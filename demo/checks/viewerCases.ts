@@ -348,6 +348,40 @@ export const VIEWER_GROUPS: CaseGroup[] = [
         },
       },
       {
+        /*
+         * doc 이 없을 때 회색 판만 남으면 "깨진 것" 처럼 보인다 — 2026.08.21 에 소비자 앱에서
+         * 실제로 그렇게 보였다. 편집기의 emptyState 와 달리 버튼이 없다: 학생은 문서를
+         * 불러올 수 없고 이 상태를 푸는 것은 호스트의 몫이다.
+         */
+        name: '★ doc 이 없으면 빈 상태를 보여준다 (회색 판만 남지 않는다)',
+        expected: [true, false],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const v = createPDFCanvasViewer(host, { doc: null })
+          const empty = host.querySelector('.pck-viewer-empty') !== null
+          const hasButton = host.querySelector('.pck-viewer-empty button') !== null
+          v.destroy()
+          host.remove()
+          return [empty, hasButton]
+        },
+      },
+      {
+        name: '문서가 들어오면 빈 상태가 사라진다',
+        expected: [true, false],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const v = createPDFCanvasViewer(host, { doc: null })
+          const before = host.querySelector('.pck-viewer-empty') !== null
+          v.update({ doc: docWith([], 1) })
+          const after = host.querySelector('.pck-viewer-empty') !== null
+          v.destroy()
+          host.remove()
+          return [before, after]
+        },
+      },
+      {
         name: '모든 페이지를 렌더한다 (연속 스크롤 — 편집기는 한 페이지뿐)',
         expected: 3,
         actual: () => {

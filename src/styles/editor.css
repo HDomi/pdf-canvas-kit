@@ -1356,6 +1356,22 @@
   display: block;
 }
 
+/**
+ * 뷰어의 빈 상태.
+ *
+ * 편집기의 `.pck-empty` 는 `position: absolute; inset: 0` 인데 여기는 흐름에 둔다 —
+ * 뷰어는 스크롤 컨테이너라 absolute 로 두면 스크롤 높이가 0 이 되어 중앙 정렬이 깨진다.
+ */
+.pck-viewer-empty {
+  display: grid;
+  place-items: center;
+  min-height: 100%;
+  padding: 32px;
+  color: var(--pck-ink-muted);
+  font-size: var(--pck-text-sm);
+  text-align: center;
+}
+
 .pck-viewer-pages {
   display: flex;
   flex-direction: column;

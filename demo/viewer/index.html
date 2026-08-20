@@ -44,33 +44,32 @@
         align-items: center;
         cursor: pointer;
       }
-      /* 편집기와 뷰어를 나란히. 둘 다 height 체인이 필요하다 (ARCHITECTURE §15.4). */
-      .split {
+      /*
+        편집기와 뷰어를 **겹쳐 두고 탭으로 전환한다.** 나란히 두지 않는 이유:
+        편집기는 데스크탑 전용 3분할이고 페이지 목록 240px + 인스펙터 280px 를 고정으로
+        먹는다 (PLAN D15). 화면 절반에 넣으면 캔버스가 남는 폭만 쓰게 되어 못 쓴다.
+
+        둘 다 항상 마운트해 둔다 — 탭을 옮길 때 편집기를 걷으면 undo 스택이 날아간다.
+      */
+      .stack {
         flex: 1;
         min-height: 0;
-        display: flex;
+        position: relative;
       }
       .pane {
-        flex: 1;
-        min-width: 0;
-        min-height: 0;
-        display: flex;
-        flex-direction: column;
+        position: absolute;
+        inset: 0;
       }
-      .pane + .pane {
-        border-left: 2px solid #26262a;
-      }
-      .pane-label {
-        flex: none;
-        padding: 3px 10px;
-        background: #1c1c20;
-        color: #9a9aa0;
-        font-size: 11px;
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      .pane[hidden] {
+        /* display:none 이 아니라 visibility — 레이아웃을 유지해야 폭 측정이 살아 있다. */
+        display: block;
+        visibility: hidden;
       }
       .host {
-        flex: 1;
-        min-height: 0;
+        height: 100%;
+      }
+      .devbar .spacer {
+        margin-left: auto;
       }
     </style>
   </head>
@@ -78,17 +77,17 @@
     <div id="app">
       <div class="devbar">
         <button id="send">뷰어로 보내기 (toPublicDoc)</button>
+        <button id="tab-editor" disabled>편집기</button>
+        <button id="tab-viewer">뷰어</button>
         <label><input type="checkbox" id="narrow" /> 375px 폭</label>
         <span id="status"></span>
-        <span style="margin-left: auto"><a href="/" style="color: #9a9aa0">← 목록</a></span>
+        <span class="spacer"><a href="/" style="color: #9a9aa0">← 목록</a></span>
       </div>
-      <div class="split">
-        <div class="pane">
-          <div class="pane-label">Editor — 교사. 정답을 넣는다</div>
+      <div class="stack">
+        <div class="pane" id="pane-editor">
           <div class="host" id="editor"></div>
         </div>
-        <div class="pane">
-          <div class="pane-label">Viewer — 학생. 정답이 없다</div>
+        <div class="pane" id="pane-viewer" hidden>
           <div class="host" id="viewer"></div>
         </div>
       </div>

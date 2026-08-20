@@ -24,10 +24,11 @@
  * 페이지가 높아지면서 세로 스크롤바가 나타나고, 그러면 콘텐츠 폭이 줄어 다시 관측이 발화한다.
  * 그래서 스크롤바 안쪽 폭을 그대로 갖는 **빈 측정용 엘리먼트**를 관측한다.
  */
-import { el, list } from '../h'
+import { el, list, when } from '../h'
 import { computed, effect, onCleanup, type ReadSignal } from '../reactive'
 import type { PDFCanvasPage } from '../../core/model/types'
 import type { ObjectTypeRegistry } from '../../core/objectTypes'
+import { text } from '../../core/config/strings'
 import { pageFrame } from '../page/pageFrame'
 import { viewerObject } from './viewerObject'
 
@@ -54,6 +55,17 @@ export function viewerShell(props: ViewerShellProps): HTMLElement {
 
   const root = el('div', { class: 'pck-viewer' }, [
     meter,
+    /*
+     * 빈 상태.
+     *
+     * 호스트가 아직 `doc` 을 주지 않았을 때 회색 판만 남으면 "깨진 것" 처럼 보인다 —
+     * 2026.08.21 에 소비자 앱에서 실제로 그렇게 보였다. 편집기의 `emptyState` 와 달리
+     * 버튼이 없다: 학생은 문서를 불러올 수 없고, 이 상태를 푸는 것은 호스트의 몫이다.
+     */
+    when(
+      () => props.pages.value.length === 0,
+      () => el('div', { class: 'pck-viewer-empty' }, [el('p', {}, [text('viewer.empty')])]),
+    ),
     el('div', { class: 'pck-viewer-pages' }, [
       /*
        * 페이지 키는 `id` 다. 인덱스로 두면 호스트가 문서를 교체할 때 모든 페이지가

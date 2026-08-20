@@ -35,6 +35,25 @@ const editorHost = document.getElementById('editor')!
 const viewerHost = document.getElementById('viewer')!
 const sendBtn = document.getElementById('send') as HTMLButtonElement
 const status = document.getElementById('status')!
+const paneEditor = document.getElementById('pane-editor')!
+const paneViewer = document.getElementById('pane-viewer')!
+const tabEditor = document.getElementById('tab-editor') as HTMLButtonElement
+const tabViewer = document.getElementById('tab-viewer') as HTMLButtonElement
+
+/**
+ * 탭 전환.
+ *
+ * 두 컴포넌트를 걷지 않고 숨긴다 — 편집기를 언마운트하면 undo 스택이 날아가고, 뷰어는
+ * 입력 중인 응답을 잃는다. `visibility` 를 쓰므로 뷰어의 폭 측정도 계속 살아 있다.
+ */
+function showTab(which: 'editor' | 'viewer') {
+  paneEditor.hidden = which !== 'editor'
+  paneViewer.hidden = which !== 'viewer'
+  tabEditor.disabled = which === 'editor'
+  tabViewer.disabled = which === 'viewer'
+}
+tabEditor.addEventListener('click', () => showTab('editor'))
+tabViewer.addEventListener('click', () => showTab('viewer'))
 
 const editor = createPDFCanvasEditor(editorHost, {
   initialDoc: createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
@@ -98,6 +117,7 @@ sendBtn.addEventListener('click', () => {
   current = editor.toPublicDoc()
   viewer.update({ doc: current })
   report()
+  showTab('viewer')
 })
 
 // 좁은 폭 확인용 (D15 — 375px 에서 가로 스크롤이 없어야 한다).

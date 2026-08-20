@@ -1921,7 +1921,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R8** ✅ | 커스텀 객체 레지스트리 | Answer Box 제거 + `objectTypes` 레지스트리 ✅ (D25). **2,277줄 삭제 / 990줄 추가.** 상세 20.13 |
 | **R9** ✅ | 프레임워크 래퍼 | facade `createPDFCanvasEditor` + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개 ✅. 래퍼 번들 **React 2.0KB · Vue 3.0KB**. `/checks/` **251 케이스 / 36 그룹**. 상세 20.17 |
 | **R10** ✅ | 배포 준비 | tarball 을 React 앱·Vue 앱에 실제 설치해 검증 ✅. **배포를 막는 버그 2건을 여기서만 잡았다** — `postinstall` 누락 파일, `SlotMap` 반공변. 상세 20.19 |
-| **R11** ✅ | `PDFCanvasViewer` | 뷰어 컨트롤러·렌더 층·facade·React·Vue 래퍼 ✅ (D28·D29). 연속 스크롤 + 페이지별 fit-to-width. `/checks/` **274 케이스 / 40 그룹**. **메인 엔트리에 `createPDFCanvasEditor` 가 빠져 있던 것도 여기서 발견**. 상세 20.20 |
+| **R11** ✅ | `PDFCanvasViewer` | 뷰어 컨트롤러·렌더 층·facade·React·Vue 래퍼 ✅ (D28·D29). 연속 스크롤 + 페이지별 fit-to-width. `/checks/` **276 케이스 / 40 그룹**. **메인 엔트리에 `createPDFCanvasEditor` 가 빠져 있던 것도 여기서 발견**. 상세 20.20 |
 | **R12** | 크롬 슬롯 | 크롬 조각 10개를 슬롯으로 교체 가능하게 (D27). **캔버스는 닫아둔다.** R11 이 컨트롤러를 건드린 뒤에 계약을 확정한다 |
 
 **R4~R7 동안 `/editor/`(Vue)는 계속 동작한다**(D23). 신규 화면은 `/editor-dom/` 에서 따로 자란다.
@@ -2956,7 +2956,7 @@ R10 의 소비자 앱 검증도 이걸 놓쳤다. 내가 만든 앱이 `pdf-canv
 
 | | 상태 |
 | --- | --- |
-| 게이트 (`typecheck`·`lint`·`build`·`checks`·`verify:tarball`) | ✅ 274 / 274 · 40 그룹 |
+| 게이트 (`typecheck`·`lint`·`build`·`checks`·`verify:tarball`) | ✅ 276 / 276 · 40 그룹 |
 | 데모 6개 빌드 (`/editor/` `/react/` `/vue/` **`/viewer/`** `/checks/` `/spike/`) | ✅ |
 | tarball 을 React·Vue 소비자 앱에 재설치 (`skipLibCheck: false`) | ✅ 양쪽 exit 0 · 뷰어 코드가 번들에 포함 |
 | 배율 파생 · controlled `doc` · 슬롯 분기 · facade | ✅ 케이스 23건 |
@@ -2967,3 +2967,25 @@ R10 의 소비자 앱 검증도 이걸 놓쳤다. 내가 만든 앱이 `pdf-canv
 `/viewer/` 데모가 편집기와 뷰어를 나란히 두고 [뷰어로 보내기] 로 `toPublicDoc()` 을 거치게
 한다. `renderViewer` 가 `answers` 를 발견하면 **콘솔에 error 를 낸다** — 정답 유출을 눈으로
 확인하는 장치다.
+
+#### 브라우저에서 잡힌 것 (2026.08.21)
+
+**뷰어에 빈 상태가 없었다.** `doc` 이 `null` 이면 회색 판만 남아 "깨진 것" 처럼 보인다.
+편집기에는 `emptyState` 가 있는데 뷰어를 만들면서 대칭을 빠뜨렸다. `viewer.empty` 문구를
+추가하고 `.pck-viewer-empty` 를 넣었다 — **버튼은 없다.** 학생은 문서를 불러올 수 없고 이
+상태를 푸는 것은 호스트의 몫이다.
+
+편집기의 `.pck-empty` 는 `position: absolute; inset: 0` 인데 뷰어는 흐름에 둔다. 뷰어는
+스크롤 컨테이너라 absolute 로 두면 스크롤 높이가 0 이 되어 중앙 정렬이 깨진다.
+
+**편집기와 뷰어를 나란히 두면 편집기가 못 쓰게 된다.** 데모 앱에서 좌우로 나눴는데 편집기가
+데스크탑 전용 3분할이고 페이지 목록 240px + 인스펙터 280px 를 **고정으로** 먹는다(D15).
+1920px 화면의 절반인 960px 에 넣으면 캔버스에 남는 폭이 400px 대다.
+
+세 데모 전부 **탭 전환**으로 바꿨다. 두 컴포넌트를 걷지 않고 `visibility` 로 숨긴다 —
+언마운트하면 편집기의 undo 스택이 날아가고 뷰어는 입력 중인 응답을 잃는다. `display: none`
+이 아닌 이유는 뷰어의 폭 측정(`ResizeObserver`)이 계속 살아 있어야 하기 때문이다.
+
+> **이것이 D15 의 실제 의미다.** "Editor 는 데스크탑 전용" 은 창 크기 이야기가 아니라
+> **편집기에 좁은 컨테이너를 주면 안 된다**는 제약이다. 호스트가 사이드바를 두는 레이아웃도
+> 같은 문제를 만든다.

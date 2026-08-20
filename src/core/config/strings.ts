@@ -54,6 +54,11 @@ export const DEFAULT_STRINGS = {
   'empty.title': '아직 불러온 문서가 없습니다',
   'empty.description': 'PDF나 문서를 불러오면 문서 편집을 시작할 수 있습니다.',
   'empty.action': '문서 불러오기',
+  /*
+   * 뷰어의 빈 상태. 편집기와 문구가 다르다 — 학생은 문서를 불러올 수 없고, 여기 온 것은
+   * 호스트가 아직 `doc` 을 주지 않았다는 뜻이다.
+   */
+  'viewer.empty': '표시할 문서가 없습니다',
 
   'toolbar.text': '텍스트 입력',
   'toolbar.shape': '도형',

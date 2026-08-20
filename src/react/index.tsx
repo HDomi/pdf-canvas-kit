@@ -42,9 +42,10 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { createPDFCanvasEditor, type EditorHandle, type EditorProps } from '../dom/createEditor'
-import type { CustomObject, PDFCanvasDoc } from '../core/model/types'
+import { createPDFCanvasViewer, type ViewerHandle, type ViewerProps } from '../dom/createViewer'
+import type { CustomObject, PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
 
-export type { EditorHandle }
+export type { EditorHandle, ViewerHandle }
 
 /** 커스텀 객체 슬롯이 받는 것. `kind` 별로 컴포넌트를 정한다. */
 export interface CustomSlotProps<Data = unknown> {
@@ -216,6 +217,110 @@ export function PDFCanvasEditor({
       />
       {portals(objectMounts, renderObject)}
       {portals(inspectorMounts, renderInspector)}
+    </>
+  )
+}
+
+/* ------------------------------------------------------ PDFCanvasViewer -- */
+
+export interface PDFCanvasViewerProps extends Omit<ViewerProps, 'onMountCustom'> {
+  /**
+   * 캔버스 안 커스텀 객체 — **응답을 받는 폼**이다 (PLAN D29).
+   *
+   * 편집기의 `renderObject` 와 슬롯 맵 형태가 같지만 화면의 목적이 다르다. 편집기는 미리보기를
+   * 그리고 편집은 인스펙터에서 하는데(D26), 뷰어는 그 자리에서 입력을 받는다.
+   */
+  renderObject?: SlotMap
+  className?: string
+  style?: React.CSSProperties
+  ref?: Ref<ViewerHandle>
+}
+
+/**
+ * 읽기 전용 뷰어 (PLAN D15 · R11).
+ *
+ * ```tsx
+ * <PDFCanvasViewer
+ *   doc={publicDoc}                       // toPublicDoc() 또는 asPublicDoc()
+ *   objectTypes={[shortAnswer]}           // 편집기와 같은 배열
+ *   renderObject={{ 'answer.short': AnswerInput }}
+ *   onChangeData={(id, next) => setResponses((r) => ({ ...r, [id]: next }))}
+ * />
+ * ```
+ *
+ * 편집기와 달리 **`doc` 이 controlled 다.** 뷰어는 문서를 소유하지 않으므로 응답을 저장할 곳도
+ * 없다 — `onChangeData` 로 받아 호스트가 자기 상태를 고치고 새 `doc` 을 내려 준다.
+ */
+export function PDFCanvasViewer({
+  renderObject,
+  className,
+  style,
+  ref,
+  ...viewerProps
+}: PDFCanvasViewerProps) {
+  const hostRef = useRef<HTMLDivElement>(null)
+  const handleRef = useRef<ViewerHandle | null>(null)
+  const [mounts, onMountCustom] = useMounts()
+
+  // 편집기 래퍼와 같은 이유로 ref 를 쓴다 — 마운트 effect 를 한 번만 돌리기 위해.
+  const propsRef = useRef(viewerProps)
+  propsRef.current = viewerProps
+
+  useEffect(() => {
+    const host = hostRef.current
+    if (!host) return
+    const handle = createPDFCanvasViewer(host, { ...propsRef.current, onMountCustom })
+    handleRef.current = handle
+    return () => {
+      handle.destroy()
+      handleRef.current = null
+    }
+  }, [onMountCustom])
+
+  // 렌더마다 흘린다. 뷰어는 `doc` 도 여기서 반영된다.
+  useEffect(() => {
+    handleRef.current?.update(viewerProps)
+  })
+
+  useImperativeHandle(ref, () => handleRef.current as ViewerHandle, [])
+
+  /*
+   * 문서를 구독하지 않는다 — 편집기와 다른 지점.
+   *
+   * 뷰어의 문서는 **prop 으로 내려온다.** `props.doc` 이 이미 최신이므로 외부 스토어를
+   * 구독할 이유가 없고, 구독하면 같은 값을 두 경로로 읽어 tearing 위험만 생긴다.
+   */
+  const doc: PublicPDFCanvasDoc | null = viewerProps.doc
+
+  const portals: ReactNode[] = []
+  if (doc && renderObject) {
+    for (const [objectId, el] of mounts) {
+      const obj = findCustom(doc, objectId)
+      if (!obj) continue
+      const Slot = renderObject[obj.kind]
+      if (!Slot) continue
+      portals.push(
+        createPortal(
+          <Slot
+            objectId={objectId}
+            data={obj.data}
+            onChange={(next: unknown) => viewerProps.onChangeData?.(objectId, next)}
+          />,
+          el,
+          objectId,
+        ),
+      )
+    }
+  }
+
+  return (
+    <>
+      <div
+        ref={hostRef}
+        {...(className !== undefined ? { className } : {})}
+        {...(style !== undefined ? { style } : {})}
+      />
+      {portals}
     </>
   )
 }

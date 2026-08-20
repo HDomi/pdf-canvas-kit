@@ -236,3 +236,41 @@ export interface CustomObject extends ObjectBase {
 export type PDFCanvasObject = TextObject | ShapeObject | MaskObject | CustomObject
 
 export type PDFCanvasObjectType = PDFCanvasObject['type']
+
+/* ------------------------------------------------ 뷰어용 문서 (D14 · D28) -- */
+
+/**
+ * 브랜드용 심볼. **런타임 값이 없다** — `declare` 라 타입 검사에만 존재한다.
+ */
+declare const PUBLIC_BRAND: unique symbol
+
+/**
+ * 비밀이 제거된 문서. **뷰어는 이것만 받는다** (PLAN D14 · D28).
+ *
+ * 구조는 `PDFCanvasDoc` 과 같다. 다른 것은 **어떻게 얻었는지**뿐이고, 그 출처를 타입이
+ * 기억한다. 브랜드가 없으면 뷰어에 넘길 수 없으므로 아래가 컴파일 에러다.
+ *
+ * ```ts
+ * viewer.update({ doc: editor.getDoc() })   // ✗ 편집 문서. 정답이 들어 있다
+ * viewer.update({ doc: editor.toPublicDoc() })  // ✓
+ * ```
+ *
+ * D25 이후로 이 패키지는 `data` 안에서 **무엇이 비밀인지 모른다** — 커스텀 객체 타입의
+ * `toPublic(data)` 만 안다. 그래서 구조가 다른 타입을 만들 방법이 없고, 브랜드가 남은
+ * 유일한 수단이다. 실수를 못 하게 막는 것이지 유출을 물리적으로 막는 것은 아니다.
+ */
+export type PublicPDFCanvasDoc = PDFCanvasDoc & { readonly [PUBLIC_BRAND]: true }
+
+/**
+ * 서버에서 받은 문서를 뷰어용으로 단언한다.
+ *
+ * `toPublicDoc()` 을 거치지 않은 문서 — JSON 응답, localStorage 복원 — 에는 브랜드가 없다.
+ * 그 문서가 이미 정답을 제거한 것이라면 여기서 단언한다.
+ *
+ * ⚠️ **이름 그대로 단언이다. 검사하지 않는다.** 이 함수를 부르는 쪽이 "서버가 학생용으로
+ * 내려준 문서" 임을 보장해야 한다. 편집 문서를 여기 통과시키면 정답이 그대로 뷰어 DOM 에
+ * 들어간다 — 그때 타입은 아무 말도 해 주지 않는다.
+ */
+export function asPublicDoc(doc: PDFCanvasDoc): PublicPDFCanvasDoc {
+  return doc as PublicPDFCanvasDoc
+}

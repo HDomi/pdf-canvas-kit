@@ -52,7 +52,7 @@ import { pickObject } from '../core/geometry/hitTest'
 import { clientToPage } from '../core/geometry/units'
 import { createObjectForTool, defaultRectAt, defaultSizeForTool } from '../core/interaction/tools'
 import type { PointerCommit } from '../core/interaction/pointerMachine'
-import type { PDFCanvasDoc, PDFCanvasObject, Rect } from '../core/model/types'
+import type { PDFCanvasDoc, PDFCanvasObject, Rect, PublicPDFCanvasDoc } from '../core/model/types'
 import type { SaveState, ToolId } from '../core/model/viewState'
 import { ConvertError } from '../core/ports/ConverterPort'
 import type { AssetPort } from '../core/ports/AssetPort'
@@ -239,7 +239,7 @@ export interface EditorController {
   onMountCustom: ((objectId: string, el: HTMLElement | null) => void) | undefined
   onMountInspector: ((objectId: string, el: HTMLElement | null) => void) | undefined
   /** 비밀을 제거한 문서. 뷰어에 넘기는 스냅샷이다. */
-  toPublicDoc: () => PDFCanvasDoc
+  toPublicDoc: () => PublicPDFCanvasDoc
 
   /* 불러오기 */
   uploadOpen: ReadSignal<boolean>

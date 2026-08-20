@@ -18,7 +18,7 @@
 import { onCleanup, scope, type Dispose } from './reactive'
 import { editorShell } from './editor/editorShell'
 import { createEditorController, type EditorProps } from '../controller/editor'
-import type { PDFCanvasDoc } from '../core/model/types'
+import type { PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
 import type { ValidationResult } from '../core/validation/rules'
 
 export type { EditorProps }
@@ -56,7 +56,7 @@ export interface EditorHandle {
   /** 문서 전체 검증 결과. 게이트를 열지 않고 상태만 볼 때. */
   validate(): ValidationResult
   /** 커스텀 객체의 비밀을 제거한 스냅샷. 뷰어에 넘긴다. */
-  toPublicDoc(): PDFCanvasDoc
+  toPublicDoc(): PublicPDFCanvasDoc
 
   /**
    * 문서를 불러온다. 편집기 안의 업로드 팝업과 **같은 경로**다.

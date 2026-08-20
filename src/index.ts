@@ -24,6 +24,8 @@ export type {
   PageSource,
   PDFCanvasPage,
   PDFCanvasDoc,
+  /** 뷰어가 받는 브랜드 타입 (D14 · D28). `toPublicDoc()` 또는 `asPublicDoc()` 으로만 만든다. */
+  PublicPDFCanvasDoc,
   PDFCanvasObject,
   PDFCanvasObjectType,
   TextObject,
@@ -136,6 +138,18 @@ export type { EditorViewState, FitMode, ToolId, SaveState } from './core/model/v
 
 /* ------------------------------------------------- 커스텀 객체 (D25) -- */
 
+export { asPublicDoc } from './core/model/types'
+
+/* --------------------------------------------- 프레임워크 없이 쓰는 facade -- */
+
+/*
+ * 프레임워크 래퍼(`pdf-canvas-kit/react` · `/vue`)를 쓰지 않는 소비자의 진입점이다.
+ * 래퍼는 이 두 함수를 감싸기만 한다 (ARCHITECTURE §17).
+ */
+export { createPDFCanvasEditor } from './dom/createEditor'
+export type { EditorHandle, EditorProps } from './dom/createEditor'
+export { createPDFCanvasViewer } from './dom/createViewer'
+export type { ViewerHandle, ViewerProps } from './dom/createViewer'
 export { defineObjectType, createObjectTypeRegistry, UNKNOWN_KIND_ISSUE } from './core/objectTypes'
 export type {
   ObjectTypeDef,

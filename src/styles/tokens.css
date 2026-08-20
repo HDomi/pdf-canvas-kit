@@ -85,6 +85,8 @@
   --pck-stage-bg: var(--pck-surface-sunken);
   --pck-page-bg: #ffffff;
   --pck-page-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+  /* 뷰어의 페이지 간 간격 (R11). 편집기는 한 페이지뿐이라 쓰지 않는다. */
+  --pck-viewer-page-gap: 16px;
   --pck-page-border: var(--pck-line);
 
   /* ---- 선택 오버레이 (줌 transform 밖에 그린다) ------------------------- */

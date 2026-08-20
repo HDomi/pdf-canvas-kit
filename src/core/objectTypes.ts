@@ -24,7 +24,8 @@
  *
  * | 슬롯 | 쓰는 곳 | 누가 부르는가 |
  * | --- | --- | --- |
- * | `render` | vanilla DOM | 렌더 층이 직접 부른다 |
+ * | `render` | vanilla DOM | 편집기 캔버스. 렌더 층이 직접 부른다 |
+ * | `renderViewer` | vanilla DOM | **뷰어**. 응답을 받는 폼이다 (D29) |
  * | (없음) | React·Vue | **빈 컨테이너**만 만들고 마운트 포인트로 알린다. 래퍼가 portal 한다 |
  *
  * 프레임워크 래퍼는 `render` 를 쓰지 않는다. React 의 `createPortal` · Vue 의 `Teleport` 가
@@ -87,7 +88,7 @@ export interface ObjectRenderContext<Data = unknown> {
   onUpdate: (fn: () => void) => void
 }
 
-export interface ObjectTypeDef<Data = unknown> {
+export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
   /** 문서에 저장되는 식별자. 레지스트리 키다. */
   kind: string
   /** 툴바에 보이는 이름. */
@@ -147,6 +148,33 @@ export interface ObjectTypeDef<Data = unknown> {
    * 여기로 옮겨졌다 (PLAN D25).
    */
   renderInspector?: (ctx: ObjectRenderContext<Data>) => Node
+  /**
+   * **뷰어**의 객체 내용. vanilla DOM. `PDFCanvasViewer` 가 부른다 (PLAN D29).
+   *
+   * `render` 와 나누는 이유는 두 화면이 하는 일이 다르기 때문이다. 편집기의 객체는 **배치
+   * 대상**이라 미리보기만 보여주고 편집은 인스펙터에서 한다(D26). 뷰어의 객체는 **응답을 받는
+   * 폼**이라 그 자리에서 입력을 받는다.
+   *
+   * ```ts
+   * render:       (ctx) => badge(ctx)        // 편집기 — "2점, 정답 미입력"
+   * renderViewer: (ctx) => textInput(ctx)    // 뷰어  — 실제 <input>
+   * ```
+   *
+   * ## ⚠️ 여기서는 콘텐츠가 포인터 이벤트를 받는다
+   *
+   * 편집기에서는 프레임이 이벤트를 먹는다 — 안 그러면 객체를 끌어 옮길 수 없다(D26).
+   * 뷰어에는 드래그가 없으므로 **콘텐츠가 먹는 쪽이 맞다.** 뷰어 렌더 층이
+   * `pointer-events: auto` 를 준다.
+   *
+   * ## `ctx.data` 는 비밀이 제거된 값이다
+   *
+   * 뷰어는 `PublicPDFCanvasDoc` 만 받으므로 `toPublic(data)` 를 거친 결과가 들어온다.
+   * 정답을 읽으려 해도 없다 — 그게 D14 의 목적이다.
+   *
+   * `render` 와 같은 규칙이다: **객체당 한 번만 불리고** 갱신은 `ctx.onUpdate` 로 받는다.
+   * 프레임워크 래퍼는 이걸 주지 않고 컨테이너에 portal 한다.
+   */
+  renderViewer?: (ctx: ObjectRenderContext<PublicData>) => Node
 }
 
 /**
@@ -157,7 +185,9 @@ export interface ObjectTypeDef<Data = unknown> {
  * const t = defineObjectType({ kind: 'x', defaultData: () => ({ n: 1 }), … })
  * ```
  */
-export function defineObjectType<Data>(def: ObjectTypeDef<Data>): ObjectTypeDef<Data> {
+export function defineObjectType<Data, PublicData = Data>(
+  def: ObjectTypeDef<Data, PublicData>,
+): ObjectTypeDef<Data, PublicData> {
   return def
 }
 
@@ -169,7 +199,7 @@ export function defineObjectType<Data>(def: ObjectTypeDef<Data>): ObjectTypeDef<
  * 레지스트리는 `data` 를 해석하지 않고 통과시키기만 하므로 여기서만 `any` 를 쓴다.
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export type AnyObjectTypeDef = ObjectTypeDef<any>
+export type AnyObjectTypeDef = ObjectTypeDef<any, any>
 
 /** `kind` → 정의. 렌더 층과 컨트롤러가 이걸 통해 조회한다. */
 export interface ObjectTypeRegistry {

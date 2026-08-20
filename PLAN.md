@@ -3,9 +3,9 @@
 | 항목 | 내용 |
 | --- | --- |
 | 대상 기획 | PDFCanvas v0.19 (초안) |
-| 문서 버전 | plan-2.3 |
+| 문서 버전 | plan-2.4 |
 | 최초 작성일 | 2026.08.19 |
-| 최종 수정일 | 2026.08.20 |
+| 최종 수정일 | 2026.08.21 |
 | 범위 | `PDFCanvasEditor` 우선 구현, `PDFCanvasViewer` 골격만 |
 | 배포 형태 | **공개 npm 패키지 `pdf-canvas-kit` (MIT).** submodule 겸용은 버렸다(D22) |
 | 소비 환경 | **프레임워크 무관.** vanilla DOM 렌더 층 + Vue·React 얇은 래퍼 (D19·D21, 상세 20장) |
@@ -54,6 +54,8 @@ import { PDFCanvasEditor, PDFCanvasViewer } from 'pdf-canvas-kit/vue'
 | **D25** | **Answer Box 3종을 제거하고 소비자가 정의하는 커스텀 객체 레지스트리로 바꾼다** (2026.08.20) | 이 패키지의 이름과 범위는 "PDF 위에 객체를 배치하는 도구" 인데, 내용은 **문제지 편집기**였다 — 채점·문항 번호·정답 제거·정답 검증이 코어에 있었다. 그 도메인을 소비자 앱으로 옮기면 패키지가 일관돼지고, 소비자는 자기 React·Vue 컴포넌트를 객체로 꽂을 수 있다. 기본 틀(pt 사각형·리사이즈·배경·테두리·회전)만 패키지가 제공한다 | (a) Answer Box 를 남기고 커스텀을 추가: 두 체계가 공존해 "왜 이건 내장이고 저건 아닌가" 가 임의적이다 (b) 도메인 로직을 dead code 로 남기기: 아무도 쓰지 않는 850줄이 코어에 남아 다음 사람이 "왜 있나" 를 묻는다. 상세 20.13 |
 | **D26** | **커스텀 객체의 편집 창구는 인스펙터 하나. 캔버스는 배치·크기 조절만 한다** (2026.08.20) | `interactive: true` 로 캔버스에서 직접 입력받는 길을 열어 뒀는데 **원리적으로 동작하지 않았다** — 콘텐츠가 이벤트를 받아도 페이지 프레임까지 버블링되고 거기서 포인터 도구가 `preventDefault()` 를 부른다. `pointerdown` 의 `preventDefault()` 는 **포커스 이동을 취소**한다. 규칙이 하나면 소비자가 외울 것도 하나다 | (a) `stopPropagation` 으로 고치기: 그 객체는 가운데를 끌어 옮길 수 없어져 배치가 불편해진다 (b) 수정자 키로 전환: Space 가 이미 팬에 쓰이고, 규칙을 외워야 한다. 상세 20.15 |
 | **D27** | **크롬 UI 조각을 슬롯으로 교체 가능하게 한다. 캔버스는 닫아둔다** (2026.08.20) | 호스트 앱에는 자기 디자인 시스템이 이미 있고, 특히 **모달이 자기 앱과 다르게 생긴 것**을 불편해한다. 크롬 조각(`topBar`·`toolbar`·`pageThumbList`·`stageControls`·`pageMeta`·`saveBadge`·`emptyState`·다이얼로그 3종)은 컨트롤러를 호출만 하므로 교체해도 위험이 없다. 반면 **캔버스(`pageFrame`·`selectionOverlay`·`resizeHandles`·`canvasStage`·`stageArea`)는 닫는다** — 좌표계·포인터 라우팅·줌 앵커링이 거기 걸려 있고, 6장의 함정(`x * scale` 이중 적용, `scrollLeft` 중복 가산, 드래그 중 문서 갱신)이 소비자 코드로 새면 **재현 불가능한 버그 리포트가 우리에게 온다** | (a) 전부 열기(headless): 컨트롤러 97개 멤버를 공개 API 로 확정해야 하고, 그 뒤 내부 리팩터가 전부 breaking change 가 된다. R11 이 컨트롤러를 또 건드릴 예정이라 표면을 굳히기엔 이르다 (b) 다이얼로그만 열기: 위험은 0 이지만 툴바·상단바를 자기 것으로 바꾸려는 요구가 곧 다시 온다 (c) CSS 토큰만: 이미 있고, 구조가 다른 UI(상단바에 자기 메뉴 넣기)는 CSS 로 안 된다. 상세 20.18 |
+| **D28** | **뷰어는 브랜드 타입 `PublicPDFCanvasDoc` 만 받는다** (2026.08.21) | D14 는 "타입 분리로 실수를 컴파일 타임에 막는다" 였는데 D25 이후 이 패키지는 `data` 안에서 **무엇이 비밀인지 모른다** — 구조가 다른 타입을 만들 방법이 사라졌다. 브랜드가 남은 유일한 수단이고, `viewer.update({ doc: editor.getDoc() })` 이 컴파일 에러가 된다 | (a) 같은 타입 공유: `getDoc()` 과 `toPublicDoc()` 을 바꿔 쓴 실수가 **런타임에도 안 잡힌다** — 정답이 학생 DOM 에 들어가고 아무 신호가 없다 (b) 런타임 검사: 무엇이 비밀인지 모르므로 검사할 것이 없다. 서버 JSON 용 탈출구로 `asPublicDoc()` 을 준다 — 이름이 단언임을 드러낸다. 상세 20.20 |
+| **D29** | **뷰어는 응답을 갖지 않는다. `renderViewer` 슬롯만 준다** (2026.08.21) | 객체 타입을 소비자가 정의하는데(D25) 응답 스키마만 패키지가 쥐고 있을 이유가 없다. 구 PLAN 4.4 의 `AttemptDraft`·`ShortRes`·`DropboxRes` 는 Answer Box 3종을 전제한 모델이라 D25 로 무효가 됐다. 뷰어는 `onChangeData(objectId, next)` 로 올려 보내고 호스트가 자기 상태를 고쳐 새 `doc` 을 내려 준다 | (a) 응답 모델을 남기기: 소비자 타입이 그 스키마에 맞지 않으면 쓸 수 없고, 맞으면 D25 를 되돌리는 것이다 (b) `render` 를 뷰어에도 재사용: 편집기의 객체는 배치 대상(미리보기)이고 뷰어의 객체는 폼이다 — 같은 슬롯이면 배지가 입력칸 자리에 들어간다. 상세 20.20 |
 | D17 | **테스트 러너 미도입. TS strict + ESLint + 데모 검증 화면으로 대체** (확정) | 팀이 운용하지 않는 도구는 방치된다. 타입·린트로 정적 안전망을 두껍게 깔고, 데모에 눈으로 확인하는 검증 화면을 만든다 | **리스크 인정**: geometry·validation 회귀를 자동으로 못 잡는다. 완화책 17장 |
 | ~~D18~~ | ~~i18n은 키 기반 + 주입 가능한 `I18nPort`, 기본 ko/en 내장~~ **철회(2026.08.20)** — 시스템을 걷어내고 문구 표 하나만 남겼다(D24) | 기획 3.2 하드코딩 금지 | — |
 | **D19** | **UI 렌더 층을 vanilla DOM 으로 다시 쓴다. Vue·React 는 얇은 래퍼만** (2026.08.20 결정, D1 대체) | 소비처가 Nuxt 하나라는 D1 의 전제가 깨졌다 — 이제 Vue·React 양쪽에서 쓰여야 한다. UI 를 프레임워크 없이 한 벌만 두면 구현이 하나고 프레임워크 런타임이 0KB 다. 래퍼는 각 ~100줄이라 세 번째 프레임워크가 와도 같은 비용이다 | (a) **Vue 를 내부 엔진으로 쓰고 양쪽 래퍼**: 기존 4,771줄을 그대로 살리지만 React 사용자 번들에 Vue 런타임 ~40KB gzip 이 강제로 들어간다 (b) **React 층 별도 구현**: UI 가 영구히 두 벌이 되고 반드시 갈라진다. 상세 20장 |
@@ -257,7 +259,11 @@ export type PublicPDFCanvasObject =
 
 `toPublicDoc(doc)` 을 코어에 두고, **서버도 같은 규칙으로 스냅샷을 만든다**.
 
-### 4.4 학생 응답 모델 (Viewer 골격용)
+### 4.4 학생 응답 모델 (Viewer 골격용) — ⚠️ 무효
+
+> **이 절은 D25 로 무효가 됐다.** Answer Box 3종(`answer.short`·`answer.essay`·`answer.dropbox`)을
+> 전제한 모델인데 그 도메인이 패키지에서 제거됐다. 뷰어는 응답을 갖지 않는다 — **D29** 와
+> 20.20 을 본다. 아래는 결정 이력으로 남긴다.
 
 ```ts
 export interface AttemptDraft {
@@ -647,6 +653,8 @@ Editor와 다르다.
 - 페이지 크기가 섞여 있어도 각자 폭을 채운다
 - `ResizeObserver` 로 회전·창 크기 변화에 재계산
 - 375px 폭에서 가로 스크롤이 생기면 안 된다(M10 DoD)
+
+**R11 에서 구현됐다** (20.20). `ResizeObserver` 는 스크롤 컨테이너가 아니라 내부 측정자에 붙는다 — 컨테이너 자신을 관측하면 배율↑ → 높이↑ → 세로 스크롤바 → 콘텐츠 폭↓ → 재발화의 피드백 루프가 생긴다.
 
 ---
 
@@ -1913,7 +1921,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R8** ✅ | 커스텀 객체 레지스트리 | Answer Box 제거 + `objectTypes` 레지스트리 ✅ (D25). **2,277줄 삭제 / 990줄 추가.** 상세 20.13 |
 | **R9** ✅ | 프레임워크 래퍼 | facade `createPDFCanvasEditor` + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개 ✅. 래퍼 번들 **React 2.0KB · Vue 3.0KB**. `/checks/` **251 케이스 / 36 그룹**. 상세 20.17 |
 | **R10** ✅ | 배포 준비 | tarball 을 React 앱·Vue 앱에 실제 설치해 검증 ✅. **배포를 막는 버그 2건을 여기서만 잡았다** — `postinstall` 누락 파일, `SlotMap` 반공변. 상세 20.19 |
-| **R11** | `PDFCanvasViewer` | 읽기 전용 렌더 + `Viewer` 슬롯. 원본 저장소에도 뷰어 코드는 없어 새로 쓴다 |
+| **R11** ✅ | `PDFCanvasViewer` | 뷰어 컨트롤러·렌더 층·facade·React·Vue 래퍼 ✅ (D28·D29). 연속 스크롤 + 페이지별 fit-to-width. `/checks/` **274 케이스 / 40 그룹**. **메인 엔트리에 `createPDFCanvasEditor` 가 빠져 있던 것도 여기서 발견**. 상세 20.20 |
 | **R12** | 크롬 슬롯 | 크롬 조각 10개를 슬롯으로 교체 가능하게 (D27). **캔버스는 닫아둔다.** R11 이 컨트롤러를 건드린 뒤에 계약을 확정한다 |
 
 **R4~R7 동안 `/editor/`(Vue)는 계속 동작한다**(D23). 신규 화면은 `/editor-dom/` 에서 따로 자란다.
@@ -2859,3 +2867,103 @@ React 앱은 `StrictMode` 로 띄웠고 편집기가 두 벌 남지 않는다.
 | 실제 registry 설치 (`npm publish` 후) | ⏳ 미배포. `file:` 프로토콜과 registry 는 tarball 해석이 같지만 동일하다고 단정하지 않는다 |
 | pdf.js 자산 복사를 소비자가 직접 하는 경로 | ⏳ 두 앱 모두 `workerSrc` 만 설정했고 PDF 를 실제로 열지는 않았다. CJK 폰트 누락은 그 경로에서만 드러난다 |
 | peer 미설치 시 경고 (Vue 앱에 react 없음 / 반대) | ✅ optional peer 라 경고 없음 — 두 앱 설치 로그에 peer 경고가 없었다 |
+
+### 20.20 R11 — `PDFCanvasViewer` (2026.08.21)
+
+원본 저장소에도 뷰어 코드가 없어 처음부터 썼다. 규모가 R 트랙에서 가장 크지만, 편집기와
+**공유할 것이 거의 없다**는 사실이 작업을 줄였다.
+
+#### 편집기와 공유하지 않는 이유
+
+| | Editor | Viewer |
+| --- | --- | --- |
+| 배율 | 사용자가 정한다 (줌·팬·앵커 줌) | **컨테이너 폭에서 파생.** 조작 없음 |
+| 페이지 | 한 번에 하나 (D8) | **연속 세로 스크롤** (Q15 는 Editor 한정) |
+| 문서 | `initialDoc` — 편집기가 소유 | **`doc` — controlled.** 호스트가 소유 |
+| 엔진 | 히스토리·자동저장·import | **쓰지 않는다** — 전부 편집 기능이다 |
+| 포인터 | 프레임이 먹는다 (드래그 — D26) | **콘텐츠가 먹는다** (폼 — D29) |
+| 반응형 | 데스크탑 전용 | 375px 까지 (D15) |
+
+공통 컨트롤러를 만들면 양쪽 분기가 절반씩 죽은 코드가 된다. 실제로 공유한 것은 좌표 규칙을
+담은 `pageFrame` · `pageBackground` 와 정적 뷰(`textObjectView` · `shapeObjectView` · `maskView`)뿐이다.
+
+`pageFrame` 은 `src/dom/editor/` 에서 **`src/dom/page/` 로 올렸다.** 두 겹 구조는 좌표 규칙의
+핵심이라 중복하면 한쪽만 고치는 버그가 난다. importer 가 3곳뿐이라 이동이 쌌다.
+
+#### `renderViewer` 를 왜 따로 두는가 (D29)
+
+편집기의 객체는 **배치 대상**이라 미리보기만 보여주고 편집은 인스펙터에서 한다(D26). 뷰어의
+객체는 **폼**이라 그 자리에서 입력을 받는다. 같은 슬롯을 쓰면 "2점 · 정답 미입력" 배지가
+입력칸 자리에 들어간다.
+
+```ts
+render:       (ctx) => badge(ctx)        // 편집기
+renderViewer: (ctx) => textInput(ctx)    // 뷰어
+```
+
+포인터 정책도 뒤집힌다. 편집기에서 콘텐츠가 이벤트를 먹으면 객체를 가운데로 끌 수 없어서
+D26 이 나왔는데, 뷰어에는 드래그가 없으므로 그 제약이 없다.
+
+#### `ObjectTypeDef` 에 제네릭이 하나 늘었다
+
+`renderViewer` 의 `ctx.data()` 는 `Data` 가 아니라 **`toPublic(data)` 를 거친 값**이다. 처음
+구현에서는 타입이 `Data` 를 약속했고, 그래서 데모가 `data() as unknown as PublicAnswerData`
+캐스트를 썼다 — **타입이 거짓말을 하고 있었다.**
+
+```ts
+export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
+  toPublic?: (data: Data) => unknown
+  renderViewer?: (ctx: ObjectRenderContext<PublicData>) => Node
+}
+```
+
+`toPublic` 의 반환은 `unknown` 으로 뒀다. `PublicData` 로 추론시키면 첫 제네릭만 명시한 기존
+호출 13곳이 전부 깨지고(`toPublic` 이 `Omit<...>` 을 반환하므로 `PublicData = Data` 와 불일치),
+반환값은 엔진이 `data` 에 그대로 넣기만 하므로 정확도로 얻는 것이 없다.
+
+기본값이 `Data` 라 `toPublic` 이 없는 타입은 아무것도 바뀌지 않는다. 지우는 타입만 두 번째를
+명시하면 되고, 그러면 데모의 캐스트가 **하나도 남지 않는다.**
+
+#### 이번에도 배포 버그가 하나 나왔다
+
+**`src/index.ts` 에 `createPDFCanvasEditor` 가 없었다** — R9 누락이다. README 는 첫 화면부터
+`import { createPDFCanvasEditor } from 'pdf-canvas-kit'` 를 광고하는데 그 export 가 없었다.
+
+R10 의 소비자 앱 검증도 이걸 놓쳤다. 내가 만든 앱이 `pdf-canvas-kit/react` 서브패스만 썼기
+때문이다. **검증이 소비 경로를 전부 덮지 않으면 그 구멍만큼 새어 나간다.**
+
+#### ResizeObserver 를 컨테이너에 붙이지 않는다 ★
+
+스크롤 컨테이너 자신을 관측하면 피드백 루프가 생긴다.
+
+```
+폭↑ → 배율↑ → 페이지 높이↑ → 세로 스크롤바 등장 → 콘텐츠 폭↓ → 재발화
+```
+
+그래서 스크롤바 **안쪽** 폭을 그대로 갖는 빈 측정자(`.pck-viewer-meter`, `height: 0`)를
+관측한다. 같은 이유로 `setContainerWidth` 는 값이 실제로 바뀔 때만 signal 에 쓴다.
+
+측정 전 배율은 `1` 이다. `0` 으로 두면 프레임 높이가 0 이 되어 컨테이너가 접히고,
+`ResizeObserver` 가 그 접힌 폭을 다시 측정해 값이 굳는다.
+
+#### 함께 정리한 stale 문서
+
+`src/core/grading/` 이 **없는데** README·ARCHITECTURE 4곳이 `scoreAttempt` · `normalizeAnswer` 를
+광고하고 있었다. R8 에서 Answer Box 와 함께 삭제된 것이다. `src/index.ts` 에 export 는 없어서
+실제 API 유출은 아니었지만, 공개 패키지 문서가 없는 함수를 광고하면 안 된다.
+
+#### 검증
+
+| | 상태 |
+| --- | --- |
+| 게이트 (`typecheck`·`lint`·`build`·`checks`·`verify:tarball`) | ✅ 274 / 274 · 40 그룹 |
+| 데모 6개 빌드 (`/editor/` `/react/` `/vue/` **`/viewer/`** `/checks/` `/spike/`) | ✅ |
+| tarball 을 React·Vue 소비자 앱에 재설치 (`skipLibCheck: false`) | ✅ 양쪽 exit 0 · 뷰어 코드가 번들에 포함 |
+| 배율 파생 · controlled `doc` · 슬롯 분기 · facade | ✅ 케이스 23건 |
+| **375px 에서 가로 스크롤 없음** (D15 DoD) | ⏳ **브라우저 확인 필요** |
+| **`ResizeObserver` 실제 발화 · `scrollIntoView` 위치** | ⏳ happy-dom 은 레이아웃이 없다 |
+| **뷰어 폼의 한글 IME** | ⏳ 같은 이유 |
+
+`/viewer/` 데모가 편집기와 뷰어를 나란히 두고 [뷰어로 보내기] 로 `toPublicDoc()` 을 거치게
+한다. `renderViewer` 가 `answers` 를 발견하면 **콘솔에 error 를 낸다** — 정답 유출을 눈으로
+확인하는 장치다.

@@ -14,6 +14,11 @@
  * 오버레이는 스케일된 엘리먼트 **밖**이다. 그래야 핸들이 어떤 배율에서도 일정한 픽셀 크기를
  * 유지한다 (PLAN D5).
  *
+ * ## 편집기·뷰어 공용이다
+ *
+ * 두 겹 구조는 좌표 규칙의 핵심이라 중복하면 한쪽만 고치는 버그가 난다. 그래서
+ * `src/dom/editor/` 밖에 둔다. 뷰어는 `overlay` 와 `ref` 를 쓰지 않으므로 둘 다 optional 이다.
+ *
  * 구 `src/vue/editor/PageFrame.vue` 의 이식.
  */
 import { el, type Child, type ElProps } from '../h'
@@ -27,14 +32,14 @@ export interface PageFrameProps {
   scale: ReadSignal<number>
   /** 스케일 안쪽 — 객체들. rect 값을 px 로 그대로 읽는다 (PLAN 5.3). */
   objects: Child
-  /** 스케일 밖 — 선택 테두리·핸들·마퀴. */
-  overlay: Child
+  /** 스케일 밖 — 선택 테두리·핸들·마퀴. 뷰어에는 없다. */
+  overlay?: Child
   /**
    * 프레임 엘리먼트를 컨트롤러에 넘긴다.
    *
    * 좌표 변환이 이 요소의 `getBoundingClientRect()` 를 기준으로 하기 때문이다 (PLAN 5.4).
    */
-  ref: (el: HTMLElement | null) => void
+  ref?: (el: HTMLElement | null) => void
   /**
    * 프레임에 붙일 이벤트.
    *
@@ -57,7 +62,7 @@ export function pageFrame(props: PageFrameProps): HTMLElement {
         width: () => frame().width,
         height: () => frame().height,
       },
-      ref: props.ref,
+      ...(props.ref ? { ref: props.ref } : {}),
     },
     [
       el(
@@ -74,7 +79,7 @@ export function pageFrame(props: PageFrameProps): HTMLElement {
         },
         [pageBackground(props.page), props.objects],
       ),
-      props.overlay,
+      ...(props.overlay === undefined ? [] : [props.overlay]),
     ],
   )
 }

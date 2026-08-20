@@ -9,7 +9,7 @@
  * 브라우저에서 손으로 확인해야 한다 (PLAN 20.5).
  */
 import { objectView } from '../../src/dom/editor/objects/objectView'
-import { pageFrame } from '../../src/dom/editor/pageFrame'
+import { pageFrame } from '../../src/dom/page/pageFrame'
 import { selectionOverlay } from '../../src/dom/editor/selectionOverlay'
 import { scope, signal } from '../../src/dom/reactive'
 import {

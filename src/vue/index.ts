@@ -45,11 +45,12 @@ import {
   type VNode,
 } from 'vue'
 import { createPDFCanvasEditor, type EditorHandle, type EditorProps } from '../dom/createEditor'
+import { createPDFCanvasViewer, type ViewerHandle } from '../dom/createViewer'
 import type { AnyObjectTypeDef } from '../core/objectTypes'
-import type { CustomObject, PDFCanvasDoc } from '../core/model/types'
+import type { CustomObject, PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
 import type { SaveState } from '../core/model/viewState'
 
-export type { EditorHandle }
+export type { EditorHandle, ViewerHandle }
 
 /** `kind` → 컴포넌트. `objectId` · `data` · `onChange` 를 prop 으로 받는다. */
 export type SlotMap = Record<string, Component>
@@ -210,6 +211,119 @@ export const PDFCanvasEditor = defineComponent({
         h('div', { ref: host, style: 'height:100%' }),
         ...portals(objectMounts.value, props.renderObject),
         ...portals(inspectorMounts.value, props.renderInspector),
+      ])
+  },
+})
+
+/* ------------------------------------------------------ PDFCanvasViewer -- */
+
+/**
+ * 읽기 전용 뷰어 (PLAN D15 · R11).
+ *
+ * ```vue
+ * <PDFCanvasViewer
+ *   :doc="publicDoc"
+ *   :object-types="[shortAnswer]"
+ *   :render-object="{ 'answer.short': AnswerInput }"
+ *   @change-data="(id, next) => (responses[id] = next)"
+ * />
+ * ```
+ *
+ * 편집기와 달리 **`doc` 이 controlled 다.** 뷰어는 문서를 소유하지 않으므로 응답도 저장하지
+ * 않는다 — `change-data` 로 올려 보내고 호스트가 새 `doc` 을 내려 준다 (PLAN D29).
+ */
+export const PDFCanvasViewer = defineComponent({
+  name: 'PDFCanvasViewer',
+
+  props: {
+    /** 표시할 문서. `toPublicDoc()` 또는 `asPublicDoc()` 으로 만든 브랜드 타입이다 (D28). */
+    doc: { type: Object as PropType<PublicPDFCanvasDoc | null>, default: null },
+    /** 커스텀 객체 타입. **최초 1회만 읽는다.** */
+    objectTypes: { type: Array as PropType<AnyObjectTypeDef[]>, default: undefined },
+    /** 최대 배율 상한. 기본은 상한 없음 (D15). */
+    maxScale: { type: Number, default: undefined },
+    /** 캔버스 안 커스텀 객체 — 응답을 받는 폼이다. */
+    renderObject: { type: Object as PropType<SlotMap>, default: undefined },
+  },
+
+  emits: {
+    changeData: (_objectId: string, _next: unknown) => true,
+  },
+
+  setup(props, { emit, expose }) {
+    const host = ref<HTMLElement | null>(null)
+    let handle: ViewerHandle | null = null
+
+    const mounts = shallowRef<ReadonlyMap<string, HTMLElement>>(new Map())
+
+    const setMount = (objectId: string, el: HTMLElement | null) => {
+      const prev = mounts.value
+      if (el === null) {
+        if (!prev.has(objectId)) return
+        const next = new Map(prev)
+        next.delete(objectId)
+        mounts.value = next
+        return
+      }
+      if (prev.get(objectId) === el) return
+      mounts.value = new Map(prev).set(objectId, el)
+    }
+
+    onMounted(() => {
+      if (!host.value) return
+      handle = createPDFCanvasViewer(host.value, {
+        doc: props.doc,
+        ...(props.objectTypes ? { objectTypes: props.objectTypes } : {}),
+        ...(props.maxScale !== undefined ? { maxScale: props.maxScale } : {}),
+        onChangeData: (objectId, next) => emit('changeData', objectId, next),
+        onMountCustom: setMount,
+      })
+    })
+
+    // `doc` 과 `maxScale` 을 흘린다. 뷰어는 controlled 다.
+    watchEffect(() => {
+      handle?.update({
+        doc: props.doc,
+        ...(props.maxScale !== undefined ? { maxScale: props.maxScale } : {}),
+      })
+    })
+
+    onBeforeUnmount(() => {
+      handle?.destroy()
+      handle = null
+    })
+
+    expose({
+      get handle() {
+        return handle
+      },
+    })
+
+    return () =>
+      h('div', { style: 'display:contents' }, [
+        h('div', { ref: host, style: 'height:100%' }),
+        ...(() => {
+          const current = props.doc
+          const slots = props.renderObject
+          if (!current || !slots) return []
+          const out: VNode[] = []
+          for (const [objectId, el] of mounts.value) {
+            const obj = findCustom(current, objectId)
+            if (!obj) continue
+            const slot = slots[obj.kind]
+            if (!slot) continue
+            out.push(
+              h(Teleport, { to: el, key: objectId }, [
+                h(slot, {
+                  objectId,
+                  data: obj.data,
+                  onChange: (next: unknown) => emit('changeData', objectId, next),
+                }),
+              ]),
+            )
+          }
+          return out
+        })(),
       ])
   },
 })

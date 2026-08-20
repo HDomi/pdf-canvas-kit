@@ -15,7 +15,13 @@ import { touch, type Command } from './commands'
 import { appendPages } from './commands/pages'
 import { applyFileNameToTitle } from './commands/doc'
 import { createPDFCanvasDoc } from './model/defaults'
-import type { PageBackground, PDFCanvasDoc, PDFCanvasPage } from './model/types'
+import {
+  asPublicDoc,
+  type PageBackground,
+  type PDFCanvasDoc,
+  type PDFCanvasPage,
+  type PublicPDFCanvasDoc,
+} from './model/types'
 import { createPdfjsConverter } from './pdf/pdfjsConverter'
 import type { ObjectTypeRegistry } from './objectTypes'
 import type { AssetPort, ConverterPort, StoragePort } from './ports'
@@ -111,7 +117,7 @@ export interface PDFCanvasEngine {
    * 각 타입의 `toPublic(data)` 를 거친다. 구현하지 않은 타입은 데이터가 그대로 나간다 —
    * 이 패키지는 `data` 안에 무엇이 비밀인지 모른다 (PLAN D25).
    */
-  toPublicDoc(): PDFCanvasDoc
+  toPublicDoc(): PublicPDFCanvasDoc
 
   /** blob URL을 해제하고 대기 중인 작업을 중단한다. */
   destroy(): void
@@ -299,9 +305,10 @@ export function createPDFCanvasEngine(options: EngineOptions = {}): PDFCanvasEng
 
     toPublicDoc: () => {
       const types = options.objectTypes
-      if (!types) return doc.get()
+      // 레지스트리가 없으면 제거할 규칙도 없다. 브랜드만 붙인다.
+      if (!types) return asPublicDoc(doc.get())
       const current = doc.get()
-      return {
+      return asPublicDoc({
         ...current,
         pages: current.pages.map((page) => ({
           ...page,
@@ -311,7 +318,7 @@ export function createPDFCanvasEngine(options: EngineOptions = {}): PDFCanvasEng
             return strip ? { ...obj, data: strip(obj.data) } : obj
           }),
         })),
-      }
+      })
     },
 
     destroy() {

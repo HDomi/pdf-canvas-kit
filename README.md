@@ -22,8 +22,9 @@ import 'pdf-canvas-kit/styles.css'
 
 ```ts
 // 프레임워크 없이 — imperative facade
-import { createPDFCanvasEditor } from 'pdf-canvas-kit'
+import { createPDFCanvasEditor, createPDFCanvasViewer } from 'pdf-canvas-kit'
 const editor = createPDFCanvasEditor(container, { initialDoc: doc })
+const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 ```
 
 > `initialDoc` 은 **최초 1회만 읽는다.** 편집기가 문서를 소유하고 `onChange` 로 밀어낸다 —
@@ -43,7 +44,7 @@ const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 
 프로토타입, **미배포.** 기능은 M0~M7 완료 + M8 부분이고, 편집 기능은 전부 동작한다.
 
-**위 세 예제는 동작한다** (R9 완료). 남은 것은 npm 배포 검증과 `PDFCanvasViewer` 다.
+**위 세 예제는 동작한다.** 편집기와 뷰어 모두 React·Vue·vanilla 에서 쓸 수 있다. 남은 것은 npm 배포뿐이다.
 
 | 항목 | 상태 |
 | --- | --- |
@@ -56,9 +57,9 @@ const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 | 인스펙터 | 완료 (R7) |
 | 커스텀 객체 레지스트리 | 완료 (R8) — 소비자가 타입을 정의한다 |
 | 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) |
-| 검증 케이스 | **251건 / 36 그룹** (`npm run checks`) |
+| 검증 케이스 | **274건 / 40 그룹** (`npm run checks`) |
 | npm 배포 | **미배포.** tarball 설치 검증은 완료 (R10) — React 19 앱 · Vue 3.5 앱 |
-| `PDFCanvasViewer` | **미구현** (R11) |
+| `PDFCanvasViewer` | 완료 (R11) — 연속 스크롤 · 페이지별 fit-to-width · `renderViewer` 슬롯 |
 | 크롬 UI 슬롯 교체 | **미구현** (R12) — 결정은 D27 |
 
 아래 기능 표는 **구 Vue 구현 기준**이다 — 새 렌더 층으로 옮겨진 항목은 R 트랙 표를 본다.
@@ -82,7 +83,6 @@ const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 | 인스펙터 (텍스트·도형·커스텀 객체 편집) | 동작 — 커스텀 객체의 **편집 창구는 여기 하나**다 |
 | 박스 색 편집 (배경·테두리·글자색) | 동작 — 텍스트·커스텀. 미지정은 테마 색을 따른다 |
 | 검증 (내보내기 차단·실시간 경고) | 동작 — 같은 규칙을 공유 |
-| 채점 순수 함수 | 동작 (`scoreAttempt` · `normalizeAnswer`) |
 | 내보내기 검증 게이트 | 동작 — 실패 시 문제 객체로 이동·스크롤 |
 | 내보내기 팝업 | **제공하지 않는다** — 검증 게이트만 준다 (`checkBeforeExport` · `toPublicDoc`) |
 | 문항 번호 자동 부여 | 동작 — 위치에서 파생, 인스펙터에서 수동 오버라이드 |
@@ -94,7 +94,7 @@ const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 | 상단바 [저장] | ⚠️ **프로토타입** — localStorage에 문서+이미지 저장 (PLAN 18.5) |
 | 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트는 `EditorHandle` 로 노출돼 있다 |
 
-`/editor/`(vanilla) · `/react/` · `/vue/` · `/spike/` · `/checks/` 를 확인할 수 있다.
+`/editor/`(vanilla) · `/react/` · `/vue/` · `/viewer/` · `/spike/` · `/checks/` 를 확인할 수 있다.
 
 ---
 
@@ -121,8 +121,8 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | --- | --- |
 | [`/editor/`](http://localhost:3100/editor/) | `PDFCanvasEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
 | [`/spike/`](http://localhost:3100/spike/) | PDF를 페이지 이미지로 변환. 페이지별 pt 크기·해상도·소요시간·폰트 진단 |
-| `/viewer/` | `PDFCanvasViewer` (미구현) |
-| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **251 케이스 / 36 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
+| [`/viewer/`](http://localhost:3100/viewer/) | 편집기와 뷰어를 나란히 — `toPublicDoc()` 이 정답을 지우는 것을 확인한다 |
+| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **274 케이스 / 40 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
 
 `/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
 `/spike/` 는 PDF를 끌어다 놓아도 된다.
@@ -170,7 +170,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | `npm run typecheck` | `vue-tsc` + node config 타입체크 |
 | `npm run lint` | ESLint + Prettier 검사 |
 | `npm run fix` | ESLint --fix + Prettier --write |
-| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (251 케이스. 실패 시 exit 1) |
+| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (274 케이스. 실패 시 exit 1) |
 | `npm run fixtures` | 테스트 PDF 생성 (크기 혼합·회전·CropBox·100페이지·손상) |
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |
@@ -407,6 +407,87 @@ const restored = loadPrototype() // pck-pck-local: 참조를 base64로 복원한
 통째로 삭제한다(그 안의 `README.md` 에 절차가 있다).
 
 `/editor/` dev 바의 [불러오기] · [저장 삭제] 로 확인할 수 있다.
+
+---
+
+## 학생용 뷰어
+
+편집기가 만든 문서를 읽기 전용으로 보여주고, 커스텀 객체 자리에서 **응답을 받는다.**
+
+```tsx
+// React
+const publicDoc = editor.current?.toPublicDoc()   // 정답이 제거된 스냅샷
+
+<PDFCanvasViewer
+  doc={publicDoc}
+  objectTypes={[shortAnswer]}              // 편집기와 같은 배열
+  renderObject={{ 'answer.short': AnswerInput }}
+  onChangeData={(id, next) => setResponses((r) => ({ ...r, [id]: next }))}
+/>
+```
+
+```vue
+<!-- Vue -->
+<PDFCanvasViewer
+  :doc="publicDoc"
+  :object-types="[shortAnswer]"
+  :render-object="{ 'answer.short': AnswerInput }"
+  @change-data="(id, next) => (responses[id] = next)"
+/>
+```
+
+### 편집기와 다른 점
+
+| | Editor | Viewer |
+| --- | --- | --- |
+| 문서 | `initialDoc` — 최초 1회 | **`doc` — 매번 반영** (controlled) |
+| 배율 | 줌·팬·맞춤 | **컨테이너 폭에 자동으로 맞춘다.** 조작 없음 |
+| 페이지 | 한 번에 하나 | **연속 세로 스크롤** |
+| 화면 | 데스크탑 | **375px 까지 반응형** |
+| 슬롯 | `renderObject` (미리보기) | `renderObject` (**응답 폼**) |
+
+### 타입이 정답 유출을 막는다
+
+뷰어는 `PublicPDFCanvasDoc` 만 받는다. 그래서 아래가 **컴파일 에러**다.
+
+```ts
+viewer.update({ doc: editor.getDoc() })         // ✗ 편집 문서. 정답이 들어 있다
+viewer.update({ doc: editor.toPublicDoc() })    // ✓
+```
+
+서버에서 JSON 으로 받은 문서에는 그 표시가 없다. 이미 학생용이라면 단언한다.
+
+```ts
+import { asPublicDoc } from 'pdf-canvas-kit'
+viewer.update({ doc: asPublicDoc(json) })
+```
+
+⚠️ **`asPublicDoc` 은 검사하지 않는다.** 이름 그대로 단언이고, 편집 문서를 통과시키면 정답이
+그대로 뷰어에 들어간다. 무엇이 비밀인지는 각 타입의 `toPublic` 만 알기 때문이다.
+
+### 응답은 호스트가 소유한다
+
+뷰어는 문서를 소유하지 않으므로 응답도 저장하지 않는다. `onChangeData` 로 올려 보내고,
+호스트가 자기 상태를 고쳐 새 `doc` 을 내려 준다. 채점·저장 시점·응답 스키마가 전부 호스트
+도메인에 남는다.
+
+### vanilla 슬롯을 쓸 때
+
+`renderViewer` 는 편집기의 `render` 와 **다른 슬롯**이다. 편집기의 객체는 배치 대상이라
+미리보기를 보여주고, 뷰어의 객체는 폼이라 입력을 받는다.
+
+```ts
+defineObjectType<Answer, Omit<Answer, 'answers'>>({
+  toPublic: ({ answers: _a, ...rest }) => rest,
+  render: ({ data }) => badge(`${data().points}점`),      // 편집기
+  renderViewer: ({ data, onChange }) => input(data(), onChange), // 뷰어
+})
+```
+
+제네릭이 둘인 이유: `toPublic` 이 필드를 지우면 `renderViewer` 가 보는 형태가 달라진다.
+두 번째를 명시하지 않으면 지워진 필드가 타입에는 남아 있어 거짓말이 된다.
+
+예제는 [demo/viewer/](demo/viewer/) — 편집기와 뷰어를 나란히 두고 정답이 지워지는 것을 확인한다.
 
 ---
 

@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.8 |
-| 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R10 완료 — PLAN 20장) |
+| 문서 버전 | arch-2.9 |
+| 최종 수정일 | 2026.08.21 |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R11 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -39,7 +39,7 @@
 ┌───────────────────────────▼─────────────────────────────────┐
 │ src/core/           순수 TypeScript (프레임워크 import 금지)   │
 │  model · config · geometry · interaction · pdf · validation  │
-│  grading · assets · ports · i18n                            │
+│  assets · ports · validation                                │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -550,18 +550,20 @@ src/
 │  ├─ validation/
 │  │   rules.ts             ★ 검증 규칙 — 인스펙터와 내보내기가 공유
 │  │   exportGuard.ts        내보내기 게이트 + publicDoc 생성
-│  └─ grading/
-│      normalize.ts          공백·대소문자·NFKC 정규화
-│      score.ts              문항·응시 채점 (서버와 공유 가능)
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
-│  createEditor.ts          ★ imperative facade — 래퍼가 아는 유일한 표면 (§17)
+│  createEditor.ts          ★ 편집기 facade (§17)
+│  createViewer.ts          ★ 뷰어 facade (§18)
+│  page/                     편집기·뷰어 **공용** — 좌표 규칙을 중복하지 않는다
+│    pageFrame.ts           ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
+│    pageBackground.ts        배경 이미지 또는 빈 종이
+│  viewer/                    읽기 전용 화면 (§18)
+│    viewerShell.ts         ★ 연속 스크롤 + ResizeObserver (피드백 루프 주의)
+│    viewerObject.ts        ★ renderViewer 슬롯 · 콘텐츠가 포인터를 먹는다
 │  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
 │  h.ts                      ★ el · svg · when · keyed · list — DOM 바인딩 (§13)
 │  editor/                    재작성된 UI (구 src/vue/editor/**)
 │    canvasStage.ts            스크롤 컨테이너 — 한 페이지만 (D8)
 │    stageArea.ts             ★ 컨트롤러 ↔ 렌더 층이 만나는 유일한 지점
-│    pageFrame.ts            ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
-│    pageBackground.ts         배경 이미지 또는 빈 종이
 │    selectionOverlay.ts      ★ 스케일 밖 — 선택 테두리·마퀴
 │    resizeHandles.ts         ★ 9방향 + 회전. 래퍼 회전 · 핸들 역회전
 │    editorShell.ts         ★ 3분할 레이아웃 조립 — 컨트롤러를 받아 화면 전체를 만든다
@@ -576,6 +578,7 @@ src/
 │    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
+│  viewer.ts                 ★ 뷰어 — 배율 파생만. 엔진을 쓰지 않는다 (§18)
 │  stage.ts                   배율·맞춤·앵커 줌
 │  pageViewport.ts           ★ frameRect 캐시·무효화 (defer 필수)
 │  pointerTool.ts             포인터 → 상태 머신
@@ -590,7 +593,7 @@ src/
    tokens.css                ★ CSS 변수
    editor.css                 레이아웃·크롬
 
-demo/          :3100 개발 서버 (spike / editor / react / vue / checks)
+demo/          :3100 개발 서버 (spike / editor / react / vue / viewer / checks)
 scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-checks.mjs)
 ```
 
@@ -1199,7 +1202,7 @@ html, body, #app { height: 100%; margin: 0; }
 
 `dist/styles.css` 는 CSS 전용 엔트리(`src/styles.ts`)에서 나온다.
 
-**코어 엔트리는 CSS 를 import 하지 않는다.** 채점 함수만 가져다 쓰는 소비자에게 19KB 스타일을
+**코어 엔트리는 CSS 를 import 하지 않는다.** 검증·좌표 함수만 가져다 쓰는 소비자에게 19KB 스타일을
 딸려 보내지 않기 위해서다. 소비자가 명시적으로 가져간다.
 
 ```ts
@@ -1285,3 +1288,90 @@ export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 컨테이너가 `transform: scale()` 안에 있다. CSS 스펙상 `transform` 조상이 `fixed` 의 컨테이닝
 블록이 되므로 드롭다운·툴팁이 페이지 프레임 기준으로 갇힌다. **우회로가 없다** — 그런 UI 는
 `document.body` 로 따로 portal / Teleport 한다.
+
+---
+
+## 18. 뷰어 (`PDFCanvasViewer`) ★
+
+편집기와 **정반대의 화면**이다 (PLAN D15 · D29). 바꿀 자리를 찾을 때 이 표가 기준이다.
+
+| | Editor | Viewer |
+| --- | --- | --- |
+| 배율 | 사용자가 정한다 | **컨테이너 폭에서 파생** (`controller/viewer.ts`) |
+| 페이지 | 한 번에 하나 | **연속 세로 스크롤** (`viewerShell.ts`) |
+| 문서 | `initialDoc` — 편집기 소유 | **`doc` — controlled**, 호스트 소유 |
+| 타입 | `PDFCanvasDoc` | **`PublicPDFCanvasDoc`** (브랜드 — §18.1) |
+| 엔진 | 히스토리·자동저장·import | **쓰지 않는다** |
+| 슬롯 | `render` · `renderInspector` | **`renderViewer`** |
+| 포인터 | 프레임이 먹는다 | **콘텐츠가 먹는다** |
+
+**공유하는 것은 좌표뿐이다.** `dom/page/` 의 `pageFrame` · `pageBackground` 와 정적 뷰
+(`textObjectView` · `shapeObjectView` · `maskView`)만 양쪽이 쓴다. 나머지는 각자 갖는다 —
+공통 컨트롤러를 두면 양쪽 분기가 절반씩 죽은 코드가 된다.
+
+## 18.1 `PublicPDFCanvasDoc` — 브랜드 타입
+
+```ts
+declare const PUBLIC_BRAND: unique symbol
+export type PublicPDFCanvasDoc = PDFCanvasDoc & { readonly [PUBLIC_BRAND]: true }
+```
+
+구조는 `PDFCanvasDoc` 과 같다. 다른 것은 **어떻게 얻었는지**뿐이고 타입이 그 출처를 기억한다.
+
+```ts
+viewer.update({ doc: editor.getDoc() })        // ✗ 컴파일 에러. 정답이 들어 있다
+viewer.update({ doc: editor.toPublicDoc() })   // ✓
+viewer.update({ doc: asPublicDoc(serverJson) }) // ✓ 호스트가 책임진다
+```
+
+`asPublicDoc()` 은 **단언이고 검사하지 않는다.** 서버가 학생용으로 내려준 문서를 위한
+탈출구다 — 편집 문서를 통과시키면 타입은 아무 말도 하지 않는다.
+
+D25 이후 이 패키지는 `data` 안에서 무엇이 비밀인지 모르므로(각 타입의 `toPublic` 만 안다)
+구조가 다른 타입을 만들 방법이 없다. 브랜드가 남은 유일한 수단이다.
+
+## 18.2 응답은 패키지 것이 아니다 (D29)
+
+```
+학생이 입력  →  renderViewer 의 onChange
+                     │
+              onChangeData(objectId, next)   ← 뷰어가 하는 일은 여기까지
+                     │
+호스트: 자기 상태를 고치고 새 doc 을 update() 로 내려 준다
+```
+
+뷰어는 문서를 소유하지 않으므로 응답을 저장할 곳이 없다. 채점·저장 시점·응답 스키마가 전부
+호스트 도메인에 남는다.
+
+## 18.3 ⚠️ ResizeObserver 는 컨테이너에 붙이지 않는다
+
+스크롤 컨테이너 자신을 관측하면 **피드백 루프**가 생긴다.
+
+```
+폭↑ → 배율↑ → 페이지 높이↑ → 세로 스크롤바 → 콘텐츠 폭↓ → 재발화
+```
+
+`.pck-viewer-meter`(`height: 0` 의 빈 블록)를 관측한다 — 스크롤바 안쪽 폭을 그대로 받는다.
+같은 이유로 `setContainerWidth` 는 값이 실제로 바뀔 때만 signal 에 쓴다.
+
+**측정 전 배율은 `1` 이다.** `0` 이면 프레임 높이가 0 이 되어 컨테이너가 접히고, 관측자가 그
+접힌 폭을 다시 측정해 값이 굳는다.
+
+## 18.4 `renderViewer` 의 `ctx.data` 는 `Data` 가 아니다
+
+`toPublic` 이 필드를 지우면 뷰어가 보는 형태가 달라진다. 그래서 `ObjectTypeDef` 의 제네릭이
+둘이다.
+
+```ts
+// toPublic 이 없다 — 두 형태가 같다
+defineObjectType<Memo>({ … })
+
+// answers 를 지운다 — 뷰어가 보는 형태를 명시한다
+defineObjectType<Answer, Omit<Answer, 'answers'>>({
+  toPublic: ({ answers: _a, ...rest }) => rest,
+  renderViewer: ({ data }) => input(data().response),  // answers 가 타입에도 없다
+})
+```
+
+명시하지 않으면 `PublicData` 는 `Data` 이고, 지워진 필드가 타입에는 남아 **타입이 거짓말을
+한다.** 두 번째 제네릭이 그것을 정정하는 수단이다.

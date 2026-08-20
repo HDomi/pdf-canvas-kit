@@ -12,7 +12,7 @@
 import { el, when, type Child } from '../h'
 import { computed, type ReadSignal } from '../reactive'
 import type { PDFCanvasPage } from '../../core/model/types'
-import { pageFrame } from './pageFrame'
+import { pageFrame } from '../page/pageFrame'
 
 export interface CanvasStageProps {
   page: ReadSignal<PDFCanvasPage | null>

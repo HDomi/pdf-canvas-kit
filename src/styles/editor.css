@@ -1323,3 +1323,94 @@
   color: var(--pck-state-danger);
   font-weight: 700;
 }
+
+/* ============================================================ 뷰어 (R11) == */
+
+/**
+ * 뷰어 스크롤 컨테이너.
+ *
+ * 편집기와 달리 **모든 페이지를 세로로 잇는다** (PLAN D15). 배율은 사용자가 조작하지 않고
+ * 컨테이너 폭에서 파생되므로 가로 스크롤이 원리적으로 생기지 않는다 — 375px 폭 DoD 가
+ * 그것으로 충족된다.
+ *
+ * `height: 100%` 다. 호스트가 컨테이너에 높이를 줘야 한다 (ARCHITECTURE §15.4).
+ */
+.pck-viewer {
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--pck-stage-bg);
+  /* 모바일에서 관성 스크롤. 학생이 긴 문서를 훑는 화면이다. */
+  -webkit-overflow-scrolling: touch;
+}
+
+/**
+ * 폭 측정자 (`ResizeObserver` 대상).
+ *
+ * 스크롤 컨테이너 자신을 관측하면 피드백 루프가 생긴다 — 배율↑ → 높이↑ → 세로 스크롤바 →
+ * 콘텐츠 폭↓ → 재발화. 그래서 스크롤바 **안쪽** 폭을 갖는 빈 블록을 관측한다.
+ */
+.pck-viewer-meter {
+  height: 0;
+  /* 흐름에 참여해야 폭을 받는다. display:none 이면 0 이 된다. */
+  display: block;
+}
+
+.pck-viewer-pages {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* 페이지 경계가 보이도록 간격을 준다. 편집기는 한 페이지뿐이라 이 규칙이 없다. */
+  gap: var(--pck-viewer-page-gap);
+}
+
+/**
+ * 뷰어의 객체.
+ *
+ * 편집기의 `.pck-obj` 와 좌표 규칙이 같다 — pt 를 px 로 그대로 쓰고 배율은 부모 페이지의
+ * `transform` 한 곳에만 있다 (PLAN 5.3).
+ *
+ * 기본은 이벤트를 받지 않는다. 응답 폼(`.pck-viewer-custom-content`)만 되받는다.
+ */
+.pck-viewer-obj {
+  position: absolute;
+  pointer-events: none;
+}
+
+.pck-viewer-custom {
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  background: var(--pck-obj-fill);
+  border: 1px solid var(--pck-obj-stroke);
+  color: var(--pck-obj-text);
+  overflow: hidden;
+  /*
+   * 크기 컨테인먼트. 안쪽 콘텐츠가 틀을 넘지 못하고, 컨테이너 쿼리로 pt 박스 크기에 반응할
+   * 수 있다 — 편집기의 `.pck-obj-custom` 과 같은 계약이다.
+   */
+  container-type: size;
+  container-name: pck-object;
+}
+
+/**
+ * 응답 폼 컨테이너. **포인터 이벤트를 받는다** — 편집기와 반대다 (PLAN D29).
+ *
+ * 뷰어에는 드래그가 없으므로 프레임이 이벤트를 먹을 이유가 없다. 인라인 스타일로도 주는데
+ * (`viewerObject.ts`), 이 정책이 뷰어의 계약이라 스타일시트 오버라이드로 폼이 죽으면 안 된다.
+ */
+.pck-viewer-custom-content {
+  width: 100%;
+  height: 100%;
+  pointer-events: auto;
+}
+
+/**
+ * 등록되지 않은 `kind`.
+ *
+ * 편집기와 달리 안내를 띄우지 않는다 — 학생이 할 수 있는 일이 없다. 자리만 비워 둔다.
+ */
+.pck-viewer-custom--unknown {
+  border-style: dashed;
+  opacity: 0.4;
+}

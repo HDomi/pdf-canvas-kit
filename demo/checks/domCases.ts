@@ -8,7 +8,7 @@
  * 브라우저(`/checks/`)에서는 실제 DOM 으로, 헤드리스(`npm run checks`)에서는 happy-dom 으로
  * 같은 케이스가 돈다. 전역 `document` 를 쓰므로 러너가 먼저 그것을 세팅한다.
  */
-import { el, list, svg, when } from '../../src/dom/h'
+import { el, keyed, list, svg, when } from '../../src/dom/h'
 import { scope, signal } from '../../src/dom/reactive'
 import type { CaseGroup } from './cases'
 
@@ -633,6 +633,136 @@ export const DOM_GROUPS: CaseGroup[] = [
           const before = node.children.length
           dispose()
           return [before, node.children.length]
+        },
+      },
+    ],
+  },
+
+  {
+    title: 'h — keyed (값 기반 재렌더) ★',
+    note: 'when 은 조건을 !!cond() 로 본다. 그래서 둘 다 truthy 인 값 변화를 감지하지 못한다 — 2026.08.20 에 인스펙터가 정확히 이 함정에 빠졌다.',
+    cases: [
+      {
+        name: '키가 있으면 그린다',
+        expected: 'a',
+        actual: () => {
+          const k = signal<string | null>('a')
+          const [node] = scope(() =>
+            el('div', {}, [
+              keyed(
+                () => k.value,
+                (v) => el('i', {}, [v]),
+              ),
+            ]),
+          )
+          return node.textContent
+        },
+      },
+      {
+        name: '키가 null 이면 아무것도 그리지 않는다',
+        expected: '',
+        actual: () => {
+          const k = signal<string | null>(null)
+          const [node] = scope(() =>
+            el('div', {}, [
+              keyed(
+                () => k.value,
+                (v) => el('i', {}, [v]),
+              ),
+            ]),
+          )
+          return node.textContent
+        },
+      },
+      {
+        /*
+         * ★ `when` 이 못 하는 것. 둘 다 truthy 인 값 변화에서 다시 그려야 한다.
+         */
+        name: '★ 키가 바뀌면 다시 그린다 (둘 다 truthy 여도)',
+        expected: [2, 'b'],
+        actual: () => {
+          const k = signal<string | null>('a')
+          let renders = 0
+          const [node] = scope(() =>
+            el('div', {}, [
+              keyed(
+                () => k.value,
+                (v) => {
+                  renders++
+                  return el('i', {}, [v])
+                },
+              ),
+            ]),
+          )
+          k.value = 'b'
+          return [renders, node.textContent]
+        },
+      },
+      {
+        name: '같은 키를 다시 대입하면 다시 그리지 않는다',
+        expected: 1,
+        actual: () => {
+          const k = signal<string | null>('a')
+          let renders = 0
+          const [node] = scope(() =>
+            el('div', {}, [
+              keyed(
+                () => k.value,
+                () => {
+                  renders++
+                  return el('i')
+                },
+              ),
+            ]),
+          )
+          k.value = 'a'
+          void node
+          return renders
+        },
+      },
+      {
+        name: '키가 사라지면 정리하고, 안쪽 effect 도 멈춘다',
+        expected: [1, ''],
+        actual: () => {
+          const k = signal<string | null>('a')
+          const inner = signal(1)
+          let runs = 0
+          const [node] = scope(() =>
+            el('div', {}, [
+              keyed(
+                () => k.value,
+                () =>
+                  el('i', {}, [
+                    () => {
+                      runs++
+                      return inner.value
+                    },
+                  ]),
+              ),
+            ]),
+          )
+          k.value = null
+          inner.value = 2 // 정리됐으면 runs 가 늘지 않는다
+          return [runs, node.textContent]
+        },
+      },
+      {
+        name: '형제 노드 사이에서 위치를 지킨다',
+        expected: ['앞', 'b', '뒤'],
+        actual: () => {
+          const k = signal<string | null>('a')
+          const [node] = scope(() =>
+            el('div', {}, [
+              el('u', {}, ['앞']),
+              keyed(
+                () => k.value,
+                (v) => el('b', {}, [v]),
+              ),
+              el('u', {}, ['뒤']),
+            ]),
+          )
+          k.value = 'b'
+          return Array.from(node.children).map((c) => c.textContent)
         },
       },
     ],

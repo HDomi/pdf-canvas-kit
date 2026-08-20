@@ -11,7 +11,7 @@
 import { editorShell } from '../../src/dom/editor/editorShell'
 import { createEditorController } from '../../src/controller/editor'
 import { scope } from '../../src/dom/reactive'
-import { createPage, createPDFCanvasDoc, A4_PT } from 'pdf-canvas-kit'
+import { createPage, createPDFCanvasDoc, defineObjectType, A4_PT } from 'pdf-canvas-kit'
 import type { PDFCanvasDoc, PDFCanvasPage } from 'pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
@@ -21,13 +21,57 @@ function docWithPages(count: number): PDFCanvasDoc {
   return createPDFCanvasDoc({ pages })
 }
 
+/** 데모용 커스텀 타입 둘. 서로 다른 `kind` 로 인스펙터 전환을 확인한다. */
+const TYPE_A = defineObjectType({
+  kind: 'demo.a',
+  label: '가 타입',
+  defaultSize: { w: 100, h: 40 },
+  defaultData: () => ({}),
+  renderInspector: () => {
+    const n = document.createElement('i')
+    n.className = 'panel-a'
+    return n
+  },
+})
+
+const TYPE_B = defineObjectType({
+  kind: 'demo.b',
+  label: '나 타입',
+  defaultSize: { w: 100, h: 40 },
+  defaultData: () => ({}),
+  renderInspector: () => {
+    const n = document.createElement('i')
+    n.className = 'panel-b'
+    return n
+  },
+})
+
+/** 인스펙터 슬롯을 주지 않는 타입. 안내 문구가 뜨는지 확인한다. */
+const TYPE_BARE = defineObjectType({
+  kind: 'demo.bare',
+  label: '슬롯 없음',
+  defaultSize: { w: 100, h: 40 },
+  defaultData: () => ({}),
+})
+
+/** 포인터 이벤트를 흉내낸다. happy-dom 에 PointerEvent 가 없어 Event 로 필드를 채운다. */
+function pointer(type: string, x: number, y: number, shift = false): Event {
+  const e = new Event(type, { bubbles: true, cancelable: true })
+  Object.assign(e, { pointerId: 1, button: 0, clientX: x, clientY: y, shiftKey: shift })
+  return e
+}
+
 /** 셸을 만들고 검사한 뒤 정리한다. */
 function withShell<T>(
   doc: PDFCanvasDoc | null,
   fn: (root: HTMLElement, c: ReturnType<typeof createEditorController>) => T,
+  withTypes = false,
 ): T {
   const [result, dispose] = scope(() => {
-    const c = createEditorController(doc ? { doc } : {})
+    const c = createEditorController({
+      ...(doc ? { doc } : {}),
+      ...(withTypes ? { objectTypes: [TYPE_A, TYPE_B, TYPE_BARE] } : {}),
+    })
     const root = editorShell(c)
     // 실제 문서에 붙인다 — 붙지 않은 트리에서는 querySelector 가 되지만 focus 등이 다르다.
     document.body.append(root)
@@ -264,6 +308,113 @@ export const SHELL_GROUPS: CaseGroup[] = [
             // 객체가 없으므로 확인 없이 지워진다. 확인 모달 경로는 아래 케이스에서 본다.
             return c.pageCount.value === 1 && !has(root, '.pck-modal--confirm')
           }),
+      },
+    ],
+  },
+
+  {
+    title: 'shell — 도구 · 커스텀 객체 (PLAN D25, 20.16) ★',
+    note: '실제 포인터 경로를 돌린다. happy-dom 은 레이아웃이 없어 좌표는 0이지만, 커밋이 나가고 상태가 바뀌는 것은 확인된다.',
+    cases: [
+      {
+        /*
+         * ★ 2026.08.20. 사용자가 "선택한 상태에서 아무데나 클릭하면 객체가 막 생긴다" 고
+         * 보고했다. 이 케이스로 재현을 시도했고 **재현되지 않았다** — 원인은 인스펙터가
+         * 엉뚱한 패널을 띄운 것(아래 keyed 케이스)이고, 그래서 툴바를 반복 클릭한 것으로
+         * 보인다. 불변식이 깨지면 앞으로는 여기서 잡힌다.
+         */
+        name: '★ 도구로 한 번 만들면 select 로 돌아간다 (연속 생성 방지)',
+        expected: ['select', 1, 'select', 1],
+        actual: () =>
+          withShell(
+            createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+            (root, c) => {
+              const frame = root.querySelector('.pck-page-frame')!
+              const click = (x: number, y: number, shift = false) => {
+                frame.dispatchEvent(pointer('pointerdown', x, y, shift))
+                globalThis.dispatchEvent(pointer('pointerup', x, y, shift))
+              }
+              c.setActiveTool('custom:demo.a')
+              click(10, 10)
+              const after = [c.activeTool.value, c.currentObjects.value.length]
+              // 선택된 상태에서 다시 클릭해도 새 객체가 생기지 않는다.
+              click(60, 60)
+              return [...after, c.activeTool.value, c.currentObjects.value.length]
+            },
+            true,
+          ),
+      },
+      {
+        name: 'Shift 를 누른 채 만들면 도구가 유지된다 (PLAN Q3)',
+        expected: ['custom:demo.a', 2],
+        actual: () =>
+          withShell(
+            createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+            (root, c) => {
+              const frame = root.querySelector('.pck-page-frame')!
+              const click = (x: number, y: number) => {
+                frame.dispatchEvent(pointer('pointerdown', x, y, true))
+                globalThis.dispatchEvent(pointer('pointerup', x, y, true))
+              }
+              c.setActiveTool('custom:demo.a')
+              click(10, 10)
+              click(60, 60)
+              return [c.activeTool.value, c.currentObjects.value.length]
+            },
+            true,
+          ),
+      },
+      {
+        /*
+         * ★ 2026.08.20 버그. `when` 은 조건을 `!!cond()` 로 보므로 `'demo.a'` → `'demo.b'`
+         * 처럼 둘 다 truthy 인 변화를 감지하지 못한다. 단답형을 편집하다 선택형을 고르면
+         * 단답형 패널이 그대로 남았다 (PLAN 20.16). `keyed` 로 고쳤다.
+         */
+        name: '★ kind 가 바뀌면 인스펙터 패널이 바뀐다 (keyed)',
+        expected: [true, false, false, true],
+        actual: () =>
+          withShell(
+            createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+            (root, c) => {
+              const frame = root.querySelector('.pck-page-frame')!
+              const click = (x: number, y: number) => {
+                frame.dispatchEvent(pointer('pointerdown', x, y))
+                globalThis.dispatchEvent(pointer('pointerup', x, y))
+              }
+              c.setActiveTool('custom:demo.a')
+              click(10, 10)
+              const a = [
+                root.querySelector('.panel-a') !== null,
+                root.querySelector('.panel-b') !== null,
+              ]
+              c.setActiveTool('custom:demo.b')
+              click(200, 200)
+              return [
+                ...a,
+                root.querySelector('.panel-a') !== null,
+                root.querySelector('.panel-b') !== null,
+              ]
+            },
+            true,
+          ),
+      },
+      {
+        name: '인스펙터 슬롯이 없는 타입은 안내를 띄운다',
+        expected: true,
+        actual: () =>
+          withShell(
+            createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+            (root, c) => {
+              const frame = root.querySelector('.pck-page-frame')!
+              c.setActiveTool('custom:demo.bare')
+              frame.dispatchEvent(pointer('pointerdown', 10, 10))
+              globalThis.dispatchEvent(pointer('pointerup', 10, 10))
+              return (root.querySelector('.pck-inspector')?.textContent ?? '').includes(
+                '편집할 속성이 없습니다',
+              )
+            },
+            true,
+          ),
       },
     ],
   },

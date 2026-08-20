@@ -5,7 +5,7 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.5 |
+| 문서 버전 | arch-2.6 |
 | 최종 수정일 | 2026.08.20 |
 | 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R8 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
@@ -691,12 +691,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **234 케이스 / 33 그룹** (순수 71 + 반응성 35 + DOM 35 + 컨트롤러 35 + 렌더 38 + 셸 20)
+   **245 케이스 / 35 그룹** (`PCK_BREAKDOWN=1 npm run checks` 로 내역 확인)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 234 / 234 passed · 33 groups · ok  (실패 시 exit 1)
+npm run checks                    # 245 / 245 passed · 35 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -811,7 +811,8 @@ Vue 템플릿을 대체한다. 템플릿 컴파일러도 VDOM 도 없다 — **�
 | --- | --- |
 | `el(tag, props, children)` | 엘리먼트 + 디렉티브 |
 | `svg(tag, props, children)` | 같음, SVG 네임스페이스 |
-| `when(cond, render)` | `v-if` |
+| `when(cond, render)` | `v-if` — **불리언만 본다** |
+| `keyed(key, render)` | 값이 바뀔 때 재렌더 (§13.2.1) |
 | `list(items, key, render)` | `v-for` + `:key` |
 | `text(value)` | `{{ }}` |
 
@@ -872,6 +873,30 @@ Vue 는 이름을 보고 어느 쪽인지 추측한다. 그 추측이 어긋나�
 
 `truthy → truthy` 는 재생성하지 않는다. 그래야 안에서 편집 중인 텍스트 노드가 살아남는다(§6.5).
 사라질 때 그 안의 effect 는 자기 scope 와 함께 정리된다.
+
+### 13.2.1 ★ `keyed` — `when` 으로는 값 변화를 감지할 수 없다
+
+`when` 은 조건을 **`!!cond()`** 로 본다. 그래서 `'a'` → `'b'` 처럼 **둘 다 truthy 인 값 변화**를
+감지하지 못한다.
+
+```ts
+// ✗ kind 가 바뀌어도 조건이 계속 truthy 라 패널이 그대로 남는다
+when(() => obj.value?.kind ?? null, () => panelFor(obj.value.kind))
+
+// ✓ kind 가 바뀌면 다시 그린다
+keyed(() => obj.value?.kind ?? null, (kind) => panelFor(kind))
+```
+
+2026.08.20 에 커스텀 객체 인스펙터가 정확히 이 함정에 빠졌다 — 단답형을 편집하다 선택형을
+고르면 단답형 패널이 남았다 (PLAN 20.16).
+
+`Object.is` 로 비교하므로 **원시값**을 키로 쓴다(id · kind · 유형 이름). 객체를 키로 쓰면
+참조가 바뀔 때마다 다시 그려진다. 키가 `null`·`undefined` 면 아무것도 그리지 않아 조건
+역할도 겸한다.
+
+| | `when` | `keyed` | `list` |
+| --- | --- | --- | --- |
+| 쓰는 곳 | 있다/없다 | 하나가 **무엇인지** 바뀔 때 | 여러 개 |
 
 ### 13.3 `list` 는 키로 재조정한다 ★
 

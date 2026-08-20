@@ -10,7 +10,7 @@
  * 참을 유지해 **패널이 바뀌지 않는다.** 조건을 유형으로 두면 유형이 바뀔 때만 재생성되고,
  * 같은 유형 안에서 객체를 옮겨 선택하면 signal 만 갱신된다 (ARCHITECTURE §13.2).
  */
-import { el, when } from '../../h'
+import { el, keyed, when } from '../../h'
 import { computed, onCleanup, type ReadSignal } from '../../reactive'
 import { text } from '../../../core/config/strings'
 import { mergeBoxStyle, type BoxStylePatch } from '../../../core/model/boxStyle'
@@ -192,10 +192,12 @@ export function inspector(props: InspectorProps): HTMLElement {
       ),
     ),
     /*
-     * 커스텀은 `kind` 를 조건으로 둔다. 유형만 보면 서로 다른 kind 사이를 옮겨도 조건이
-     * 참을 유지해 패널이 바뀌지 않는다 — 유형 분기와 같은 함정이다.
+     * 커스텀은 `kind` 로 **키잉**한다.
+     *
+     * `when` 은 조건을 `!!cond()` 로 보므로 `'demo.shortAnswer'` → `'demo.choice'` 처럼
+     * 둘 다 truthy 인 변화를 감지하지 못한다 — 단답형 패널이 그대로 남는다 (PLAN 20.16).
      */
-    when(
+    keyed(
       () => (single.value?.type === 'custom' ? single.value.kind : null),
       () => customPanel(),
     ),

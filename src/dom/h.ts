@@ -417,6 +417,74 @@ export function when(cond: () => unknown, render: () => Element | Element[] | nu
   }
 }
 
+/* ----------------------------------------------------------------- keyed -- */
+
+/**
+ * 키가 **바뀔 때만** 다시 그린다. `when` 의 값 기반 형제다.
+ *
+ * ## `when` 으로는 안 되는 이유
+ *
+ * `when` 은 조건을 `!!cond()` 로 본다. 그래서 `'a'` → `'b'` 처럼 **둘 다 truthy 인 값 변화**를
+ * 감지하지 못한다. 2026.08.20 에 커스텀 객체 인스펙터가 정확히 이 함정에 빠졌다 — 단답형을
+ * 편집하다 선택형을 고르면 단답형 패널이 그대로 남았다 (PLAN 20.16).
+ *
+ * ```ts
+ * // ✗ 조건이 계속 truthy 라 패널이 안 바뀐다
+ * when(() => obj.value?.kind ?? null, () => panelFor(obj.value.kind))
+ *
+ * // ✓ kind 가 바뀌면 다시 그린다
+ * keyed(() => obj.value?.kind ?? null, (kind) => (kind ? panelFor(kind) : null))
+ * ```
+ *
+ * 키가 `null` · `undefined` 면 아무것도 그리지 않는다 — `when` 처럼 조건 역할도 겸한다.
+ *
+ * `Object.is` 로 비교한다. 객체를 키로 쓰면 참조가 바뀔 때마다 다시 그려지므로, **원시값**을
+ * 키로 쓴다(id · kind · 유형 이름).
+ */
+export function keyed<K>(
+  key: () => K,
+  render: (key: NonNullable<K>) => Element | Element[] | null,
+): Fragment {
+  return {
+    __fragment: true,
+    attach(parent: Node) {
+      const anchorNode = document.createComment('keyed')
+      parent.appendChild(anchorNode)
+
+      let nodes: Node[] = []
+      let dispose: Dispose | null = null
+      /** 아직 아무것도 그리지 않았음을 나타내는 표식. `undefined` 를 키로 쓸 수 있게 한다. */
+      let current: K | typeof NOTHING = NOTHING
+
+      const clear = () => {
+        removeNodes(nodes)
+        dispose?.()
+        dispose = null
+      }
+
+      effect(() => {
+        const next = key()
+        if (current !== NOTHING && Object.is(next, current)) return
+        current = next
+
+        clear()
+        if (next === null || next === undefined) return
+
+        const [rendered, d] = scope(() => render(next as NonNullable<K>))
+        dispose = d
+        nodes = toNodes(rendered)
+        const ref = anchorNode.nextSibling
+        for (const n of nodes) anchorNode.parentNode!.insertBefore(n, ref)
+      })
+
+      onCleanup(clear)
+    },
+  }
+}
+
+/** `keyed` 의 "아직 그리지 않음" 표식. `undefined` 키와 구분해야 한다. */
+const NOTHING = Symbol('nothing')
+
 /* ------------------------------------------------------------------ list -- */
 
 interface Entry<T> {

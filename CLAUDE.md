@@ -54,9 +54,10 @@
 ### 3.1 언어
 - **코드 주석·JSDoc은 한국어.** (2026.08.19 결정) 이 저장소의 관례다. 새 파일도 한국어로 쓴다
 - **문서(PLAN·ARCHITECTURE·README)는 한국어.** 기획서가 한국어다
-- **식별자·타입명·커밋 메시지는 영어.** 코드 자체는 영어로 읽히는 편이 표준 도구·검색과 맞는다
+- **식별자·타입명은 영어.** 코드 자체는 영어로 읽히는 편이 표준 도구·검색과 맞는다
+- **커밋 메시지는 한국어.** (2026.08.20 결정, 이전 규칙 뒤집음) 접두사만 영어로 남긴다 — §5
 - **로그·에러 메시지는 영어.** 스택트레이스·이슈 검색에서 다뤄지는 문자열이다.
-  단 사용자에게 보이는 문구는 i18n 키를 쓴다(기획 3.2 하드코딩 금지)
+  단 사용자에게 보이는 문구는 `core/config/strings.ts` 를 쓴다(하드코딩 금지, PLAN D24)
 - 코드 예시 안의 주석도 한국어
 
 ### 3.2 JSDoc — 무엇을 쓰는가
@@ -145,15 +146,20 @@ PLAN 10.2 / ARCHITECTURE §5 가 그 형식이다.
 ## 5. 커밋
 
 - 한 커밋은 한 가지 변경. 코드 + 그에 딸린 문서 갱신은 **같은 커밋**
-- 메시지는 영어, `feat` / `fix` / `refactor` / `docs` / `chore` 접두사
+- **메시지는 한국어** (2026.08.20 결정). 접두사는 영어로 유지한다 —
+  `feat` / `fix` / `refactor` / `docs` / `chore`. 도구가 읽는 구조이고 관례가 굳어 있다
+- 파괴적 변경은 `!` 를 붙인다 (`feat!:`)
 - 본문에 **왜** 를 쓴다. 무엇을 바꿨는지는 diff가 말한다
+- 실패·건너뛴 검증·남은 위험을 본문에 남긴다. 커밋 메시지가 그 시점의 유일한 기록이다
+
+식별자·경로·에러 문자열은 원문 그대로 둔다. 번역하면 검색이 안 된다.
 
 ```
-fix(pdf): configure CMap and standard font URLs
+fix(pdf): CMap·표준 폰트 URL 설정
 
-pdf.js fetches these at runtime; without cmaps/ every glyph in a
-non-embedded CID font silently disappears. Adds configurePdfResources()
-and a copy script, plus a warning when cMapUrl is unset.
+pdf.js 는 이 자산을 런타임에 가져온다. cmaps/ 가 없으면 임베드되지 않은 CID 폰트의
+글자가 조용히 전부 사라진다. configurePdfResources() 와 복사 스크립트를 추가하고,
+cMapUrl 이 설정되지 않았을 때 경고를 낸다.
 ```
 
 ---

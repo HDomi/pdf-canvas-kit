@@ -1901,7 +1901,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R3** ✅ | 컨트롤러 이식 | composables 9개 + 루트 스크립트 → `src/controller/` ✅ (이동이 아니라 **복사** — D23). ESLint 경계 규칙 추가 + 발동 확인 ✅. `/checks/` **202 케이스 / 27 그룹**. 상세 20.8 |
 | **R4** ✅ | 객체 · 페이지 렌더 | 객체 7종 + `pageFrame` + 배경 + 오버레이 + 핸들 ✅. 렌더 케이스 39건. 상세 20.9 |
 | **R5** ✅ | 스테이지 · i18n 제거 · Vue 삭제 | `canvasStage` · `stageArea` ✅. **i18n 시스템 제거**(D24) · **`src/vue` 삭제**(D23 철회) ✅. `/editor/` 가 새 렌더 층으로 뜬다 — 편집기 번들 152KB → 4.8KB. 상세 20.10 |
-| **R6** | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 |
+| **R6** ✅ | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 + `editorShell` ✅. `/checks/` **266 케이스 / 37 그룹**. 상세 20.11 |
 | **R7** | 인스펙터 | 패널 8개. 검증 경고 · 박스 색 편집 포함 |
 | **R8** | 프레임워크 래퍼 | `/react` · `/vue` 엔트리 + 데모 2개. **양쪽에서 같은 조작이 다 되는지 손으로 확인** |
 | **R9** | 배포 준비 · Vue SFC 층 삭제 | `npm pack` 산출물을 React 앱·Vue 앱에 각각 설치해 동작. 구 `src/vue/editor/**` 삭제. 문서 3종 갱신 |
@@ -2227,3 +2227,74 @@ i18n 키 3개(`canvas.noAnswer` · `canvas.essayManual` · `canvas.dropboxIncomp
 그때 함께 확인한다.
 
 ⚠️ **R5 시점의 `/editor/` 는 상단바·툴바·페이지 목록·인스펙터가 없다.** R6·R7 에서 붙는다.
+
+### 20.11 R6 — 크롬 (2026.08.20)
+
+SFC 11개 → TS 10개. 이제 `/editor/` 가 **인스펙터만 빼고** 온전한 편집기다.
+
+| 신규 | 구 SFC |
+| --- | --- |
+| `editorShell.ts` ★ | `PDFCanvasEditor.vue` 의 `<template>` |
+| `topBar.ts` · `titleInput.ts` · `saveBadge.ts` | 같은 이름 SFC 3개 |
+| `toolbar.ts` · `pageMeta.ts` · `emptyState.ts` | 같은 이름 SFC 3개 |
+| `stageControls.ts` · `pageContextMenu.ts` | 같은 이름 SFC 2개 |
+| `pageThumbList.ts` | `PageThumbList.vue` + `PageThumb.vue` (합침) |
+| `dialogs/{confirmDialog,uploadDialog}.ts` | 같은 이름 SFC 2개 |
+
+`PageThumb` 를 목록에 합친 이유: 목록 밖에서 쓰이지 않고, 드롭 표시선 판정이 **목록의 길이**를
+알아야 한다. 나눠 두면 그 조건이 두 파일에 걸친다.
+
+#### ★ 이번에 만들고 잡은 접근성 버그 — `aria-pressed=""`
+
+`h.ts` 의 `attr` 이 boolean 을 "참이면 빈 문자열, 거짓이면 제거" 로 처리했다. HTML boolean
+속성(`disabled` · `hidden`)에는 맞지만 **ARIA 는 규칙이 다르다.**
+
+| | HTML boolean | `aria-*` |
+| --- | --- | --- |
+| `true` | `=""` (존재하면 참) | `="true"` |
+| `false` | 제거 | **`="false"`** |
+
+`aria-pressed=""` 는 유효하지 않고, 속성을 지우면 "눌리지 않음" 이 아니라 **"토글이 아님"** 이라는
+다른 뜻이 된다. 스크린리더가 토글 버튼을 일반 버튼으로 읽는다.
+
+호출부 4곳(툴바 `aria-pressed` · 줌 메뉴 `aria-expanded` · 업로드 탭 `aria-selected` ·
+썸네일 `aria-current`)에서 boolean 을 넘겼고, 각자 `String(x)` 을 하게 두면 한 곳을 빠뜨린다 —
+실제로 그랬다. `applyAttr` 에서 `aria-` 접두사를 특수 처리해 그 계층에서 끝냈다.
+
+케이스도 셋으로 쪼갰다: `null` 제거 · HTML boolean · **aria boolean 리터럴**.
+
+#### 함께 고친 것 — `onBack` 을 부르는 곳이 없었다
+
+`EditorProps.onBack` 은 있는데 트리거가 없었다. 구 Vue 판은 템플릿에서 `emit('back')` 을 직접
+했고, R3 에서 컨트롤러로 옮길 때 빠졌다. `controller.back()` 을 추가했다.
+
+#### 셸 조립 케이스 20건
+
+컨트롤러가 내놓는 표면과 컴포넌트가 기대하는 prop 이 어긋나면 `editorShell()` 이 던지거나
+조용히 빈 노드를 만든다. **그 종류의 버그는 브라우저를 열어야만 보이는데, 조립 자체는 레이아웃이
+필요 없으므로 헤드리스로 잡을 수 있다.**
+
+고정한 것: 3분할 레이아웃 · 빈 문서/문서 있음의 조건부 전환(EmptyState ↔ 스테이지+툴바+줌컨트롤) ·
+패널 폭 CSS 변수 · undo 활성 전이 · 도구 선택 시 `aria-pressed` · 썸네일 `is-active` 추적 ·
+마지막 1페이지 삭제 비활성 · 업로드 팝업 열고 닫기 · 우클릭 메뉴.
+
+#### ⚠️ 브라우저에서 아직 확인하지 못했다
+
+`/editor/` 가 200 으로 뜨고 모든 모듈이 트랜스폼되며 픽스처·pdf worker·cmaps 가 서빙되는 것까지
+확인했다. **하지만 클릭·드래그를 실제로 해보지 못했다** — 작업 환경에 브라우저 자동화 도구가 없다.
+
+손으로 확인해야 하는 목록:
+
+| 항목 | 왜 헤드리스로 안 되나 |
+| --- | --- |
+| 드래그로 객체 생성 · 이동 · 9방향 리사이즈 | 포인터 이벤트 + 레이아웃 |
+| 줌 앵커링 (Cmd+휠 · 프리셋 · 맞춤) | `getBoundingClientRect()` 가 happy-dom 에서 0 |
+| Space+드래그 팬 · 스크롤 범위 | 실제 스크롤 컨테이너 필요 |
+| **한글 IME 인라인 편집** | 조합 이벤트와 selection 이 happy-dom 에 없다 |
+| 회전 핸들 · 회전된 객체 히트테스트 | 레이아웃 |
+| 썸네일 드래그 순서 변경 | 포인터 + 항목 위치 |
+| 패널 폭 리사이즈 | 포인터 |
+
+특히 **`stage.ts` 가 `nextTick()` 없이 동기로 동작하는지**(R3 에서 바꾼 것)와 **`pageViewport` 의
+`defer` 가 줌 직후 핸들 위치를 맞추는지**가 이 목록에서 가장 중요하다. 둘 다 R3 의 설계 판단이고
+브라우저에서만 검증된다.

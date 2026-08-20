@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.0 |
+| 문서 버전 | arch-2.1 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R5 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R6 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -538,6 +538,10 @@ src/
 │    pageBackground.ts         배경 이미지 또는 빈 종이
 │    selectionOverlay.ts      ★ 스케일 밖 — 선택 테두리·마퀴
 │    resizeHandles.ts         ★ 9방향 + 회전. 래퍼 회전 · 핸들 역회전
+│    editorShell.ts         ★ 3분할 레이아웃 조립 — 컨트롤러를 받아 화면 전체를 만든다
+│    topBar.ts titleInput.ts saveBadge.ts toolbar.ts pageMeta.ts
+│    pageThumbList.ts stageControls.ts pageContextMenu.ts emptyState.ts
+│    dialogs/{confirmDialog,uploadDialog}.ts
 │    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
@@ -683,12 +687,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **241 케이스 / 34 그룹** (순수 101 + 반응성 35 + DOM 33 + 컨트롤러 33 + 렌더 39 — §12~§14)
+   **266 케이스 / 37 그룹** (순수 101 + 반응성 35 + DOM 35 + 컨트롤러 36 + 렌더 39 + 셸 20 — §12~§14)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 241 / 241 passed · 34 groups · ok  (실패 시 exit 1)
+npm run checks                    # 266 / 266 passed · 37 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -707,7 +711,8 @@ PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 | `demo/checks/domCases.ts` | 렌더 층 케이스 — 바인딩·조건부·**키 리스트 재조정**. DOM 이 필요하다 |
 | `demo/checks/controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션. DOM 이 필요하다 |
 | `demo/checks/objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조. DOM 이 필요하다 |
-| `demo/checks/allCases.ts` | 다섯을 합친 단일 출처 |
+| `demo/checks/shellCases.ts` | 편집기 셸 조립 — 컨트롤러↔컴포넌트 계약. DOM 이 필요하다 |
+| `demo/checks/allCases.ts` | 여섯을 합친 단일 출처 |
 
 DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
@@ -842,8 +847,22 @@ Vue 는 이름을 보고 어느 쪽인지 추측한다. 그 추측이 어긋나�
 갱신되지 않는다"** 가 되고, 원인이 프레임워크 안쪽이라 찾기 어렵다. 호출부가 밝히면 그 종류의
 버그가 존재할 수 없다.
 
-`attr` 은 값이 `null` · `undefined` · `false` 면 속성을 **제거**한다. `true` 면 빈 문자열 속성이 된다.
 `prop` 은 값이 실제로 달라졌을 때만 대입한다 — `input.value` 재대입은 캐럿을 끝으로 보낸다.
+
+#### boolean 직렬화 — ARIA 는 규칙이 다르다 ★
+
+| 값 | HTML 속성 (`disabled`) | `aria-*` |
+| --- | --- | --- |
+| `null` · `undefined` | 제거 | 제거 |
+| `true` | `=""` (존재하면 참) | `="true"` |
+| `false` | 제거 | **`="false"`** |
+| 그 외 | `String(v)` | `String(v)` |
+
+`aria-pressed=""` 는 유효하지 않다. 그리고 속성을 지우면 "눌리지 않음" 이 아니라 **"토글이 아님"**
+이라는 다른 뜻이 되어 스크린리더가 토글 버튼을 일반 버튼으로 읽는다.
+
+`applyAttr` 이 `aria-` 접두사를 보고 알아서 처리한다. 호출부에서 `String(x)` 을 하게 두면
+네 곳 중 한 곳을 빠뜨린다 — 2026.08.20 에 실제로 그랬다(PLAN 20.11).
 
 ### 13.2 `when` 은 조건이 바뀔 때만 다시 그린다
 

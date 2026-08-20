@@ -82,24 +82,49 @@ export const DOM_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: 'attr 은 null·false 면 속성을 제거한다',
-        expected: ['true', null, null],
+        name: 'attr 은 null·undefined 면 속성을 제거한다',
+        expected: ['x', null],
         actual: () => {
-          const v = signal<string | null | false>('true')
-          const [node] = scope(() => el('div', { attr: { 'aria-pressed': () => v.value } }))
-          const a = node.getAttribute('aria-pressed')
+          const v = signal<string | null>('x')
+          const [node] = scope(() => el('div', { attr: { 'data-k': () => v.value } }))
+          const a = node.getAttribute('data-k')
           v.value = null
-          const b = node.getAttribute('aria-pressed')
-          v.value = false
-          return [a, b, node.getAttribute('aria-pressed')]
+          return [a, node.getAttribute('data-k')]
         },
       },
       {
-        name: 'attr true 는 빈 문자열 속성 (boolean attribute)',
-        expected: '',
+        name: 'HTML boolean 속성 — true 는 빈 문자열, false 는 제거',
+        expected: ['', null],
         actual: () => {
-          const [node] = scope(() => el('input', { attr: { disabled: true } }))
-          return node.getAttribute('disabled')
+          const v = signal(true)
+          const [node] = scope(() => el('input', { attr: { disabled: () => v.value } }))
+          const a = node.getAttribute('disabled')
+          v.value = false
+          return [a, node.getAttribute('disabled')]
+        },
+      },
+      {
+        /*
+         * ARIA 는 HTML boolean 속성과 규칙이 다르다. `aria-pressed=""` 는 유효하지 않고,
+         * 속성을 제거하면 "눌리지 않음" 이 아니라 "토글이 아님" 이라는 다른 뜻이 된다.
+         * 2026.08.20 에 실제로 이 버그를 만들었다 — 툴바 버튼이 `aria-pressed=""` 를 냈다.
+         */
+        name: '★ aria-* boolean 은 "true"/"false" 리터럴이다',
+        expected: ['true', 'false'],
+        actual: () => {
+          const v = signal(true)
+          const [node] = scope(() => el('button', { attr: { 'aria-pressed': () => v.value } }))
+          const a = node.getAttribute('aria-pressed')
+          v.value = false
+          return [a, node.getAttribute('aria-pressed')]
+        },
+      },
+      {
+        name: 'aria-* 도 null 이면 제거된다',
+        expected: null,
+        actual: () => {
+          const [node] = scope(() => el('button', { attr: { 'aria-pressed': null } }))
+          return node.getAttribute('aria-pressed')
         },
       },
       {

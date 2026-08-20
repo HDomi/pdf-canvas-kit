@@ -145,7 +145,16 @@ export type StyleValue =
   | (() => string | Record<string, StyleProp> | null | undefined)
   | Record<string, MaybeReactive<StyleProp>>
 
-/** 속성 값. `null` · `undefined` · `false` 면 속성을 **제거**한다. */
+/**
+ * 속성 값.
+ *
+ * | 값 | HTML 속성 | `aria-*` |
+ * | --- | --- | --- |
+ * | `null` · `undefined` | 제거 | 제거 |
+ * | `true` | `=""` (존재하면 참) | `="true"` |
+ * | `false` | 제거 | `="false"` |
+ * | 그 외 | `String(v)` | `String(v)` |
+ */
 export type AttrValue = MaybeReactive<string | number | boolean | null | undefined>
 
 export interface ElProps<E extends Element = Element> {
@@ -243,10 +252,32 @@ function applyStyle(node: Element, value: StyleValue): void {
   }
 }
 
+/**
+ * ARIA 속성은 boolean 을 **리터럴 문자열**로 쓴다.
+ *
+ * HTML boolean 속성(`disabled` · `hidden`)은 "존재하면 참" 이므로 참일 때 빈 문자열, 거짓일 때
+ * 제거가 맞다. **ARIA 는 그렇지 않다** — `aria-pressed=""` 는 유효하지 않고, 스크린리더가
+ * "눌리지 않음" 을 알려면 `aria-pressed="false"` 가 있어야 한다. 제거하면 "토글이 아님" 이라는
+ * 다른 뜻이 된다.
+ *
+ * 호출부에서 `String(x)` 을 하게 두면 네 곳 중 한 곳을 빠뜨린다(실제로 그랬다). 여기서 처리한다.
+ */
+const isAria = (name: string) => name.startsWith('aria-')
+
 function applyAttr(node: Element, name: string, value: AttrValue): void {
+  const aria = isAria(name)
   const set = (raw: string | number | boolean | null | undefined) => {
-    if (raw === null || raw === undefined || raw === false) node.removeAttribute(name)
-    else node.setAttribute(name, raw === true ? '' : String(raw))
+    if (raw === null || raw === undefined) {
+      node.removeAttribute(name)
+      return
+    }
+    if (typeof raw === 'boolean') {
+      if (aria) node.setAttribute(name, raw ? 'true' : 'false')
+      else if (raw) node.setAttribute(name, '')
+      else node.removeAttribute(name)
+      return
+    }
+    node.setAttribute(name, String(raw))
   }
   if (typeof value === 'function') effect(() => set(value()))
   else set(value)

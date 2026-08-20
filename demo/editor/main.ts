@@ -8,8 +8,9 @@
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
- * ⚠️ **R5 시점의 상태다.** 스테이지·객체·선택·줌·팬만 붙어 있다. 상단바·툴바·페이지 목록·
- * 인스펙터는 R6·R7 에서 붙는다. 그때까지 문서 불러오기는 아래 dev 바로만 할 수 있다.
+ * ⚠️ **R6 시점의 상태다.** 상단바·툴바·페이지 목록·줌 컨트롤·다이얼로그까지 붙어 있고
+ * **인스펙터만 R7 에서 붙는다.** 편집기 안의 [문서 불러오기] 도 이제 동작한다 — 아래 dev 바는
+ * 픽스처를 빨리 띄우기 위한 것이다.
  */
 import {
   clearPrototypeSave,
@@ -21,7 +22,7 @@ import {
   type SaveState,
 } from 'pdf-canvas-kit'
 import { createEditorController } from '../../src/controller/editor'
-import { stageWrap } from '../../src/dom/editor/stageArea'
+import { editorShell } from '../../src/dom/editor/editorShell'
 import { el, when } from '../../src/dom/h'
 import { onCleanup, scope, signal } from '../../src/dom/reactive'
 import '../../src/styles/tokens.css'
@@ -92,7 +93,7 @@ function mountEditor(doc: PDFCanvasDoc | null) {
     window.addEventListener('keydown', c.onKeyDown)
     onCleanup(() => window.removeEventListener('keydown', c.onKeyDown))
 
-    stageHost?.append(stageWrap(c))
+    stageHost?.append(editorShell(c))
     return c
   })
   controller = made
@@ -118,7 +119,7 @@ async function loadFixture(name: string): Promise<void> {
 const [root] = scope(() =>
   el('div', { class: 'demo-shell' }, [
     el('div', { class: 'demo-bar' }, [
-      el('strong', {}, ['editor (R5)']),
+      el('strong', {}, ['editor (R6)']),
       ...FIXTURES.map(([file, label]) =>
         el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
           label,

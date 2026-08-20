@@ -237,6 +237,14 @@ export interface EditorController {
   manualSaving: ReadSignal<boolean>
   manualSave: () => Promise<void>
 
+  /**
+   * 상단바 뒤로 가기. `onBack` prop 을 부른다.
+   *
+   * prop 만 있고 부르는 지점이 없었다 — 구 Vue 판은 템플릿에서 `emit('back')` 를 직접 했고,
+   * 컨트롤러로 옮길 때 빠졌다.
+   */
+  back: () => void
+
   /* 수명 */
   setProps: (next: Partial<EditorProps>) => void
   flushSave: () => Promise<void>
@@ -1103,6 +1111,8 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
     manualSaving,
     manualSave,
+
+    back: () => props.value.onBack?.(),
 
     /**
      * prop 을 갱신한다.

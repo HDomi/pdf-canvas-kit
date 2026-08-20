@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.6 |
+| 문서 버전 | arch-2.7 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R8 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R9 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -433,8 +433,8 @@ const asset = createS3AssetPort({
 **`src/prototype/` 은 실서버가 붙으면 통째로 삭제한다.** 자세한 절차는 그 안의 `README.md`.
 
 상단바 [내보내기] 버튼이 [저장 (프로토타입)] 으로 대체돼 있다 — 과제 생성 API가 없어 내보내기를
-누르면 빈 팝업만 뜨기 때문이다. 검증 게이트와 `ExportDialog` 는 그대로 남아 있고,
-`requestExport()` 는 expose로 공개돼 있으므로 호스트가 직접 부를 수 있다 (PLAN 18.5).
+누르면 빈 팝업만 뜨기 때문이다. 검증 게이트는 `EditorHandle.checkBeforeExport()` 로 그대로
+노출돼 있으므로(§17.1) 호스트가 자기 버튼에서 직접 부를 수 있다 (PLAN 18.5).
 
 ```ts
 // localStorage 에 문서 + 이미지(base64) 저장
@@ -459,31 +459,32 @@ const doc = loadPrototype()
 
 ## 7.3 내보내기 경계
 
-편집기는 **검증만** 하고 `request-export` 를 발행한다. 그 뒤는 호스트 몫이다.
+편집기는 **검증만** 한다. 그 뒤는 호스트 몫이다.
 
 ```
-편집기: guardExport(doc)
-   ├─ 실패 → 팝업 안 열고 문제 객체로 이동·선택·스크롤
-   └─ 통과 → request-export { doc, publicDoc, validation }
-                    │
-호스트: 과제 생성 API · Class 목록 · 링크·QR 발급
-                    │
-        (옵션) <ExportDialog :result="{ url, qrUrl }" />
+호스트: [내보내기] 버튼 (편집기 안에 없다)
+   │
+편집기: handle.checkBeforeExport()
+   ├─ 실패 → false. 문제 객체로 이동·선택·스크롤한다
+   └─ 통과 → true
+   │
+편집기: handle.toPublicDoc()   타입별 toPublic(data) 로 비밀 제거
+   │
+호스트: 과제 생성 API · 링크·QR 발급 · 팝업 UI
 ```
 
-`ExportDialog` 는 **옵션 컴포넌트**다. 폼 상태만 관리하고 `submit` 으로 `ExportSettings` 를
-넘긴다. 호스트가 자기 팝업을 써도 검증 게이트는 동일하게 통과한다.
+**팝업 컴포넌트를 제공하지 않는다.** 구 `ExportDialog` 는 R5 에서 Vue 층과 함께 삭제됐다 —
+과제·학급·링크는 이 패키지의 도메인이 아니고, 폼 하나를 위해 도메인을 다시 끌어들이면
+D25(커스텀 객체 레지스트리)로 얻은 것을 잃는다.
+
+| 필요한 것 | 어디 |
+| --- | --- |
+| 검증 게이트 | `EditorHandle.checkBeforeExport()` (§17.1) |
+| 검증 결과만 읽기 | `EditorHandle.validate()` — 인스펙터 경고와 **같은 규칙** |
+| 학생용 스냅샷 | `EditorHandle.toPublicDoc()` |
+| 규칙 정의 | `core/validation/rules.ts` + 각 타입의 `validate` / `toPublic` (§16) |
 
 QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
-
-```ts
-import { ExportDialog, type ExportSettings } from 'pdf-canvas-kit/vue'
-
-async function onSubmit(settings: ExportSettings) {
-  const { url, qrUrl } = await api.createAssignment({ ...settings, doc: payload.publicDoc })
-  result.value = { url, qrUrl }
-}
-```
 
 ## 8. 디렉토리
 
@@ -504,7 +505,6 @@ src/
 │  │   history.ts             undo/redo 역연산 스택
 │  ├─ commands/               doc.ts pages.ts objects.ts — 모든 문서 변경의 단일 창구
 │  ├─ engine.ts              ★ 문서·히스토리·import 파이프라인 (프레임워크 무관)
-│  ├─ i18n/                   ko.ts en.ts createI18n.ts
 │  ├─ interaction/
 │  │   tools.ts                도구 정의·도구별 객체 생성
 │  │   pointerMachine.ts      ★ 드래그 상태 머신 (DOM 비의존)
@@ -529,8 +529,9 @@ src/
 │      normalize.ts          공백·대소문자·NFKC 정규화
 │      score.ts              문항·응시 채점 (서버와 공유 가능)
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
+│  createEditor.ts          ★ imperative facade — 래퍼가 아는 유일한 표면 (§17)
 │  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
-│  h.ts                      ★ el · svg · when · list — DOM 바인딩 (§13)
+│  h.ts                      ★ el · svg · when · keyed · list — DOM 바인딩 (§13)
 │  editor/                    재작성된 UI (구 src/vue/editor/**)
 │    canvasStage.ts            스크롤 컨테이너 — 한 페이지만 (D8)
 │    stageArea.ts             ★ 컨트롤러 ↔ 렌더 층이 만나는 유일한 지점
@@ -546,6 +547,7 @@ src/
 │    inspector/fields.ts       공용 폼 위젯 — 패널 6개가 공유
 │    inspector/{objectPanels,boxStylePanel}.ts
 │    objects/customObjectView.ts ★ 기본 틀 + 콘텐츠 컨테이너 (§16)
+│    objects/renderSlot.ts   ★ vanilla 슬롯 마운트 — render 1회 + onUpdate (§16.2)
 │    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
@@ -553,29 +555,17 @@ src/
 │  pageViewport.ts           ★ frameRect 캐시·무효화 (defer 필수)
 │  pointerTool.ts             포인터 → 상태 머신
 │  pageNav.ts pan.ts panelSizes.ts pageReorder.ts
-│  engineState.ts i18n.ts editorState.ts textEntry.ts
-│  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
-│  ├─ composables/
-│  │   useEngine.ts           engine → Vue reactive 브릿지
-│  │   useStage.ts           ★ scale · fitMode · 앵커 줌
-│  │   usePan.ts              Space/중간버튼 드래그 팬
-│  │   usePageNav.ts          currentPageIndex 전환·클램프
-│  │   usePageViewport.ts     ★ frameRect 캐시·무효화
-│  │   usePointerTool.ts       포인터 → 상태 머신 바인딩
-│  │   usePanelSizes.ts       패널 폭 리사이즈 + localStorage
-│  │   usePageReorder.ts      썸네일 드래그 순서 변경
-│  └─ editor/                 TopBar · PageThumbList · CanvasStage · PageFrame
-│                             StageControls · Toolbar · UploadDialog · EmptyState
-│                             SelectionOverlay · ResizeHandles · objects/*.vue
-│                             inspector/*.vue (유형별 패널)
-│                             PageContextMenu · dialogs/ConfirmDialog
+│  engineState.ts editorState.ts textEntry.ts
+├─ react/index.tsx          얇은 래퍼 — createPortal + useSyncExternalStore (§17.2)
+├─ vue/index.ts             얇은 래퍼 — Teleport + defineComponent (SFC 아님, §17.2)
+├─ styles.ts                CSS 전용 엔트리 (`pdf-canvas-kit/styles.css`)
 ├─ prototype/               ⚠️ 임시 — 실서버 연결 시 삭제
 │  localStorageStore.ts       images / doc 두 키 저장·복원
 └─ styles/
    tokens.css                ★ CSS 변수
    editor.css                 레이아웃·크롬
 
-demo/          :3100 개발 서버 (spike / editor / viewer / checks)
+demo/          :3100 개발 서버 (spike / editor / react / vue / checks)
 scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-checks.mjs)
 ```
 
@@ -1190,3 +1180,69 @@ html, body, #app { height: 100%; margin: 0; }
 ```ts
 import 'pdf-canvas-kit/styles.css'
 ```
+
+---
+
+## 17. facade 와 프레임워크 래퍼 ★
+
+편집기 본체는 vanilla DOM 이다(PLAN D19). 프레임워크는 **세 파일**에만 닿는다.
+
+| 파일 | 역할 |
+| --- | --- |
+| `src/dom/createEditor.ts` | facade. 프레임워크를 모른다 — ESLint 가 `react`·`vue` import 를 막는다 (§10) |
+| `src/react/index.tsx` | `createPortal` + `useSyncExternalStore` |
+| `src/vue/index.ts` | `Teleport` + `defineComponent` |
+
+바꿀 자리를 찾는 규칙은 하나다. **편집기 동작을 바꾸려면 컨트롤러·렌더 층으로 가고, 프레임워크
+연결을 바꾸려면 이 세 파일 안에서 끝난다.**
+
+## 17.1 `EditorHandle` — 유일한 표면
+
+```ts
+const editor = createPDFCanvasEditor(container, { initialDoc, objectTypes })
+editor.update({ readOnly: true })
+editor.destroy()
+```
+
+| | 계약 |
+| --- | --- |
+| `update(next)` | `initialDoc` · `initialScale` · `objectTypes` 는 **무시**된다 (§14.2) |
+| `destroy()` | **멱등이어야 한다.** React StrictMode 가 정리를 두 번 부른다 |
+| `getDoc()` · `subscribe(fn)` | 문서는 편집기가 소유한다. 호스트는 읽고 구독만 한다 |
+| `updateObjectData(id, data)` | 커스텀 객체 데이터. 커맨드 한 번 = undo 한 항목 |
+| `importFile(file)` | 호스트 UI(자체 드래그&드롭)에서 파일을 넣는 경로 |
+
+**컨테이너에 높이를 줘야 한다.** `.pck-editor` 가 `height: 100%` 이므로 확정 높이가 없으면
+편집기가 접힌다 — §15.4 가 그 함정과 flex 의 `min-height: 0` 까지 설명한다.
+
+## 17.2 슬롯 portal — 마운트 통지 프로토콜
+
+렌더 층이 커스텀 객체의 **빈 컨테이너**만 만들고, 그 엘리먼트를 콜백으로 알린다.
+
+```
+onMountCustom(objectId, el)      캔버스 안 객체
+onMountInspector(objectId, el)   우측 인스펙터 (편집 창구 — PLAN D26)
+```
+
+정리할 때 같은 `objectId` 로 **`null`** 을 보낸다. 그게 래퍼가 portal 을 걷는 신호다.
+
+래퍼 양쪽 모두 마운트 집합을 `Map` 으로 들고 **새 `Map` 을 대입한다.** 같은 Map 을 변형하면
+React 의 `useState` 도 Vue 의 `shallowRef` 도 변경을 보지 못한다 — 슬롯이 조용히 안 그려진다.
+
+### portal 안에서는 vanilla 슬롯의 제약이 없다
+
+`objectType.render` 는 객체당 한 번만 불리고 갱신을 `onUpdate` 로 받아야 한다(§16.2). 그건
+DOM 을 직접 들고 있기 때문의 제약이고, portal 경로에는 해당하지 않는다.
+
+| | vanilla 슬롯 | portal |
+| --- | --- | --- |
+| 값 | `data()` — 함수 | prop |
+| 갱신 | `onUpdate(fn)` | 리렌더 |
+| 목록 증감 | DOM 을 손으로 | `map` / `v-for` |
+| 포커스 가드 | **필요** | 불필요 |
+
+### ⚠️ `position: fixed` 는 갇힌다
+
+컨테이너가 `transform: scale()` 안에 있다. CSS 스펙상 `transform` 조상이 `fixed` 의 컨테이닝
+블록이 되므로 드롭다운·툴팁이 페이지 프레임 기준으로 갇힌다. **우회로가 없다** — 그런 UI 는
+`document.body` 로 따로 portal / Teleport 한다.

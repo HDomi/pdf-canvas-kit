@@ -80,7 +80,7 @@ function mountEditor(doc: PDFCanvasDoc | null) {
 
   const [made, d] = scope(() => {
     const c = createEditorController({
-      ...(doc ? { doc } : {}),
+      ...(doc ? { initialDoc: doc } : {}),
       ports: { storage },
       objectTypes: DEMO_OBJECT_TYPES,
       onSaveStateChange: (s) => (saveState.value = s),

@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 | --- | --- |
 | 대상 기획 | PDFCanvas v0.19 (초안) |
-| 문서 버전 | plan-2.0 |
+| 문서 버전 | plan-2.1 |
 | 최초 작성일 | 2026.08.19 |
 | 최종 수정일 | 2026.08.20 |
 | 범위 | `PDFCanvasEditor` 우선 구현, `PDFCanvasViewer` 골격만 |
@@ -720,7 +720,11 @@ pdf-canvas-kit/
 
 ---
 
-## 8. 컴포넌트 공개 API (Vue 3)
+## 8. 컴포넌트 공개 API (Vue 3) — ⚠️ 대체됨
+
+> **이 절은 M 단계의 Vue SFC 명세다.** 그 층은 R5 에서 삭제됐고(D23 철회), `locale` 은 R5 의
+> i18n 제거(D24)로, `doc` 은 R9 에서 `initialDoc` 으로 바뀌었다. 현재 계약은 **20.17 과
+> [ARCHITECTURE §17](ARCHITECTURE.md)** 에 있다. 아래는 무엇이 왜 바뀌었는지 보기 위한 기록이다.
 
 ```vue
 <template>
@@ -1811,7 +1815,7 @@ base64는 +33% 팽창하므로 **약 9~18페이지에서 한계에 닿는다.** 
 ```tsx
 // React
 import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
-;<PDFCanvasEditor doc={doc} ports={ports} onChange={setDoc} />
+;<PDFCanvasEditor initialDoc={doc} ports={ports} onChange={setDoc} />
 ```
 
 ```vue
@@ -1819,7 +1823,7 @@ import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
 <script setup>
 import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
 </script>
-<template><PDFCanvasEditor :doc="doc" :ports="ports" @change="onChange" /></template>
+<template><PDFCanvasEditor :initial-doc="doc" :ports="ports" @change="onChange" /></template>
 ```
 
 ### 20.1 무엇을 버리고 무엇을 남기는가
@@ -1906,7 +1910,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R6** ✅ | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 + `editorShell` ✅. `/checks/` **266 케이스 / 37 그룹**. 상세 20.11 |
 | **R7** ✅ | 인스펙터 | 패널 8개 → 파일 5개 ✅. 검증 경고 · BoxStyle 3상태 포함. `/checks/` **295 케이스 / 40 그룹**. 상세 20.12 |
 | **R8** ✅ | 커스텀 객체 레지스트리 | Answer Box 제거 + `objectTypes` 레지스트리 ✅ (D25). **2,277줄 삭제 / 990줄 추가.** 상세 20.13 |
-| **R9** | 프레임워크 래퍼 | facade + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개. **양쪽에서 같은 조작이 다 되는지 손으로 확인** |
+| **R9** ✅ | 프레임워크 래퍼 | facade `createPDFCanvasEditor` + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개 ✅. 래퍼 번들 **React 2.0KB · Vue 3.0KB**. `/checks/` **251 케이스 / 36 그룹**. 상세 20.17 |
 | **R10** | 배포 준비 | `npm pack` 산출물을 React 앱·Vue 앱에 각각 설치해 동작. 문서 3종 갱신 |
 | **R11** | `PDFCanvasViewer` | 읽기 전용 렌더 + `Viewer` 슬롯. 원본 저장소에도 뷰어 코드는 없어 새로 쓴다 |
 
@@ -2662,3 +2666,83 @@ Shift 를 누른 채면 유지된다(PLAN Q3). 앞으로 진짜 깨지면 여기
 
 `shell` 그룹은 **실제 포인터 이벤트를 디스패치한다.** happy-dom 은 레이아웃이 없어 좌표가
 0이지만, 커밋이 나가고 상태가 바뀌는 것은 확인된다 — 도구 상태 회귀를 잡는 데는 충분하다.
+
+### 20.17 R9 — 프레임워크 래퍼 (2026.08.20)
+
+R8 까지 만든 것은 vanilla DOM 편집기 하나다. R9 는 그 위에 **얇은 층 셋**을 얹는다.
+
+```
+src/dom/createEditor.ts   facade — 래퍼가 아는 유일한 표면
+src/react/index.tsx       createPortal + useSyncExternalStore
+src/vue/index.ts          Teleport + defineComponent (SFC 아님)
+```
+
+#### facade 를 왜 따로 두는가
+
+래퍼가 컨트롤러를 직접 쓰게 하면 두 가지가 깨진다. 첫째, 컨트롤러의 signal 이 공개 API 가 되어
+반응성 구현을 바꿀 수 없다. 둘째, 세 번째 프레임워크가 올 때 비용이 래퍼 하나가 아니라
+"컨트롤러를 다시 읽는 일" 이 된다.
+
+`EditorHandle` 이 그 경계다. 래퍼는 signal 을 모르고, 구독은 `subscribe(fn)` 하나로 받는다.
+
+| 메서드 | 왜 필요한가 |
+| --- | --- |
+| `update(next)` | React 가 렌더마다 부른다. `initialDoc`·`initialScale`·`objectTypes` 는 **무시**된다 |
+| `destroy()` | **멱등.** StrictMode 가 정리를 두 번 부른다 (20.5 의 리스크가 여기서 해소됐다) |
+| `getDoc()` · `subscribe(fn)` | `useSyncExternalStore` 의 두 인자. tearing 없이 읽는 공식 경로 |
+| `updateObjectData(id, data)` | portal 안 컴포넌트의 `onChange` 가 부른다. 커맨드 한 번 = undo 한 항목 |
+| `importFile(file)` | 호스트가 자기 드래그&드롭에서 파일을 넣을 수 있어야 한다 |
+
+#### portal 이 vanilla 슬롯의 제약을 없앤다
+
+20.14 에서 정한 계약은 `render` 가 **객체당 한 번만** 불리는 것이었다. 그 제약은 vanilla 슬롯이
+DOM 을 직접 들고 있기 때문에 생긴 것이고, portal 경로에는 해당하지 않는다.
+
+| | vanilla 슬롯 | portal (React·Vue) |
+| --- | --- | --- |
+| 값 읽기 | `data()` — 함수 | prop — 평범한 값 |
+| 갱신 | `onUpdate(fn)` 등록 | 리렌더 |
+| 목록 증감 | DOM 을 손으로 추가·제거 | `map` / `v-for` |
+| 포커스 가드 | **필요** (`document.activeElement` 확인) | 불필요 — 프레임워크가 노드를 유지 |
+
+데모 두 개가 정확히 그 차이를 보여준다. `demo/editor/objectTypes.ts` 의 선택형은 보기 칸이
+**3개 고정**이고 포커스 가드가 붙어 있다. `demo/react/main.tsx` · `demo/vue/main.ts` 의 같은
+`demo.choice` 는 보기를 **추가·삭제**하고 가드가 없다.
+
+#### 마운트 통지 프로토콜
+
+렌더 층이 커스텀 객체의 **빈 컨테이너**만 만들고 `onMountCustom(objectId, el)` 로 알린다.
+정리할 때 같은 자리에 `null` 을 보낸다 — 래퍼가 portal 을 걷는 신호다.
+
+래퍼 양쪽 모두 마운트 집합을 `Map` 으로 들고 있고 **새 `Map` 을 대입**한다. 같은 Map 을
+변형하면 React 의 `useState` 도 Vue 의 `shallowRef` 도 변경을 보지 못한다.
+
+#### `doc` → `initialDoc` (20.8 의 미결 해소)
+
+R3 에서 남긴 질문은 "controlled 가 아닌 prop 을 `doc` 이라 불러도 되는가" 였다. React 관례에서
+`doc` 은 controlled 를 뜻하고, 소비자는 `<PDFCanvasEditor doc={state} />` 를 쓰다가 상태가
+반영되지 않는 이유를 문서에서 찾아야 한다.
+
+**이름을 바꿨다.** `initialDoc` 은 계약을 스스로 말한다 — `initialValue` 와 같은 관례다.
+컨트롤러·facade·양쪽 래퍼·데모·케이스 전부 함께 바꿨다.
+
+#### 확인한 것 / 확인하지 못한 것
+
+| | 상태 |
+| --- | --- |
+| 네 게이트 (`typecheck`·`lint`·`build`·`checks`) | ✅ 251 / 251 · 36 그룹 |
+| 데모 5개 빌드 (`/editor/` `/react/` `/vue/` `/checks/` `/spike/`) | ✅ |
+| `npm pack` 산출물에 `dist/react`·`dist/vue` 의 `.js` + `.d.ts` | ✅ |
+| `destroy()` 멱등 · 마운트 통지 · `update()` 가 `initialDoc` 무시 | ✅ 케이스로 고정 (6건) |
+| **portal 안에서 보기 추가·삭제 중 포커스 유지** | ⏳ 브라우저 확인 필요 — happy-dom 은 포커스·레이아웃이 없다 |
+| **React·Vue 양쪽 조작 동등성** (드래그·줌·IME) | ⏳ 같은 이유 |
+
+#### 함께 넣은 케이스
+
+| 그룹 | 내용 |
+| --- | --- |
+| `facade — createPDFCanvasEditor` | 마운트 · `destroy` · **멱등** · `subscribe` · **마운트 통지** · `update` 가 `initialDoc` 무시 (6건) |
+
+facade 케이스가 래퍼 케이스를 대신한다. React·Vue 래퍼는 facade 위 30줄 남짓이고, happy-dom
+에서 두 프레임워크 런타임을 띄우는 비용보다 **facade 계약을 고정하는 편이 회귀를 더 잡는다**.
+"래퍼가 실제로 로드되는가" 는 데모 빌드가 확인한다.

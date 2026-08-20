@@ -19,13 +19,11 @@
  * UI 문구는 prop 이 아니다. `configureStrings()` 로 모듈 수준에서 한 번 설정한다
  * (`core/config/strings.ts`).
  * | `ports` · `uploadFile` | 반영된다 — 단 엔진에 이미 넘어간 port 는 교체되지 않는다 |
- * | **`doc`** | **최초 1회만.** 이후 변경은 무시된다 |
- * | **`initialScale`** | **최초 1회만.** 이름 그대로다 |
+ * | **`initialDoc`** | **최초 1회만.** 이름 그대로다 |
+ * | **`initialScale`** · **`objectTypes`** | **최초 1회만.** 이름 그대로다 |
  *
- * ⚠️ **`doc` 이 controlled prop 이 아니라는 점은 함정이다.** `<PDFCanvasEditor doc={doc}
- * onChange={setDoc} />` 는 controlled 처럼 보이지만, 편집기가 문서를 소유하고 변경을 밖으로
- * 밀어낼 뿐이다. Vue 판의 동작을 그대로 옮긴 것이며(이식이지 재설계가 아니다), 바꿀지는 R8 에서
- * 정한다 (PLAN 20.8). 문서를 교체해야 하면 컴포넌트를 다시 마운트한다(React 는 `key` 변경).
+ * `initialDoc` 이라는 이름이 그 계약을 드러낸다 — 편집기가 문서를 소유하고 `onChange` 로
+ * 변경을 밀어낸다. React 의 `defaultValue` 와 같은 성격이다 (PLAN 20.8 결정).
  */
 import { batch, computed, onCleanup, signal, watch, type ReadSignal } from '../dom/reactive'
 import { EDITOR_DEFAULTS } from '../core/config/defaults'
@@ -87,8 +85,16 @@ export type UploadFile = (
 ) => Promise<{ url: string; assetId?: string }>
 
 export interface EditorProps {
-  /** 초기 문서. `null` 이면 빈 상태로 시작해 문서 불러오기 안내를 띄운다. **최초 1회만 읽는다.** */
-  doc?: PDFCanvasDoc | null
+  /**
+   * 초기 문서. `null` 이면 빈 상태로 시작해 문서 불러오기 안내를 띄운다.
+   *
+   * **이름이 계약이다** (PLAN 20.8 결정). 편집기가 문서를 소유하고 변경을 `onChange` 로 밀어낸다 —
+   * controlled prop 이 아니다. `doc` 이라고 부르면 React 소비자가 controlled 로 착각하는데,
+   * 그건 API 이름이 거짓말을 하는 것이다.
+   *
+   * 문서를 교체해야 하면 컴포넌트를 다시 마운트한다 (React 는 `key` 변경).
+   */
+  initialDoc?: PDFCanvasDoc | null
   ports?: EnginePorts
   readOnly?: boolean
   /**
@@ -268,6 +274,9 @@ export interface EditorController {
    */
   back: () => void
 
+  /** 문서 변경을 구독한다. 프레임워크 래퍼가 리렌더 신호로 쓴다 (facade `subscribe`). */
+  subscribeDoc: (fn: (doc: PDFCanvasDoc) => void) => () => void
+
   /* 수명 */
   setProps: (next: Partial<EditorProps>) => void
   flushSave: () => Promise<void>
@@ -329,7 +338,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
   const startAsset = resolveAssetPort(initialProps)
   const engineState = createEngineState({
-    ...(initialProps.doc ? { doc: initialProps.doc } : {}),
+    ...(initialProps.initialDoc ? { doc: initialProps.initialDoc } : {}),
     ports: {
       ...initialProps.ports,
       ...(startAsset ? { asset: startAsset } : {}),
@@ -1161,10 +1170,12 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
     back: () => props.value.onBack?.(),
 
+    subscribeDoc: (fn) => engine.doc.subscribe(fn),
+
     /**
      * prop 을 갱신한다.
      *
-     * `doc` 과 `initialScale` 은 무시된다 — 위 props 계약 참고. 조용히 무시하는 대신 개발 모드에서
+     * `initialDoc` · `initialScale` · `objectTypes` 는 무시된다 — 위 props 계약 참고. 조용히 무시하는 대신 개발 모드에서
      * 경고를 낼 수도 있지만, React 는 렌더마다 같은 `doc` 을 다시 넘기므로 경고가 폭주한다.
      */
     setProps: (next) => {

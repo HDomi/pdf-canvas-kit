@@ -158,6 +158,15 @@ export default tseslint.config(
     },
   },
 
+  /*
+   * 데모는 예제이므로 한 파일에 여러 컴포넌트를 둔다 — 소비자가 한 화면에서 전체 사용법을
+   * 읽는 편이 파일을 오가는 것보다 낫다.
+   */
+  {
+    files: ['demo/**'],
+    rules: { 'vue/one-component-per-file': 'off' },
+  },
+
   // 데모·스크립트는 console 사용을 허용한다
   {
     files: ['demo/**', 'scripts/**', '*.config.ts', 'eslint.config.js'],

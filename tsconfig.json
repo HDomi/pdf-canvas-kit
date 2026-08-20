@@ -15,16 +15,35 @@
     "noFallthroughCasesInSwitch": true,
     "verbatimModuleSyntax": true,
 
+    /*
+     * React 래퍼는 TSX 다. `react-jsx` 로 두면 소비자가 React 를 import 하지 않아도 된다.
+     *
+     * `jsxImportSource` 를 명시해야 한다 — @vue/tsconfig 베이스가 Vue 를 가리키고, Vue 는
+     * 전역 `JSX` 네임스페이스를 채우므로 TSX 안의 엘리먼트가 `VNode` 로 추론된다.
+     */
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
       "pdf-canvas-kit": ["./src/index.ts"],
+      "pdf-canvas-kit/react": ["./src/react/index.tsx"],
+      "pdf-canvas-kit/styles.css": ["./src/styles.ts"],
+      "pdf-canvas-kit/vue": ["./src/vue/index.ts"],
       "pdf-canvas-kit/*": ["./src/*"]
     },
 
     "skipLibCheck": true,
     "noEmit": true
   },
-  "include": ["src/**/*.ts", "src/**/*.vue", "demo/**/*.ts", "demo/**/*.vue"],
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.tsx",
+    "src/**/*.vue",
+    "demo/**/*.ts",
+    "demo/**/*.tsx",
+    "demo/**/*.vue"
+  ],
   "exclude": ["node_modules", "dist", "examples"]
 }

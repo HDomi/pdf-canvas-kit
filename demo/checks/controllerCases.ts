@@ -40,7 +40,7 @@ function withController<T>(
   fn: (c: ReturnType<typeof createEditorController>) => T,
 ): T {
   const [result, dispose] = scope(() => {
-    const c = createEditorController(doc ? { doc } : {})
+    const c = createEditorController(doc ? { initialDoc: doc } : {})
     return fn(c)
   })
   dispose()
@@ -372,11 +372,11 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: '⚠️ setProps 의 doc 은 무시된다 (controlled 아님 — PLAN 20.8)',
+        name: '⚠️ setProps 의 initialDoc 은 무시된다 (controlled 아님 — PLAN 20.8)',
         expected: 1,
         actual: () =>
           withController(docWithPages(1), (c) => {
-            c.setProps({ doc: docWithPages(5) })
+            c.setProps({ initialDoc: docWithPages(5) })
             return c.pageCount.value
           }),
       },
@@ -453,7 +453,7 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
         expected: 0,
         actual: () => {
           let calls = 0
-          const [c, dispose] = scope(() => createEditorController({ doc: docWithPages(1) }))
+          const [c, dispose] = scope(() => createEditorController({ initialDoc: docWithPages(1) }))
           c.setProps({ onChange: () => calls++ })
           dispose()
           c.setTitle('dispose 후')

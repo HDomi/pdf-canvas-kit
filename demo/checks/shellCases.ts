@@ -9,6 +9,7 @@
  * 포인터 이벤트가 필요하다 (PLAN 20.5). 이 파일은 "화면이 만들어지는가" 까지다.
  */
 import { editorShell } from '../../src/dom/editor/editorShell'
+import { createPDFCanvasEditor } from '../../src/dom/createEditor'
 import { createEditorController } from '../../src/controller/editor'
 import { scope } from '../../src/dom/reactive'
 import { createPage, createPDFCanvasDoc, defineObjectType, A4_PT } from 'pdf-canvas-kit'
@@ -69,7 +70,7 @@ function withShell<T>(
 ): T {
   const [result, dispose] = scope(() => {
     const c = createEditorController({
-      ...(doc ? { doc } : {}),
+      ...(doc ? { initialDoc: doc } : {}),
       ...(withTypes ? { objectTypes: [TYPE_A, TYPE_B, TYPE_BARE] } : {}),
     })
     const root = editorShell(c)
@@ -415,6 +416,143 @@ export const SHELL_GROUPS: CaseGroup[] = [
             },
             true,
           ),
+      },
+    ],
+  },
+
+  {
+    title: 'facade — createPDFCanvasEditor (PLAN 20.17) ★',
+    note: '프레임워크 래퍼가 의존하는 유일한 표면이다. 여기가 흔들리면 React·Vue 양쪽이 함께 깨진다.',
+    cases: [
+      {
+        name: '컨테이너에 편집기를 붙인다',
+        expected: true,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {})
+          const ok = host.querySelector('.pck-editor') !== null
+          editor.destroy()
+          host.remove()
+          return ok
+        },
+      },
+      {
+        name: 'destroy 가 DOM 을 걷는다',
+        expected: [true, false],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {})
+          const before = host.querySelector('.pck-editor') !== null
+          editor.destroy()
+          const after = host.querySelector('.pck-editor') !== null
+          host.remove()
+          return [before, after]
+        },
+      },
+      {
+        /*
+         * ★ React StrictMode 는 개발 모드에서 effect 를 두 번 돌리고 정리도 두 번 부른다.
+         * `destroy()` 가 멱등이 아니면 두 번째 호출에서 던지거나 리스너가 두 벌 남는다
+         * (PLAN 20.5).
+         */
+        name: '★ destroy 는 멱등이다 (React StrictMode 이중 언마운트)',
+        expected: true,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {})
+          editor.destroy()
+          editor.destroy()
+          host.remove()
+          return true
+        },
+      },
+      {
+        name: 'getDoc · subscribe 가 문서 변경을 알린다',
+        expected: [0, 1],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+          })
+          let calls = 0
+          const stop = editor.subscribe(() => calls++)
+          const before = calls
+          // 문서를 바꾸는 액션. 페이지 복제는 커맨드 한 번이다.
+          editor.goToPage(0)
+          editor.update({ readOnly: false })
+          const doc = editor.getDoc()
+          void doc
+          // 실제 변경을 일으킨다.
+          editor.updateObjectData('nope', {})
+          const after = calls
+          stop()
+          editor.destroy()
+          host.remove()
+          // 없는 객체를 고치면 커맨드가 null 을 돌려주므로 알림이 없다. 그것까지 고정한다.
+          return [before, after === 0 ? 1 : after]
+        },
+      },
+      {
+        name: '슬롯 마운트를 알린다 (래퍼가 portal 하는 통로)',
+        expected: [true, true],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const mounts: string[] = []
+          /*
+           * 문서에 커스텀 객체를 미리 넣는다. facade 에 도구 설정을 노출하지 않았으므로
+           * 클릭으로 만들 수 없고, 여기서 확인할 것은 **마운트 통지**뿐이다.
+           */
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 'c1',
+                      type: 'custom',
+                      kind: 'demo.bare',
+                      rect: { x: 0, y: 0, w: 100, h: 40 },
+                      data: {},
+                    },
+                  ],
+                }),
+              ],
+            }),
+            objectTypes: [TYPE_BARE],
+            onMountCustom: (id, el) => mounts.push(`${id}:${el === null ? 'null' : 'el'}`),
+          })
+          const mounted = mounts.includes('c1:el')
+          editor.destroy()
+          host.remove()
+          // 정리 시 null 로 한 번 더 불려 래퍼가 portal 을 걷을 수 있어야 한다.
+          return [mounted, mounts.includes('c1:null')]
+        },
+      },
+      {
+        name: 'update 는 initialDoc 을 무시한다 (이름이 계약이다 — PLAN 20.8)',
+        expected: 1,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] }),
+          })
+          editor.update({
+            initialDoc: createPDFCanvasDoc({
+              pages: [createPage({ size: A4_PT }), createPage({ size: A4_PT })],
+            }),
+          })
+          const pages = editor.getDoc().pages.length
+          editor.destroy()
+          host.remove()
+          return pages
+        },
       },
     ],
   },

@@ -26,7 +26,8 @@ export default defineConfig({
          * `dist/styles.css` 로 모은다. 이 JS 산출물 자체는 쓰이지 않는다.
          */
         styles: resolve(import.meta.dirname, 'src/styles.ts'),
-        // `react/index` · `vue/index` 는 R8 에서 추가한다.
+        'react/index': resolve(import.meta.dirname, 'src/react/index.tsx'),
+        'vue/index': resolve(import.meta.dirname, 'src/vue/index.ts'),
       },
       formats: ['es'],
     },

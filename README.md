@@ -1,27 +1,33 @@
 # pdf-canvas-kit
 
-PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **Answer Box·텍스트·도형을 레이어**로 올리는
-문제지 편집기. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고 Vue·React 래퍼가
-같은 컴포넌트를 제공한다.
+PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **텍스트·도형·직접 만든 객체를 레이어**로
+올리는 문제지 편집기. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고
+Vue·React 래퍼가 같은 컴포넌트를 제공한다.
 
 ```tsx
 // React
 import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
-;<PDFCanvasEditor doc={doc} ports={ports} onChange={setDoc} />
+import 'pdf-canvas-kit/styles.css'
+;<PDFCanvasEditor initialDoc={doc} ports={ports} onChange={setDoc} />
 ```
 
 ```vue
 <!-- Vue / Nuxt -->
 <script setup>
 import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
+import 'pdf-canvas-kit/styles.css'
 </script>
-<template><PDFCanvasEditor :doc="doc" :ports="ports" @change="onChange" /></template>
+<template><PDFCanvasEditor :initial-doc="doc" :ports="ports" @change="onChange" /></template>
 ```
 
 ```ts
-// 프레임워크 없이 — 코어 + imperative facade
+// 프레임워크 없이 — imperative facade
 import { createPDFCanvasEditor } from 'pdf-canvas-kit'
+const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 ```
+
+> `initialDoc` 은 **최초 1회만 읽는다.** 편집기가 문서를 소유하고 `onChange` 로 밀어낸다 —
+> controlled 가 아니다. 이름이 그 계약이다.
 
 런타임 의존성은 `pdfjs-dist` 하나다. `vue` · `react` 는 **optional peer** 라 쓰는 쪽만 설치한다.
 
@@ -37,23 +43,22 @@ import { createPDFCanvasEditor } from 'pdf-canvas-kit'
 
 프로토타입, **미배포.** 기능은 M0~M7 완료 + M8 부분이고, 편집 기능은 전부 동작한다.
 
-> ⚠️ **프레임워크 무관 재구조화(R 트랙)가 진행 중이다** — PLAN 20장.
-> **위 세 예제 모두 아직 동작하지 않는다.** 프레임워크 래퍼와 facade 는 R8 에서 만들어진다.
-> 현재는 `createEditorController()` + `stageWrap()` 을 직접 마운트하는 경로만 있다 (`demo/editor/main.ts` 참고).
-> 진행 상황은 [PLAN 20.4 의 R 트랙 표](PLAN.md)에 있다.
+**위 세 예제는 동작한다** (R9 완료). 남은 것은 npm 배포 검증과 `PDFCanvasViewer` 다.
 
 | 항목 | 상태 |
 | --- | --- |
-| Vue 래퍼 (`/vue`) | **미구현** (R8). 구 SFC 구현은 R5 에서 삭제됐다 |
-| React 래퍼 (`/react`) | **미구현** (R8) |
-| vanilla facade (`createPDFCanvasEditor`) | **미구현** (R8) |
-| 렌더 층 바닥 (`src/dom/reactive.ts` · `h.ts`) | 완료 (R2) — 검증 케이스 68건 |
-| 객체·페이지·스테이지 렌더 | 완료 (R4·R5) — 검증 케이스 39건 |
-| 편집기 크롬 (상단바·툴바·페이지목록·다이얼로그) | 완료 (R6) — 검증 케이스 20건 |
+| vanilla facade (`createPDFCanvasEditor`) | 완료 (R9) |
+| React 래퍼 (`pdf-canvas-kit/react`) | 완료 (R9) — 번들 2.0KB |
+| Vue 래퍼 (`pdf-canvas-kit/vue`) | 완료 (R9) — 번들 3.0KB |
+| 렌더 층 바닥 (`src/dom/reactive.ts` · `h.ts`) | 완료 (R2) |
+| 객체·페이지·스테이지 렌더 | 완료 (R4·R5) |
+| 편집기 크롬 (상단바·툴바·페이지목록·다이얼로그) | 완료 (R6) |
 | 인스펙터 | 완료 (R7) |
-| 커스텀 객체 레지스트리 | 완료 (R8) — Answer Box 제거, 소비자가 타입 정의 |
-| 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) — 검증 케이스 33건 |
-| npm 배포 | **미배포.** `npm pack` 검증은 R9 |
+| 커스텀 객체 레지스트리 | 완료 (R8) — 소비자가 타입을 정의한다 |
+| 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) |
+| 검증 케이스 | **251건 / 36 그룹** (`npm run checks`) |
+| npm 배포 | **미배포.** `npm pack` 설치 검증은 R10 |
+| `PDFCanvasViewer` | **미구현** (R11) |
 
 아래 기능 표는 **구 Vue 구현 기준**이다 — 새 렌더 층으로 옮겨진 항목은 R 트랙 표를 본다.
 
@@ -67,18 +72,18 @@ import { createPDFCanvasEditor } from 'pdf-canvas-kit'
 | 로드 시 자동 배율 | 페이지 **전체가 보이도록** 맞춤 (`fit-page` 기본) |
 | 문서 업로드 · 진행률 | 동작 (PDF만, DOC/PPT는 서버 컨버터 필요) |
 | undo/redo · 타이틀 편집 | 동작 |
-| 객체 생성 (텍스트·도형·단답형·서술형·드롭박스) | 동작 — 도구 선택 후 드래그 |
+| 객체 생성 (텍스트·도형·커스텀) | 동작 — 도구 선택 후 드래그 |
 | 객체 이동·리사이즈 (9방향 핸들) | 동작 (Shift 종횡비, Alt 중심 기준) |
 | 다중 선택 (마퀴) · 복제 · 삭제 | 동작 |
 | 텍스트 인라인 편집 (한글 IME 안전) | 동작 — 더블클릭 |
 | 회전 (텍스트·도형) | 동작 — 회전 핸들 또는 인스펙터 |
 | 지우개 | 동작 — 클릭한 객체 삭제 |
-| 인스펙터 (정답·배점·텍스트·도형 편집) | 동작 |
-| 박스 색 편집 (배경·테두리·글자색) | 동작 — 텍스트·단답형·서술형·드롭박스. 미지정은 테마 색을 따른다 |
+| 인스펙터 (텍스트·도형·커스텀 객체 편집) | 동작 — 커스텀 객체의 **편집 창구는 여기 하나**다 |
+| 박스 색 편집 (배경·테두리·글자색) | 동작 — 텍스트·커스텀. 미지정은 테마 색을 따른다 |
 | 검증 (내보내기 차단·실시간 경고) | 동작 — 같은 규칙을 공유 |
 | 채점 순수 함수 | 동작 (`scoreAttempt` · `normalizeAnswer`) |
 | 내보내기 검증 게이트 | 동작 — 실패 시 문제 객체로 이동·스크롤 |
-| 내보내기 팝업 (`ExportDialog`) | 옵션 컴포넌트 제공 — 과제 생성 API는 호스트 몫 |
+| 내보내기 팝업 | **제공하지 않는다** — 검증 게이트만 준다 (`checkBeforeExport` · `toPublicDoc`) |
 | 문항 번호 자동 부여 | 동작 — 위치에서 파생, 인스펙터에서 수동 오버라이드 |
 | 패널 폭 리사이즈 | 동작 — 조정하면 localStorage에 기억 |
 | 페이지 이미지 업로드 (S3) | 동작 — `createS3AssetPort` 또는 `uploadFile` prop |
@@ -86,10 +91,9 @@ import { createPDFCanvasEditor } from 'pdf-canvas-kit'
 | 페이지 삭제·복제 | 동작 — 썸네일 우클릭 메뉴 또는 하단 버튼. 객체가 있으면 확인 모달 |
 | 자동저장 파이프라인 | 동작 — 저장 대상은 콘솔(`console.debug`). 실서버 미연결 |
 | 상단바 [저장] | ⚠️ **프로토타입** — localStorage에 문서+이미지 저장 (PLAN 18.5) |
-| 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트와 `ExportDialog` 는 그대로 |
-| `PDFCanvasViewer` | **미구현** (M10) |
+| 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트는 `EditorHandle` 로 노출돼 있다 |
 
-`/editor/` · `/spike/` · `/checks/` 를 확인할 수 있다.
+`/editor/`(vanilla) · `/react/` · `/vue/` · `/spike/` · `/checks/` 를 확인할 수 있다.
 
 ---
 
@@ -176,7 +180,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 
 ---
 
-## 호스트 앱에서 쓰기 (Nuxt 3)
+## 호스트 앱에서 쓰기
 
 ### 1. pdf.js 런타임 자산을 서빙한다 — **필수**
 
@@ -225,13 +229,13 @@ html, body, #app { height: 100%; margin: 0; }
 감싸는 요소를 한 겹 더 두면 **그 요소도 높이를 넘겨야 한다.** 규칙 없는 `<div>` 를 끼우면
 체인이 끊긴다. 자세한 증상표는 [ARCHITECTURE §15.4](ARCHITECTURE.md).
 
-### 2. 클라이언트 전용으로 마운트한다
+### 2. 클라이언트 전용으로 마운트한다 (Nuxt·Next)
 
 pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR을 지원하지 않는다.
 
 ```vue
 <ClientOnly>
-  <PDFCanvasEditor :doc="doc" :ports="ports" locale="ko" @change="onChange" />
+  <PDFCanvasEditor :initial-doc="doc" :ports="ports" @change="onChange" />
 </ClientOnly>
 ```
 
@@ -240,9 +244,9 @@ pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR
 기본은 `fit-page` — 문서를 올리면 페이지 전체가 보인다. 폭 기준이 낫다면:
 
 ```vue
-<PDFCanvasEditor :doc="doc" initial-scale="fit-width" />
+<PDFCanvasEditor :initial-doc="doc" initial-scale="fit-width" />
 <!-- 또는 고정 배율 -->
-<PDFCanvasEditor :doc="doc" :initial-scale="1" />
+<PDFCanvasEditor :initial-doc="doc" :initial-scale="1" />
 ```
 
 ### 4. Vite 설정
@@ -406,54 +410,121 @@ const restored = loadPrototype() // pck-pck-local: 참조를 base64로 복원한
 
 ## 내보내기 연동
 
-편집기는 **검증만** 하고 `request-export` 를 발행한다. 과제 생성·Class 목록·링크·QR은 호스트 몫이다.
+편집기는 **검증만** 한다. 과제 생성·링크·QR·팝업 UI 는 전부 호스트 몫이다 — 그래야 도메인
+없는 패키지로 남는다.
 
-⚠️ 현재 상단바 버튼은 프로토타입 저장으로 대체돼 있다. 내보내기를 트리거하려면 expose된
-`requestExport()` 를 호스트가 직접 부른다.
-
-```vue
-<script setup lang="ts">
-import { ref } from 'vue'
-import type { ExportPayload } from 'pdf-canvas-kit'
-import {
-  PDFCanvasEditor,
-  ExportDialog,
-  type ExportSettings,
-  type ExportResult,
-} from 'pdf-canvas-kit/vue'
-
-const payload = ref<ExportPayload | null>(null)
-const result = ref<ExportResult | null>(null)
-const busy = ref(false)
-
-async function onSubmit(settings: ExportSettings) {
-  busy.value = true
-  // publicDoc 은 정답이 제거된 학생용 스냅샷이다
-  const created = await api.createAssignment({ ...settings, doc: payload.value!.publicDoc })
-  result.value = { url: created.url, qrUrl: created.qrUrl }
-  busy.value = false
-}
-</script>
-
-<template>
-  <ClientOnly>
-    <PDFCanvasEditor :doc="doc" @request-export="payload = $event" />
-    <ExportDialog
-      v-if="payload"
-      :default-title="payload.doc.title"
-      :classes="classes"
-      :busy="busy"
-      :result="result"
-      :t="t"
-      @submit="onSubmit"
-      @close="((payload = null), (result = null))"
-    />
-  </ClientOnly>
-</template>
+```
+호스트가 [내보내기] 버튼을 만든다
+   │
+   ├─ handle.checkBeforeExport()
+   │     실패 → false. 편집기가 문제 객체로 이동·선택·스크롤한다
+   │     통과 → true
+   │
+   └─ handle.toPublicDoc()   각 타입의 toPublic(data) 를 거친 학생용 스냅샷
+         │
+         └─ 호스트 API 로 보낸다
 ```
 
-`ExportDialog` 를 쓰지 않고 자기 팝업을 만들어도 검증 게이트는 동일하게 통과한다.
+```tsx
+// React — ref 로 handle 을 받는다
+const editor = useRef<EditorHandle>(null)
+
+async function onExport() {
+  // 검증 실패 시 편집기가 스스로 문제 지점을 보여주므로 여기서 할 일이 없다
+  if (!editor.current?.checkBeforeExport()) return
+  await api.createAssignment({ doc: editor.current.toPublicDoc() })
+}
+
+;<PDFCanvasEditor ref={editor} initialDoc={doc} objectTypes={[shortAnswer]} />
+```
+
+```vue
+<!-- Vue — expose 된 handle 을 그대로 쓴다 -->
+<script setup>
+const editor = ref(null)
+
+async function onExport() {
+  if (!editor.value?.handle?.checkBeforeExport()) return
+  await api.createAssignment({ doc: editor.value.handle.toPublicDoc() })
+}
+</script>
+<template><PDFCanvasEditor ref="editor" :initial-doc="doc" /></template>
+```
+
+**`toPublicDoc()` 은 각 객체 타입의 `toPublic(data)` 를 거친다.** 구현하지 않은 타입은 데이터가
+그대로 나간다 — 정답처럼 학생에게 보이면 안 되는 값은 반드시 그 함수로 제거한다.
+
+게이트를 열지 않고 상태만 볼 때는 `handle.validate()` 를 쓴다. 인스펙터의 실시간 경고가
+**같은 규칙**을 쓰므로 결과가 어긋나지 않는다.
+
+QR 인코더는 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
+
 자세한 경계는 [ARCHITECTURE §7.3](ARCHITECTURE.md).
+
+---
+
+## 직접 만든 객체 올리기
+
+패키지는 **기본 틀**(네모, 크기 변경, 색상)만 그린다. 그 안을 채우는 것은 소비자 코드다.
+타입을 선언하고 `kind` 별로 컴포넌트를 붙인다.
+
+```ts
+// 1. 타입 선언 — 프레임워크 무관
+import { defineObjectType } from 'pdf-canvas-kit'
+
+export const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
+  kind: 'answer.short',
+  label: '단답형',
+  defaultSize: { w: 160, h: 40 },
+  defaultData: () => ({ answers: [], points: 1 }),
+  // 인스펙터 경고와 내보내기 게이트가 같은 규칙을 쓴다
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  // 정답은 학생 번들에 실려 가면 안 된다
+  toPublic: ({ answers: _answers, ...rest }) => rest,
+})
+```
+
+```tsx
+// 2. React — 캔버스 안(renderObject)과 인스펙터(renderInspector)에 컴포넌트를 붙인다
+<PDFCanvasEditor
+  initialDoc={doc}
+  objectTypes={[shortAnswer]}
+  renderObject={{ 'answer.short': ({ data }) => <b>{data.points}점</b> }}
+  renderInspector={{
+    'answer.short': ({ data, onChange }) => (
+      <input
+        value={data.answers[0] ?? ''}
+        onChange={(e) => onChange({ ...data, answers: [e.target.value] })}
+      />
+    ),
+  }}
+  onChange={setDoc}
+/>
+```
+
+```vue
+<!-- 2. Vue — 같은 계약. 슬롯 컴포넌트가 objectId · data · onChange 를 prop 으로 받는다 -->
+<PDFCanvasEditor
+  :initial-doc="doc"
+  :object-types="[shortAnswer]"
+  :render-object="{ 'answer.short': AnswerBadge }"
+  :render-inspector="{ 'answer.short': AnswerFields }"
+  @change="onChange"
+/>
+```
+
+**크기 변경은 viewport 조작처럼 동작한다.** 핸들로 틀을 키우면 안쪽 컴포넌트가 자기 CSS 대로
+다시 흐른다 — flex 면 줄바꿈이 일어난다. 틀 안에 갇히므로 밖으로 삐져나오지 않는다.
+
+**편집 창구는 인스펙터 하나다.** 캔버스 안 객체는 배치·크기 조절만 받는다 — 캔버스에서
+직접 입력받게 하면 드래그와 포커스가 같은 포인터 이벤트를 다투게 된다.
+
+> ⚠️ **`position: fixed` 는 갇힌다.** 컨테이너가 `transform: scale()` 안에 있어 드롭다운·툴팁이
+> 페이지 프레임 기준으로 갇힌다. 그런 UI 는 `body` 로 따로 portal / Teleport 한다.
+
+프레임워크 없이 쓸 때는 `render` / `renderInspector` 슬롯을 타입 정의에 직접 넣는다.
+그 경로에는 규칙이 하나 더 있다 — 슬롯은 **객체당 한 번만** 불리므로 값은 `data()` 로 읽고
+갱신은 `onUpdate(fn)` 으로 받는다. 예제는 [demo/editor/objectTypes.ts](demo/editor/objectTypes.ts).
 
 ---
 
@@ -464,7 +535,7 @@ async function onSubmit(settings: ExportSettings) {
 | 색·폰트·패널 기본 폭 | [src/styles/tokens.css](src/styles/tokens.css) — `--pck-*` CSS 변수 오버라이드 |
 | 새 객체 기본 크기, 줌 단계, 스냅 | [src/core/config/defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
 | 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |
-| 페이지·Answer Box 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
+| 페이지·객체 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
 
 ```css
 .my-app .pck-editor {

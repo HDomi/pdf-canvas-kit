@@ -300,32 +300,93 @@ export function effect(fn: () => void): Dispose {
   return dispose
 }
 
+export interface WatchOptions {
+  /** 즉시 한 번 부른다. 이전 값은 `undefined` 다. */
+  immediate?: boolean
+  /**
+   * 콜백을 **마이크로태스크로 미룬다.** Vue 의 `flush: 'post'` 자리.
+   *
+   * ## 언제 필요한가 — 레이아웃을 읽는 콜백
+   *
+   * effect 는 동기이고 실행 순서는 **등록 순서**다. 그래서 같은 signal 을 구독하는
+   * "DOM 스타일을 쓰는 effect" 와 "레이아웃을 읽는 콜백" 이 있을 때, 후자가 먼저 등록돼 있으면
+   * **낡은 값을 읽는다.**
+   *
+   * 실제 사례: 배율이 바뀌면 페이지 프레임 크기가 변하고 뷰포트 위치도 변한다. 측정 콜백이
+   * 스타일 바인딩보다 먼저 등록돼 있으면 이전 배율의 위치를 캐시하고, 선택 핸들이 줌 직후
+   * 어긋난 자리에 그려진다.
+   *
+   * `defer` 를 켜면 그 턴의 모든 동기 effect 가 끝난 뒤에 콜백이 돈다 — 등록 순서와 무관해진다.
+   *
+   * **레이아웃을 읽지 않는 콜백에는 쓰지 않는다.** 미루는 만큼 상태가 한 틱 늦게 반영된다.
+   */
+  defer?: boolean
+}
+
 /**
  * 특정 값이 바뀔 때만 콜백을 부른다. Vue 의 `watch(source, cb)` 자리.
  *
  * `effect` 와 달리 콜백 안에서 읽는 signal 은 의존성이 되지 않는다 — `source` 만 본다.
  * 콜백이 다른 상태를 읽고 쓰는 경우가 많아서, 그것까지 구독하면 의도하지 않은 재실행이 생긴다.
+ *
+ * **여러 값을 보려면 배열을 반환한다.** `Object.is` 로 비교하므로 배열은 매번 다른 참조가 되지만,
+ * `source` 가 다시 실행되는 것 자체가 의존성이 실제로 바뀐 경우이므로 결과는 같다.
+ *
+ * ```ts
+ * watch(() => [pageListWidth.value, inspectorWidth.value], persist)
+ * ```
  */
 export function watch<T>(
   source: () => T,
   cb: (value: T, prev: T | undefined) => void,
-  options?: { immediate?: boolean },
+  options?: WatchOptions,
 ): Dispose {
   let prev: T | undefined
   let first = true
-  return effect(() => {
+  const defer = options?.defer === true
+
+  /** 미뤄 둔 호출. 한 턴에 여러 번 바뀌어도 마지막 것만 돈다. */
+  let queued: { value: T; before: T | undefined } | null = null
+  let disposed = false
+
+  const fire = (value: T, before: T | undefined) => {
+    if (!defer) {
+      untrack(() => cb(value, before))
+      return
+    }
+    const wasQueued = queued !== null
+    // 여러 번 바뀌면 마지막 값만 남긴다. `before` 는 이 턴의 최초 이전 값을 유지한다.
+    queued = { value, before: wasQueued ? queued!.before : before }
+    if (wasQueued) return
+    void Promise.resolve().then(() => {
+      const pendingCall = queued
+      queued = null
+      if (disposed || !pendingCall) return
+      untrack(() => cb(pendingCall.value, pendingCall.before))
+    })
+  }
+
+  const stop = effect(() => {
     const value = source()
     if (first) {
       first = false
       prev = value
-      if (options?.immediate) untrack(() => cb(value, undefined))
+      if (options?.immediate) fire(value, undefined)
       return
     }
     if (Object.is(value, prev)) return
     const before = prev
     prev = value
-    untrack(() => cb(value, before))
+    fire(value, before)
   })
+
+  const dispose: Dispose = () => {
+    disposed = true
+    queued = null
+    stop()
+  }
+  onCleanup(dispose)
+  return dispose
 }
 
 /* --------------------------------------------------------- batch·untrack -- */

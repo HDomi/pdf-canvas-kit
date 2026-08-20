@@ -37,10 +37,10 @@ interface Outcome {
   expected: string
 }
 
-function runCase(c: Case): Outcome {
+async function runCase(c: Case): Promise<Outcome> {
   const expected = stable(c.expected)
   try {
-    const actual = stable(c.actual())
+    const actual = stable(await c.actual())
     return { pass: actual === expected, actual, expected }
   } catch (err) {
     // 던진 예외도 결과로 취급한다. 케이스가 예외를 기대하는 경우가 있다.
@@ -57,7 +57,7 @@ const html: string[] = []
 for (const group of GROUPS) {
   const rows: string[] = []
   for (const c of group.cases) {
-    const r = runCase(c)
+    const r = await runCase(c)
     total++
     if (!r.pass) failed++
     rows.push(

@@ -41,11 +41,16 @@ import {
   type PDFCanvasObject,
 } from 'pdf-canvas-kit'
 
-/** 한 건의 검증 케이스. `actual` 은 렌더 시점에 실행된다. */
+/**
+ * 한 건의 검증 케이스. `actual` 은 렌더 시점에 실행된다.
+ *
+ * `Promise` 를 반환해도 된다. 마이크로태스크 경계를 넘어야 확인되는 것(예: `watch` 의 `defer`,
+ * 디바운스 저장)이 있어서 러너와 화면이 둘 다 await 한다.
+ */
 export interface Case {
   name: string
   expected: unknown
-  actual: () => unknown
+  actual: () => unknown | Promise<unknown>
 }
 
 export interface CaseGroup {

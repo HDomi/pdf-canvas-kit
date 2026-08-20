@@ -1896,8 +1896,8 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | --- | --- | --- |
 | **R0** ✅ | 안전장치 · 베이스라인 | `.gitignore` · `.prettierrc` 추가 → `npm run lint` 통과 ✅ (216개 파일 불일치 → 0). 리라이트 전 전체 코드 커밋 ✅ (`c18f552`) |
 | **R1** ✅ | 리네임 · 패키징 골격 | `pdf-canvas-kit` · `pck-` · MIT · `exports` 맵 3엔트리 ✅. **코드·설정에 옛 이름 0건** ✅. 네 게이트 + 데모 빌드 통과 ✅. 상세 20.6 |
-| **R2** ✅ | 반응성 · DOM substrate | `reactive.ts` + `h.ts` ✅. `/checks/` **162 케이스 / 23 그룹 통과** (순수 79 + 반응성 50 + DOM 33). happy-dom 으로 헤드리스 실행. 상세 20.7 |
-| **R3** | 컨트롤러 이식 | composables + 루트 스크립트 → `src/controller/`. ESLint 경계 규칙에 `controller` 추가 |
+| **R2** ✅ | 반응성 · DOM substrate | `reactive.ts` + `h.ts` ✅. `/checks/` 케이스 추가 (DOM 33건). happy-dom 으로 헤드리스 실행. 상세 20.7 |
+| **R3** ✅ | 컨트롤러 이식 | composables 9개 + 루트 스크립트 → `src/controller/` ✅ (이동이 아니라 **복사** — D23). ESLint 경계 규칙 추가 + 발동 확인 ✅. `/checks/` **202 케이스 / 27 그룹**. 상세 20.8 |
 | **R4** | 객체 · 페이지 렌더 | 객체 7종 + `PageFrame` + 배경 + 오버레이 + 핸들. `/editor-dom/` 에서 렌더·선택 확인 |
 | **R5** | 스테이지 | 줌 · 팬 · 포인터 배선. `/editor-dom/` 에서 생성·이동·리사이즈·회전 동작 |
 | **R6** | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 |
@@ -1993,10 +1993,15 @@ Vue 는 이름을 보고 속성인지 프로퍼티인지 추측한다. 그 추�
 `render` 는 항목과 인덱스를 **signal 로** 받는다. 키가 같고 내용만 바뀌면 노드를 다시 만들지 않고
 그 signal 만 갱신한다.
 
-#### 검증 — 129 → 162 케이스
+#### 검증 — DOM 케이스 33건 추가
 
-DOM 케이스 33건을 추가했다. 가장 중요한 것은 리스트 재조정이다 — 순서 변경 시
-`render` 재호출 0회, 같은 DOM 노드 객체 유지, 삭제 항목의 effect 정리를 각각 고정했다.
+가장 중요한 것은 리스트 재조정이다 — 순서 변경 시 `render` 재호출 0회, 같은 DOM 노드 객체 유지,
+삭제 항목의 effect 정리를 각각 고정했다.
+
+> **케이스 수를 실측으로 적는다.** `PCK_BREAKDOWN=1 npm run checks` 가 파일별 내역을 낸다.
+> 문서에 오래 적혀 있던 "79 케이스" 는 실제(101)와 달랐고, 그걸 물려받은 계산이 전부
+> 어긋났다. 2026.08.20 에 실측으로 바로잡았다 — 현재 **순수 101 + 반응성 35 + DOM 33 +
+> 컨트롤러 33 = 202** (27 그룹).
 
 **`happy-dom` 을 dev 의존성으로 채택했다** (3.3). 없으면 `h.ts` 전체가 헤드리스 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
@@ -2012,3 +2017,80 @@ production 의존성이 아니므로 소비자에게 전염되지 않는다 — 
 happy-dom 은 `getBoundingClientRect()` 가 전부 0 이다. **좌표 변환·맞춤 배율·줌 앵커링은
 헤드리스로 검증되지 않는다** — 실제 레이아웃이 필요하다. 브라우저에서 손으로 확인해야 하고,
 이것이 R4~R8 의 주된 위험이다(20.5).
+
+### 20.8 R3 — 컨트롤러 이식 (2026.08.20 완료)
+
+`src/vue/composables/**` 9개 + `PDFCanvasEditor.vue` 의 `<script setup>` ~900줄 →
+`src/controller/**` 11개 파일. **이동이 아니라 복사**다 — Vue 층은 R9 까지 살아 있어야
+회귀를 대조할 수 있다(D23). 대응표는 `src/controller/README.md`.
+
+| 계층 | DOM | 프레임워크 |
+| --- | --- | --- |
+| `src/core/` | 모름 | 모름 |
+| **`src/controller/`** | **안다** (스크롤·rect·리스너) | 모름 |
+| `src/dom/` | 안다 (생성·바인딩) | 모름 |
+| `src/react/` · `src/vue/` | 안다 | 안다 |
+
+ESLint 가 `src/dom/**` · `src/controller/**` 의 `vue` · `react` import 를 막는다.
+**규칙이 실제로 발동하는지 확인했다** — 임시로 import 를 넣어 두 파일 모두에서 에러를 재현했다.
+문서로만 적은 경계는 잊히지만 린트는 잊히지 않는다.
+
+#### 이식에서 실제로 달라진 것 3개
+
+| 지점 | Vue | 여기 | 왜 |
+| --- | --- | --- | --- |
+| 뷰 상태 | `ref(createViewState())` + 필드 변형 | **필드마다 signal** | signal 은 얕다. 같은 코드가 조용히 실패한다(§12.1) |
+| 스테이지 | 모든 보정 앞에 `await nextTick()` (5곳) | **동기** | effect 가 동기라 대입 직후 스타일이 갱신돼 있고, `scrollWidth` 읽기가 reflow 를 강제한다 |
+| 뷰포트 측정 | `watch(..., { flush: 'post' })` | `watch(..., { defer: true })` | effect 순서는 등록 순서다. 컨트롤러가 DOM 보다 먼저 만들어지므로 미루지 않으면 **낡은 좌표**를 캐시한다 |
+
+`defer` 는 이번에 `reactive.ts` 에 추가했다. Vue 의 `flush: 'post'` 자리이며, 마이크로태스크로
+미뤄 그 턴의 동기 effect 가 모두 끝난 뒤에 콜백을 돌린다. 검증 케이스 6건으로 고정했다 —
+합치기(마지막 값 · 최초 이전 값 유지), dispose 취소, `immediate` 조합, scope 정리.
+
+#### ★ 이식하다 발견한 버그 — 초기 `doc` 이 있으면 스테이지가 빈 화면
+
+`watch(pageCount, ...)` 에 `immediate` 가 없었다. **초기 `doc` 에 페이지가 이미 있으면**
+`pageCount` 가 처음부터 N 이고 한 번도 *변하지* 않으므로 감시자가 돌지 않는다.
+`currentPageIndex` 가 `-1` 로 남아 툴바는 있는데 스테이지가 비어 보인다.
+
+데모는 항상 `doc: null` 로 시작해 파일을 import 하므로 `0 → N` 전이가 생겨 이 경로를 밟지
+않았다. 그래서 M3 부터 지금까지 발견되지 않았다 — **README 첫 줄의
+`<PDFCanvasEditor :doc="doc" />` 가 정확히 이 경로다.**
+
+`immediate: true` + `prev === undefined` 조건으로 고쳤다. 재현 케이스를 함께 넣었다.
+
+> ⚠️ **Vue 판(`src/vue/PDFCanvasEditor.vue`)은 고치지 않았다.** 기준 구현을 건드리지 않는 것이
+> D23 의 원칙이고, 그 층은 R9 에서 삭제된다. 그때까지 Vue 경로로 초기 문서를 넘기는 소비자가
+> 있으면 이 버그를 만난다 — 현재 소비자가 없으므로(미배포) 받아들일 수 있다고 판단했다.
+
+#### 함께 정리한 것
+
+- `isTextEntry` 가 `usePan.ts` 와 루트 컴포넌트에 **각각 복사**돼 있었다. 한쪽만 고치면 팬과
+  단축키가 서로 다른 판정을 하기 시작하므로 `controller/textEntry.ts` 로 모았다.
+- `createEditorViewSignals()` 의 기본값을 `createViewState()` 에서 가져온다. 리터럴로 다시
+  적었다가 `gridSnap` 을 틀렸다 — 상수 `snapGrid` 는 4 인데 기본은 **꺼짐**이다.
+- `promoteBackgrounds()` 의 반환형을 `Promise<boolean>` 으로 바로잡았다. 엔진이 "승격된 것이
+  있었나" 를 돌려주는데 계약에 `void` 로 적혀 있었다.
+
+#### 검증 — 컨트롤러 케이스 33건 추가 (전체 202)
+
+컨트롤러 케이스 33건. 조립체라 순수 함수처럼 입출력을 볼 수 없으므로 **signal 배선**을 본다 —
+`pageNav` 의 클램프·선택 비우기, 루트의 액션·prop 갱신·undo, scope dispose 후 콜백 정지.
+
+헤드리스에서 컨트롤러를 돌리려고 러너를 두 번 고쳤다.
+
+| 문제 | 원인 | 조치 |
+| --- | --- | --- |
+| `Cannot find package 'pdfjs-dist'` | 번들을 `os.tmpdir()` 에 써서, 상위로 올라가며 `node_modules` 를 찾는 해석이 실패 | 번들 위치를 `node_modules/.pck-checks` 로 |
+| `DOMMatrix is not defined` | `pdfjs-dist` 가 모듈 최상위에서 `new DOMMatrix()` 를 만든다 | 최소 스텁. 여기서 PDF 기능을 검증하지는 않고 **모듈 로드만** 필요하다 |
+| `parameter 1 is not of type 'Event'` | Node 22 가 `Event` 를 자체 정의하므로 happy-dom 판이 안 올라가고, happy-dom `EventTarget` 이 거부 | DOM 생성자 4개를 강제로 덮어쓴다 |
+
+#### 미결정 — R8 에서 정한다
+
+**`doc` 은 controlled prop 이 아니다.** 최초 1회만 읽고 이후 변경은 무시한다(Vue 판과 동일).
+`<PDFCanvasEditor doc={doc} onChange={setDoc} />` 는 controlled 처럼 보이는데 아니므로 React
+소비자에게 함정이다. 이식 단계에서 동작을 바꾸지 않았고, R8 에서 셋 중 하나를 택한다.
+
+1. 그대로 두고 문서에 명시 (문서 교체는 `key` 변경으로 리마운트)
+2. `doc` 변경을 감지해 엔진 문서를 교체 — 히스토리를 어떻게 할지 정해야 한다
+3. prop 이름을 `initialDoc` 으로 바꿔 계약을 이름으로 드러낸다

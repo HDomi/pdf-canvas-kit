@@ -92,9 +92,39 @@ export default tseslint.config(
     },
   },
 
+  /*
+   * 렌더 층·컨트롤러 경계 (PLAN D19).
+   *
+   * `src/dom/**` 과 `src/controller/**` 는 프레임워크 무관 층이다. Vue 나 React 를 import 하면
+   * 그 순간 "프레임워크 런타임 0KB" 라는 D19 의 전제가 깨지고, 그 사실이 번들 크기로만
+   * 드러난다 — 린트로 막는 편이 빠르다.
+   *
+   * 반대 방향(`src/react/**` · `src/vue/**` → `src/dom/**`)은 정상이다. 래퍼가 얇은 이유가 그것이다.
+   */
+  {
+    files: ['src/dom/**/*.ts', 'src/controller/**/*.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: ['vue', 'vue/*', '@vueuse/*', 'react', 'react/*', 'react-dom', 'react-dom/*'],
+              message: 'the render layer must stay framework-agnostic (PLAN D19)',
+            },
+            {
+              group: ['**/*.vue', '../vue/**', '../react/**', '**/src/vue/**', '**/src/react/**'],
+              message: 'the render layer must not depend on a framework wrapper (PLAN D19)',
+            },
+          ],
+        },
+      ],
+    },
+  },
+
   // 객체 렌더 컴포넌트는 좌표 변환을 호출하지 않는다 (PLAN 5.4)
   {
-    files: ['src/vue/editor/objects/**'],
+    files: ['src/vue/editor/objects/**', 'src/dom/editor/objects/**'],
     rules: {
       'no-restricted-imports': [
         'error',

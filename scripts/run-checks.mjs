@@ -21,8 +21,7 @@
  */
 import { build } from 'vite'
 import { Window } from 'happy-dom'
-import { mkdtempSync, rmSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { mkdirSync, rmSync } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
@@ -49,19 +48,66 @@ function stable(value) {
  * 만지는 코드가 있으면 그때 이미 필요하다.
  */
 const window = new Window({ url: 'http://localhost/' })
-for (const name of [
-  'window',
-  'document',
-  'Node',
-  'Element',
-  'HTMLElement',
-  'Event',
-  'CustomEvent',
-]) {
-  globalThis[name] = window[name]
+
+/*
+ * happy-dom 이 제공하는 것을 전부 전역에 올린다. 이름을 하나씩 나열하면 케이스가 새 API 를
+ * 쓸 때마다 여기를 고쳐야 하고, 빠뜨렸을 때 증상이 "왜 이 케이스만 죽지" 가 된다.
+ */
+for (const name of Object.getOwnPropertyNames(window)) {
+  if (name in globalThis) continue
+  try {
+    globalThis[name] = window[name]
+  } catch {
+    // getter 가 던지는 항목이 있다. 그건 건너뛴다.
+  }
+}
+globalThis.window ??= window
+globalThis.document ??= window.document
+
+/*
+ * Node 22 는 `Event` · `EventTarget` · `CustomEvent` 를 **자체적으로** 정의한다. 위 루프는
+ * `name in globalThis` 로 건너뛰므로 그 Node 판이 남고, happy-dom 의 `EventTarget` 이
+ * "parameter 1 is not of type 'Event'" 로 거부한다. 이건 반드시 덮어써야 한다.
+ */
+for (const name of ['Event', 'EventTarget', 'CustomEvent', 'MessageEvent']) {
+  if (window[name]) globalThis[name] = window[name]
 }
 
-const outDir = mkdtempSync(join(tmpdir(), 'pck-checks-'))
+/*
+ * `pdfjs-dist` 는 모듈 최상위에서 `new DOMMatrix()` 를 만든다. happy-dom 에는 없다.
+ *
+ * 여기서 PDF 기능을 검증하지는 않는다 — 컨트롤러가 엔진을 import 하고 엔진이 PDF 파이프라인을
+ * import 하므로 **모듈이 로드되기만** 하면 된다. 그래서 최소 스텁으로 끝낸다.
+ *
+ * ⚠️ 이 스텁으로 렌더·변환을 검증할 수는 없다. PDF 경로는 `/spike/` 에서 실제 브라우저로
+ * 확인한다 (PLAN 10.3).
+ */
+if (!('DOMMatrix' in globalThis)) {
+  globalThis.DOMMatrix = class DOMMatrixStub {
+    constructor() {
+      Object.assign(this, { a: 1, b: 0, c: 0, d: 1, e: 0, f: 0 })
+    }
+    scale() {
+      return this
+    }
+    translate() {
+      return this
+    }
+    transformPoint(p) {
+      return p
+    }
+  }
+}
+
+/*
+ * 번들을 **프로젝트 안에** 쓴다.
+ *
+ * `os.tmpdir()` 에 쓰면 externalize 된 의존성(`pdfjs-dist`)을 Node 가 해석하지 못한다 —
+ * 모듈 해석이 상위 디렉토리의 `node_modules` 를 찾아 올라가는데, /tmp 위에는 없다.
+ * `node_modules/` 안이면 그 탐색이 그대로 성립하고, 이미 gitignore 대상이다.
+ */
+const outDir = join(root, 'node_modules/.pck-checks')
+mkdirSync(outDir, { recursive: true })
 
 try {
   const result = await build({
@@ -94,7 +140,28 @@ try {
   const chunk = outputs.flatMap((o) => o.output ?? []).find((c) => c.type === 'chunk' && c.isEntry)
   if (!chunk) throw new Error('run-checks: bundler produced no entry chunk')
 
-  const { ALL_GROUPS } = await import(pathToFileURL(join(outDir, chunk.fileName)).href)
+  const mod = await import(pathToFileURL(join(outDir, chunk.fileName)).href)
+  const { ALL_GROUPS } = mod
+  if (process.env.PCK_BREAKDOWN) {
+    const src = {
+      GROUPS: 'pure',
+      REACTIVE_GROUPS: 'reactive',
+      DOM_GROUPS: 'dom',
+      CONTROLLER_GROUPS: 'controller',
+    }
+    for (const [k, label] of Object.entries(src)) {
+      const g = mod[k]
+      if (!g) {
+        console.log(label, 'NOT EXPORTED')
+        continue
+      }
+      console.log(
+        label.padEnd(11),
+        'groups=' + g.length,
+        'cases=' + g.reduce((n, x) => n + x.cases.length, 0),
+      )
+    }
+  }
 
   let total = 0
   let failed = 0
@@ -106,7 +173,7 @@ try {
       const expected = stable(c.expected)
       let actual
       try {
-        actual = stable(c.actual())
+        actual = stable(await c.actual())
       } catch (err) {
         // 던진 예외도 결과로 취급한다. 케이스가 예외를 기대하는 경우가 있다.
         actual = `throw: ${String(err)}`

@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-1.7 |
+| 문서 버전 | arch-1.8 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R2 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R3 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -28,7 +28,12 @@
                             │ createPdfCanvasEditor(el, props) → EditorHandle
 ┌───────────────────────────▼─────────────────────────────────┐
 │ src/dom/            프레임워크 무관 렌더 층                    │
-│  reactive.ts (§12) · h.ts · editor/**  — DOM 을 직접 바인딩   │
+│  reactive.ts (§12) · h.ts (§13) · editor/** — DOM 을 바인딩   │
+└───────────────────────────┬─────────────────────────────────┘
+                            │ signal 을 읽고 액션을 부른다
+┌───────────────────────────▼─────────────────────────────────┐
+│ src/controller/     DOM 은 알고 프레임워크는 모른다 (§14)      │
+│  editor.ts · stage.ts · pageViewport.ts · pointerTool.ts …   │
 └───────────────────────────┬─────────────────────────────────┘
                             │ 함수 호출만. 역방향 의존 없음
 ┌───────────────────────────▼─────────────────────────────────┐
@@ -69,6 +74,7 @@
 | 박스 기본 색 | `tokens.css` → `--pck-answerbox-*` | 객체가 색을 지정하지 않았을 때만 적용(§3.3) |
 | UI 문구 | `src/core/i18n/{ko,en}.ts` | 하드코딩 금지(기획 3.2) |
 | 반응성 동작 (signal·effect) | [src/dom/reactive.ts](src/dom/reactive.ts) | **§12.** 깊은 반응성이 없다는 함정을 먼저 읽는다 |
+| 편집기 동작·단축키·액션 | [src/controller/editor.ts](src/controller/editor.ts) | **§14.** UI 가 아니라 여기가 동작을 정한다 |
 
 ---
 
@@ -523,6 +529,13 @@ src/
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
 │  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
 │  h.ts                      ★ el · svg · when · list — DOM 바인딩 (§13)
+├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
+│  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
+│  stage.ts                   배율·맞춤·앵커 줌
+│  pageViewport.ts           ★ frameRect 캐시·무효화 (defer 필수)
+│  pointerTool.ts             포인터 → 상태 머신
+│  pageNav.ts pan.ts panelSizes.ts pageReorder.ts
+│  engineState.ts i18n.ts editorState.ts textEntry.ts
 ├─ vue/                      모든 UI  ⚠️ R9 에서 삭제 예정 (PLAN D23)
 │  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
 │  ├─ composables/
@@ -661,13 +674,18 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **162 케이스 / 23 그룹** (순수 함수 79 + 반응성 50 + DOM 33 — §12·§13)
+   **202 케이스 / 27 그룹** (순수 101 + 반응성 35 + DOM 33 + 컨트롤러 33 — §12·§13·§14)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks     # 162 / 162 passed · 23 groups · ok  (실패 시 exit 1)
+npm run checks                    # 202 / 202 passed · 27 groups · ok  (실패 시 exit 1)
+PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
+
+**케이스 수를 문서에 적을 때는 위 명령으로 확인한다.** 이 문서에 오래 적혀 있던 "79 케이스" 는
+실제(101)와 달랐다 — 케이스를 추가하면서 수치를 갱신하지 않은 결과였고, 그 뒤 계산이 전부
+어긋났다(2026.08.20 정정).
 
 케이스는 `demo/checks/allCases.ts` 가 단일 출처다 —
 **화면(`main.ts`)과 헤드리스 러너(`scripts/run-checks.mjs`)가 같은 배열을 소비한다.**
@@ -678,7 +696,8 @@ npm run checks     # 162 / 162 passed · 23 groups · ok  (실패 시 exit 1)
 | `demo/checks/cases.ts` | 순수 함수 케이스 — 입력 → 출력 한 줄 |
 | `demo/checks/reactiveCases.ts` | 반응성 케이스 — 상태 변화 **순서**를 확인 |
 | `demo/checks/domCases.ts` | 렌더 층 케이스 — 바인딩·조건부·**키 리스트 재조정**. DOM 이 필요하다 |
-| `demo/checks/allCases.ts` | 셋을 합친 단일 출처 |
+| `demo/checks/controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션. DOM 이 필요하다 |
+| `demo/checks/allCases.ts` | 넷을 합친 단일 출처 |
 
 DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
@@ -849,3 +868,58 @@ SVG 는 별도 네임스페이스라 `createElement` 로 만들면 **렌더되�
 깨진다. 주석은 레이아웃에 영향이 없다.
 
 DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어야 한다.
+
+---
+
+## 14. 컨트롤러 (`src/controller/`)
+
+**동작이 여기 있다.** UI 컴포넌트는 signal 을 읽어 그리고 액션을 부를 뿐이다.
+편집기 동작을 바꾸려면 컴포넌트가 아니라 이 디렉토리를 본다.
+
+`src/core/` 와 다른 점: **DOM 을 안다.** 스크롤 컨테이너를 잡고 `getBoundingClientRect()` 를
+읽고 `window` 리스너를 붙인다. 대신 프레임워크는 모른다 — ESLint 가 막는다(§10).
+
+| 파일 | 담당 |
+| --- | --- |
+| `editor.ts` | ★ 루트. 조립·단축키·객체/페이지 액션·검증·내보내기 게이트 |
+| `stage.ts` | 배율·맞춤 모드·앵커 줌·`scrollRectIntoView` |
+| `pageViewport.ts` | ★ 프레임 위치 캐시와 무효화 (좌표 변환의 입력) |
+| `pointerTool.ts` | 포인터 이벤트 → 상태 머신 → 커밋 |
+| `pageNav.ts` | 현재 페이지 전환·클램프 |
+| `pan.ts` | Space/중간버튼 드래그 팬 |
+| `panelSizes.ts` | 패널 폭 리사이즈 + localStorage |
+| `pageReorder.ts` | 썸네일 드래그 순서 변경 |
+| `engineState.ts` | 엔진 → signal 브릿지 |
+| `i18n.ts` · `editorState.ts` · `textEntry.ts` | 문구·뷰 상태 signal·입력 판정 |
+
+### 14.1 렌더 층과의 계약
+
+`createEditorController(props)` 가 `EditorController` 를 돌려준다. 렌더 층이 쓰는 것은
+**signal(읽기)과 함수(액션)뿐**이다. 컨트롤러는 DOM 을 만들지 않는다.
+
+엘리먼트는 렌더 층이 `ref` 콜백으로 넘긴다 — `setStageEl` · `setFrameEl` · `setPageListEl`.
+스테이지는 문서에 페이지가 있는 동안만 존재하므로 한 번 넘기는 게 아니라 마운트가 바뀔 때마다
+넘긴다.
+
+### 14.2 `props` 계약 ★ — `doc` 은 controlled 가 아니다
+
+`setProps()` 로 갱신되는 것과 **최초 1회만 읽는 것**이 나뉜다. React 는 렌더마다 `setProps` 를
+부르므로 이 구분이 중요하다.
+
+| prop | 갱신 |
+| --- | --- |
+| `locale` · `readOnly` · `autosave` · `on*` 콜백 | 반영된다 |
+| `ports` · `uploadFile` | 반영된다 — 단 엔진에 이미 넘어간 port 는 교체되지 않는다 |
+| **`doc`** · **`initialScale`** | **최초 1회만.** 이후 변경은 무시된다 |
+
+⚠️ `<PDFCanvasEditor doc={doc} onChange={setDoc} />` 는 controlled 처럼 보이지만 아니다.
+편집기가 문서를 소유하고 변경을 밖으로 밀어낼 뿐이다. 문서를 교체해야 하면 컴포넌트를 다시
+마운트한다(React 는 `key` 변경). 이 계약을 바꿀지는 PLAN 20.8 에서 R8 로 미뤄 두었다.
+
+### 14.3 이식 함정 (Vue → 여기)
+
+전체 대응표는 [src/controller/README.md](src/controller/README.md). 조용히 실패하는 것 셋:
+
+1. **깊은 반응성이 없다** — `view.value.activeTool = x` 는 아무 일도 하지 않는다(§12.1)
+2. **`nextTick()` 이 사라진다** — effect 가 동기라 대입 직후 스타일이 갱신돼 있다
+3. **레이아웃을 읽는 `watch` 는 `defer: true`** — 아니면 낡은 좌표를 캐시한다(§12.1 ②)

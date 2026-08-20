@@ -11,7 +11,7 @@
  * 이 파일은 공개 API 가 아니라 내부 모듈을 직접 import 한다. reactive 는 라이브러리 소비자가
  * 아니라 UI 층이 쓰는 것이라 `src/index.ts` 에 내보내지 않는다.
  */
-import { batch, computed, effect, signal, untrack, watch } from '../../src/dom/reactive'
+import { batch, computed, effect, scope, signal, untrack, watch } from '../../src/dom/reactive'
 import type { CaseGroup } from './cases'
 
 export const REACTIVE_GROUPS: CaseGroup[] = [
@@ -273,6 +273,136 @@ export const REACTIVE_GROUPS: CaseGroup[] = [
           )
           stop()
           return got
+        },
+      },
+      {
+        name: '여러 값을 배열로 본다',
+        expected: [
+          [1, 'b'],
+          [2, 'b'],
+        ],
+        actual: () => {
+          const a = signal(1)
+          const b = signal('a')
+          const got: unknown[] = []
+          const stop = watch(
+            () => [a.value, b.value],
+            (v) => got.push(v),
+          )
+          b.value = 'b'
+          a.value = 2
+          stop()
+          return got
+        },
+      },
+      {
+        name: 'defer 는 동기 구간에서 콜백을 부르지 않는다',
+        expected: 0,
+        actual: () => {
+          const a = signal(1)
+          let calls = 0
+          const stop = watch(
+            () => a.value,
+            () => calls++,
+            { defer: true },
+          )
+          a.value = 2
+          stop()
+          return calls
+        },
+      },
+      {
+        name: 'defer 콜백은 마이크로태스크에서 실제로 돈다',
+        expected: [2, 1],
+        actual: async () => {
+          const a = signal(1)
+          const got: Array<number | undefined> = []
+          const stop = watch(
+            () => a.value,
+            (v, p) => got.push(v, p),
+            { defer: true },
+          )
+          a.value = 2
+          await Promise.resolve()
+          stop()
+          return got
+        },
+      },
+      {
+        name: 'defer 는 한 턴의 여러 변경을 1회로 합친다 (마지막 값 · 최초 이전 값)',
+        expected: [
+          [2, 1],
+          [5, 2],
+        ],
+        actual: async () => {
+          const a = signal(1)
+          const got: Array<[number, number | undefined]> = []
+          const stop = watch(
+            () => a.value,
+            (v, p) => got.push([v, p]),
+            { defer: true },
+          )
+          a.value = 2
+          await Promise.resolve()
+          a.value = 3
+          a.value = 4
+          a.value = 5
+          await Promise.resolve()
+          stop()
+          return got
+        },
+      },
+      {
+        name: 'dispose 는 미뤄 둔 defer 콜백을 취소한다',
+        expected: 0,
+        actual: async () => {
+          const a = signal(1)
+          let calls = 0
+          const stop = watch(
+            () => a.value,
+            () => calls++,
+            { defer: true },
+          )
+          a.value = 2
+          stop()
+          await Promise.resolve()
+          return calls
+        },
+      },
+      {
+        name: 'immediate + defer 도 마이크로태스크에서 돈다',
+        expected: [0, 1],
+        actual: async () => {
+          const c = signal('x')
+          let calls = 0
+          const stop = watch(
+            () => c.value,
+            () => calls++,
+            { immediate: true, defer: true },
+          )
+          const sync = calls
+          await Promise.resolve()
+          stop()
+          return [sync, calls]
+        },
+      },
+      {
+        name: 'scope dispose 가 미뤄 둔 defer 콜백도 취소한다',
+        expected: 0,
+        actual: async () => {
+          const d = signal(1)
+          let calls = 0
+          const [, dispose] = scope(() => {
+            watch(
+              () => d.value,
+              () => calls++,
+              { defer: true },
+            )
+          })
+          d.value = 2
+          dispose()
+          await Promise.resolve()
+          return calls
         },
       },
       {

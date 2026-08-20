@@ -150,6 +150,7 @@ try {
       CONTROLLER_GROUPS: 'controller',
       OBJECT_RENDER_GROUPS: 'render',
       SHELL_GROUPS: 'shell',
+      INSPECTOR_GROUPS: 'inspector',
     }
     for (const [k, label] of Object.entries(src)) {
       const g = mod[k]

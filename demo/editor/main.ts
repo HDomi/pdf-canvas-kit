@@ -8,9 +8,8 @@
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
- * ⚠️ **R6 시점의 상태다.** 상단바·툴바·페이지 목록·줌 컨트롤·다이얼로그까지 붙어 있고
- * **인스펙터만 R7 에서 붙는다.** 편집기 안의 [문서 불러오기] 도 이제 동작한다 — 아래 dev 바는
- * 픽스처를 빨리 띄우기 위한 것이다.
+ * **R7 시점 — 편집기 UI 가 전부 붙었다.** 상단바·툴바·페이지 목록·줌 컨트롤·다이얼로그·인스펙터.
+ * 아래 dev 바는 픽스처를 빨리 띄우기 위한 것이고, 편집기 안의 [문서 불러오기] 도 동작한다.
  */
 import {
   clearPrototypeSave,
@@ -127,7 +126,7 @@ async function loadFixture(name: string): Promise<void> {
  */
 const [nodes] = scope(() => [
   el('div', { class: 'devbar' }, [
-    el('strong', {}, ['editor (R6)']),
+    el('strong', {}, ['editor (R7)']),
     ...FIXTURES.map(([file, label]) =>
       el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
         label,

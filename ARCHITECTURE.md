@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.1 |
+| 문서 버전 | arch-2.2 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R6 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R7 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -542,6 +542,9 @@ src/
 │    topBar.ts titleInput.ts saveBadge.ts toolbar.ts pageMeta.ts
 │    pageThumbList.ts stageControls.ts pageContextMenu.ts emptyState.ts
 │    dialogs/{confirmDialog,uploadDialog}.ts
+│    inspector/inspector.ts   ★ 유형별 분기 — when 조건을 **유형**으로 둔다 (§13.2)
+│    inspector/fields.ts       공용 폼 위젯 — 패널 6개가 공유
+│    inspector/{answerPanels,objectPanels,boxStylePanel}.ts
 │    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
@@ -687,12 +690,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **266 케이스 / 37 그룹** (순수 101 + 반응성 35 + DOM 35 + 컨트롤러 36 + 렌더 39 + 셸 20 — §12~§14)
+   **295 케이스 / 40 그룹** (순수 101 + 반응성 35 + DOM 35 + 컨트롤러 36 + 렌더 39 + 셸 20 + 인스펙터 29)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 266 / 266 passed · 37 groups · ok  (실패 시 exit 1)
+npm run checks                    # 295 / 295 passed · 40 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -712,7 +715,8 @@ PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 | `demo/checks/controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션. DOM 이 필요하다 |
 | `demo/checks/objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조. DOM 이 필요하다 |
 | `demo/checks/shellCases.ts` | 편집기 셸 조립 — 컨트롤러↔컴포넌트 계약. DOM 이 필요하다 |
-| `demo/checks/allCases.ts` | 여섯을 합친 단일 출처 |
+| `demo/checks/inspectorCases.ts` | 인스펙터 — 유형별 분기·패치 내용·BoxStyle 3상태. DOM 이 필요하다 |
+| `demo/checks/allCases.ts` | 일곱을 합친 단일 출처 |
 
 DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.

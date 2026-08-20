@@ -26,6 +26,7 @@ import type { EditorController } from '../../controller/editor'
 import { confirmDialog } from './dialogs/confirmDialog'
 import { uploadDialog } from './dialogs/uploadDialog'
 import { emptyState } from './emptyState'
+import { inspector } from './inspector/inspector'
 import { pageContextMenu } from './pageContextMenu'
 import { pageMeta } from './pageMeta'
 import { pageThumbList } from './pageThumbList'
@@ -153,14 +154,14 @@ export function editorShell(c: EditorController): HTMLElement {
 
         resizer('inspector', 'panel.resizeInspector'),
 
-        /*
-         * 인스펙터는 R7 에서 붙는다. 지금은 자리만 잡아 3분할 레이아웃과 패널 폭 리사이즈를
-         * 확인할 수 있게 한다 — 빈 `aside` 가 없으면 grid 열이 무너진다.
-         */
-        el('aside', { class: 'pck-inspector' }, [
-          el('header', { class: 'pck-panel-head' }, [el('span', {}, [text('inspector.title')])]),
-          el('p', { class: 'pck-panel-empty' }, ['인스펙터는 R7 에서 붙는다.']),
-        ]),
+        inspector({
+          selected: c.selectedObjects,
+          autoNumber: c.autoNumber,
+          readOnly: c.readOnly,
+          onUpdate: c.updateObject,
+          onRemove: (id) => c.deleteSelection([id]),
+          onRotate: c.rotateObject,
+        }),
       ],
     ),
 

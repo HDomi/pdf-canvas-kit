@@ -13,6 +13,7 @@
  * | `controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션 | **예** |
  * | `objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조 | **예** |
  * | `shellCases.ts` | 편집기 셸 조립 — 컨트롤러↔컴포넌트 계약 | **예** |
+ * | `inspectorCases.ts` | 인스펙터 — 유형별 분기·패치 내용·BoxStyle 3상태 | **예** |
  *
  * 헤드리스 러너(`scripts/run-checks.mjs`)는 happy-dom 으로 전역 `document` 를 세운 뒤
  * 이 모듈을 불러온다. 브라우저에서는 실제 DOM 을 그대로 쓴다.
@@ -23,6 +24,7 @@ import { DOM_GROUPS } from './domCases'
 import { CONTROLLER_GROUPS } from './controllerCases'
 import { OBJECT_RENDER_GROUPS } from './objectRenderCases'
 import { SHELL_GROUPS } from './shellCases'
+import { INSPECTOR_GROUPS } from './inspectorCases'
 
 export type { Case, CaseGroup } from './cases'
 
@@ -33,6 +35,7 @@ export const ALL_GROUPS: CaseGroup[] = [
   ...CONTROLLER_GROUPS,
   ...OBJECT_RENDER_GROUPS,
   ...SHELL_GROUPS,
+  ...INSPECTOR_GROUPS,
 ]
 
 /* 내역 집계용 재export. `PCK_BREAKDOWN=1 npm run checks` 가 읽는다. */
@@ -42,3 +45,4 @@ export { DOM_GROUPS } from './domCases'
 export { CONTROLLER_GROUPS } from './controllerCases'
 export { OBJECT_RENDER_GROUPS } from './objectRenderCases'
 export { SHELL_GROUPS } from './shellCases'
+export { INSPECTOR_GROUPS } from './inspectorCases'

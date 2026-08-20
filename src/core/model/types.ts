@@ -112,7 +112,7 @@ export interface PDFCanvasDoc {
  *
  * ## 왜 모든 필드가 optional 인가
  *
- * 값을 주지 않으면 CSS 토큰(`--pck-answerbox-bg` 등)의 기본값이 그대로 적용된다. 객체마다 색을
+ * 값을 주지 않으면 CSS 토큰(`--pck-custom-bg` 등)의 기본값이 그대로 적용된다. 객체마다 색을
  * 하드코딩해 채워 두면 호스트 앱이 `--pck-*` 로 테마를 바꿀 수 없다 (ARCHITECTURE §3).
  *
  * 그래서 "지정하지 않음" 과 "지정함" 을 구분한다. 렌더는 지정된 값만 인라인 스타일로 덮는다.
@@ -191,68 +191,48 @@ export interface MaskObject extends ObjectBase {
   fill: string
 }
 
-/** Answer Box 3종이 공유하는 필드. */
-interface AnswerBoxBase extends ObjectBase {
+/**
+ * 소비자가 정의한 커스텀 객체 (PLAN D25).
+ *
+ * 이 패키지는 **기본 틀**만 제공한다 — pt 사각형, 리사이즈 핸들, 배경·테두리, 회전.
+ * 그 안에 무엇을 그릴지는 소비자가 `objectTypes` 레지스트리로 정한다.
+ *
+ * ```ts
+ * // 소비자 앱
+ * const shortAnswer = defineObjectType({
+ *   kind: 'answer.short',
+ *   label: '단답형',
+ *   defaultSize: { w: 160, h: 40 },
+ *   defaultData: () => ({ answers: [], points: 5 }),
+ * })
+ * ```
+ *
+ * ## 왜 Answer Box 를 타입으로 두지 않는가
+ *
+ * 이전 판에는 `ShortAnswerBox` · `EssayAnswerBox` · `DropboxAnswerBox` 가 있었고, 그에 딸린
+ * 채점·문항 번호·정답 제거·검증이 코어에 있었다. 그건 **문제지 편집기**의 기능이고 이 패키지의
+ * 이름과 범위(PDF 위에 객체를 배치하는 도구)와 맞지 않았다. 문제지 도메인은 소비자 앱으로
+ * 옮겼다 — 상세는 PLAN D25.
+ */
+export interface CustomObject extends ObjectBase {
+  type: 'custom'
+  /** 레지스트리 키. 소비자가 이 값으로 렌더러를 찾는다. */
+  kind: string
   /**
-   * 정답 시 부여하는 배점. 1 이상 정수, 기본 1.
+   * 소비자 데이터. **JSON 직렬화가 가능해야 한다** — 문서에 그대로 실린다.
    *
-   * all-or-nothing이다 — 틀리거나 미응답이면 0점이고 부분 점수는 없다 (기획 3.3).
+   * 이 패키지는 내용을 해석하지 않는다. 검증·채점이 필요하면 소비자가
+   * `objectType.validate(data)` 를 제공한다.
    */
-  points: number
-  /** 교사에게 보이는 문항 번호. 자동 부여 + 수동 오버라이드 (PLAN Q9). */
-  label?: string
+  data: unknown
   /**
    * 시각 스타일. 미지정 필드는 CSS 토큰 기본값을 따른다 (PLAN 18.8).
    *
-   * **학생 화면에도 그대로 적용된다.** 교사가 교재 배경에 맞춰 색을 조정하면 학생도 같은 모양을
-   * 봐야 하므로, `toPublicDoc` 이 이 필드를 제거하지 않는다.
+   * 기본 틀의 배경·테두리·글자색이다. 콘텐츠 내부 스타일은 소비자 컴포넌트가 정한다.
    */
   style?: BoxStyle
 }
 
-/**
- * 자유 텍스트 입력, 자동 채점.
- *
- * 비교 전에 공백을 제거하고 대소문자를 무시한다(기획 3.3). 그래서 "Seoul" 과 "seo ul" 이
- * 모두 "seoul" 과 일치한다.
- */
-export interface ShortAnswerBox extends AnswerBoxBase {
-  type: 'answer.short'
-  /**
-   * 허용 정답. 1~5개, 각 1~50자.
-   * **하나라도** 일치하면 정답이며, 이게 동의어를 처리하는 방식이다.
-   */
-  answers: string[]
-}
-
-/**
- * 서술형 답안. **자동 채점 불가** — 교사가 Report에서 정답/오답을 지정하며,
- * 지정 전까지는 '미채점' 상태로 점수에 반영되지 않는다 (기획 3.3).
- */
-export interface EssayAnswerBox extends AnswerBoxBase {
-  type: 'answer.essay'
-  /** 교사용 채점 가이드. 학생 문서에서는 제거된다. */
-  rubric?: string
-}
-
-/**
- * 드롭다운 선택, 자동 채점. 학생에게는 placeholder "선택" 의 select로 보인다.
- */
-export interface DropboxAnswerBox extends AnswerBoxBase {
-  type: 'answer.dropbox'
-  /** 보기 2~5개, 각 1~50자. 배열 순서대로 학생에게 노출되고 중복은 거부한다. */
-  choices: { id: string; label: string }[]
-  /**
-   * 정답 보기. 최소 1개.
-   *
-   * 복수면 학생이 **지정 정답을 모두, 그리고 그것만** 선택해야 정답이다 —
-   * all-or-nothing, 부분 점수 없음 (기획 3.3).
-   */
-  correctChoiceIds: string[]
-}
-
-export type AnswerBox = ShortAnswerBox | EssayAnswerBox | DropboxAnswerBox
-
-export type PDFCanvasObject = TextObject | ShapeObject | MaskObject | AnswerBox
+export type PDFCanvasObject = TextObject | ShapeObject | MaskObject | CustomObject
 
 export type PDFCanvasObjectType = PDFCanvasObject['type']

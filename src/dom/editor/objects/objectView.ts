@@ -12,14 +12,13 @@
  *
  * 구 `src/vue/editor/objects/ObjectView.vue` 의 이식.
  */
-import { el, when, type Child } from '../../h'
+import { el, type Child } from '../../h'
 import type { ReadSignal } from '../../reactive'
 import type { PDFCanvasObject, Rect } from '../../../core/model/types'
-import { dropboxAnswerView } from './dropboxAnswerView'
-import { essayAnswerView } from './essayAnswerView'
+import { customObjectView } from './customObjectView'
 import { maskView } from './maskView'
 import { shapeObjectView } from './shapeObjectView'
-import { shortAnswerView } from './shortAnswerView'
+import type { ObjectTypeRegistry } from '../../../core/objectTypes'
 import { textObjectView } from './textObjectView'
 
 export interface ObjectViewProps {
@@ -34,9 +33,13 @@ export interface ObjectViewProps {
   previewRotation: () => number | null
   /** 이 객체가 인라인 텍스트 편집 중인지. */
   editing: () => boolean
-  /** 자동 부여된 문항 번호. Answer Box 에만 표시한다 (PLAN Q9). */
-  questionNumber: () => string | null
   onEditText: (value: string) => void
+  /** 커스텀 객체 타입 레지스트리 (PLAN D25). */
+  types?: ObjectTypeRegistry
+  /** 커스텀 객체의 데이터 변경. */
+  onChangeData?: (next: unknown) => void
+  /** 커스텀 객체의 콘텐츠 컨테이너를 알린다. 프레임워크 래퍼가 portal 한다. */
+  onMountCustom?: (objectId: string, el: HTMLElement | null) => void
 }
 
 export function objectView(props: ObjectViewProps): HTMLElement {
@@ -78,8 +81,6 @@ export function objectView(props: ObjectViewProps): HTMLElement {
 }
 
 function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
-  const questionNumber = props.questionNumber
-
   switch (type) {
     case 'text':
       return textObjectView({
@@ -98,38 +99,13 @@ function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
         object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'mask' }>>,
       })
 
-    case 'answer.short':
-      return shortAnswerView({
-        object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.short' }>>,
-        questionNumber,
-      })
-
-    case 'answer.essay':
-      return essayAnswerView({
-        object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.essay' }>>,
-        questionNumber,
-      })
-
-    case 'answer.dropbox':
-      return dropboxAnswerView({
-        object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.dropbox' }>>,
-        questionNumber,
+    case 'custom':
+      return customObjectView({
+        object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'custom' }>>,
+        selected: props.selected,
+        types: props.types,
+        onChange: (next) => props.onChangeData?.(next),
+        ...(props.onMountCustom ? { onMount: props.onMountCustom } : {}),
       })
   }
-}
-
-/**
- * Answer Box 3종이 공유하는 앞머리 — 문항 번호 배지와 배점.
- *
- * 세 뷰에 같은 두 줄을 복사해 두면 배지 순서나 클래스가 갈라진다. 실제로 Vue 판에서
- * 세 파일이 같은 마크업을 각자 들고 있었다.
- */
-export function answerBadges(questionNumber: () => string | null, points: () => number): Child[] {
-  return [
-    when(
-      () => questionNumber() !== null,
-      () => el('span', { class: 'pck-answer-no' }, [() => questionNumber()]),
-    ),
-    el('span', { class: 'pck-answer-badge' }, [points]),
-  ]
 }

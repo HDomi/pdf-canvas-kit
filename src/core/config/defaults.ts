@@ -17,29 +17,26 @@ import type { Pt } from '../model/types'
 
 /**
  * 기획서의 고정 한도. 서버도 같은 값을 검증하므로, 한쪽만 바꾸면
- * 교사가 만든 워크시트를 백엔드가 거부하게 된다.
+ * 소비자 서버가 문서를 거부하게 된다.
  */
 export const LIMITS = {
-  /** 한 워크시트의 최대 페이지 수 (기획 2.2). */
+  /** 한 문서의 최대 페이지 수 (기획 2.2). */
   pagesPerDoc: 500,
   /** 파일 1개당 최대 업로드 용량(바이트) (기획 2.2). */
   fileBytes: 500 * 1024 * 1024,
   /** 업로드 1회당 파일 수 (기획 2.2 — "1 limit"). */
   filesPerUpload: 1,
-  /** 페이지당 Answer Box 최대 개수 (기획 6.2). */
-  answerBoxesPerPage: 30,
-  /** 문서 전체 Answer Box 최대 개수 (기획 6.2). */
-  answerBoxesPerDoc: 200,
-  /** 워크시트 타이틀 최대 글자 수 (기획 4.2). */
+  /**
+   * 페이지당 객체 최대 개수.
+   *
+   * DOM 렌더(PLAN D2)의 상한이다. 이 수를 넘기면 페이지 하나의 노드 수가 드래그 성능에
+   * 영향을 준다 — 드래그 중 rAF 코얼레싱을 쓰지 않는 판단(PLAN 18.6)이 이 상한을 전제로 한다.
+   */
+  objectsPerPage: 30,
+  /** 문서 전체 객체 최대 개수. */
+  objectsPerDoc: 200,
+  /** 문서 타이틀 최대 글자 수 (기획 4.2). */
   titleChars: 100,
-  /** 드롭박스 보기 최소·최대 개수 (기획 6.2). */
-  dropboxChoices: { min: 2, max: 5 },
-  /** 단답형 허용 정답 개수 (기획 6.4). */
-  shortAnswers: { min: 1, max: 5 },
-  /** 보기·허용 정답 1개의 최대 글자 수 (기획 6.2). */
-  choiceChars: 50,
-  /** Answer Box 최소 크기(pt) (기획 6.2). 이보다 작으면 학생이 탭할 수 없다. */
-  minAnswerBoxSize: { w: 80 as Pt, h: 32 as Pt },
   /** 업로드 가능한 문서 포맷 (기획 2.2). */
   formats: ['pdf', 'doc', 'docx', 'ppt', 'pptx'] as const,
 } as const

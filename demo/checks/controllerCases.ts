@@ -310,11 +310,11 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
       },
       {
         name: 'setActiveTool 이 signal 에 반영된다',
-        expected: ['select', 'answer.short'],
+        expected: ['select', 'custom:demo.box'],
         actual: () =>
           withController(docWithPages(1), (c) => {
             const before = c.activeTool.value
-            c.setActiveTool('answer.short')
+            c.setActiveTool('custom:demo.box')
             return [before, c.activeTool.value]
           }),
       },
@@ -447,11 +447,6 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
         name: '검증 결과가 문서에서 파생된다 (객체 0 이면 위반 없음)',
         expected: 0,
         actual: () => withController(docWithPages(1), (c) => c.validation.value.issues.length),
-      },
-      {
-        name: '문항 번호 맵이 비어 있다 (Answer Box 0)',
-        expected: 0,
-        actual: () => withController(docWithPages(1), (c) => c.questionNumbers.value.size),
       },
       {
         name: 'scope dispose 후 문서 변경 콜백이 오지 않는다',

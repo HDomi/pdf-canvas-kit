@@ -49,6 +49,12 @@ export interface ResizeOptions {
    * 주지 않으면 0으로 본다. 회전된 객체에 이 값을 빼먹으면 리사이즈가 앵커를 중심으로 미끄러진다.
    */
   rotation?: number
+  /**
+   * 최소 크기 override(pt). 커스텀 객체 타입이 요구하는 값 (PLAN D25).
+   *
+   * 주지 않으면 `EDITOR_DEFAULTS.minObjectSize` 를 쓴다.
+   */
+  minSize?: { w: Pt; h: Pt }
 }
 
 /** 핸들이 각 축을 어느 방향으로 움직이는지. 0이면 그 축은 고정. */
@@ -127,7 +133,7 @@ export function resizeRect(
 ): Rect {
   const { sx, sy } = direction(handle)
   const grid = opts.grid ?? 0
-  const min = minSizeFor(type)
+  const min = minSizeFor(type, opts.minSize)
   const rotation = opts.rotation ?? 0
 
   // 화면 델타를 객체 로컬 공간으로 옮긴다. 회전이 0이면 그대로다.

@@ -1,40 +1,47 @@
 /**
- * 우측 인스펙터 패널 (기획 1.6).
+ * 우측 인스펙터 패널 (기획 1.6, PLAN D25).
  *
- * 선택 상태에 따라 유형별 패널로 분기한다. 검증 경고는 내보내기 게이트와 **같은 규칙**을 쓰므로
- * (`validateObject`), 여기서 통과한 문항이 내보내기에서 막히는 일이 없다 (PLAN 12).
+ * 선택 상태에 따라 유형별 패널로 분기한다. 내장 유형은 텍스트·도형뿐이고, 커스텀 객체는
+ * `objectType.renderInspector` 나 프레임워크 portal 이 채운다.
  *
- * 구 `src/vue/editor/inspector/Inspector.vue` 의 이식.
+ * ## 유형별 `when` 을 따로 둔다
+ *
+ * 하나의 `when(단일 선택인가)` 안에서 `switch` 로 분기하면 다른 유형의 객체를 선택해도 조건이
+ * 참을 유지해 **패널이 바뀌지 않는다.** 조건을 유형으로 두면 유형이 바뀔 때만 재생성되고,
+ * 같은 유형 안에서 객체를 옮겨 선택하면 signal 만 갱신된다 (ARCHITECTURE §13.2).
  */
 import { el, when } from '../../h'
-import { computed, type ReadSignal } from '../../reactive'
+import { computed, effect, onCleanup, type ReadSignal } from '../../reactive'
 import { text } from '../../../core/config/strings'
 import { mergeBoxStyle, type BoxStylePatch } from '../../../core/model/boxStyle'
 import { validateObject } from '../../../core/validation/rules'
+import type { ObjectTypeRegistry } from '../../../core/objectTypes'
 import type {
   BoxStyle,
-  DropboxAnswerBox,
-  EssayAnswerBox,
+  CustomObject,
   PDFCanvasObject,
   ShapeObject,
-  ShortAnswerBox,
   TextObject,
 } from '../../../core/model/types'
-import { dropboxPanel, essayPanel, shortAnswerPanel } from './answerPanels'
 import { boxStylePanel } from './boxStylePanel'
-import { field, numberInput, panelSection, textInput } from './fields'
+import { field, numberInput } from './fields'
 import { shapePanel, textPanel } from './objectPanels'
 
 export interface InspectorProps {
   /** 선택된 객체들. 0개면 빈 상태, 2개 이상이면 개수만 보여준다. */
   selected: ReadSignal<readonly PDFCanvasObject[]>
-  /** 자동 부여된 문항 번호. 수동 입력이 비어 있을 때 placeholder 로 보여준다 (PLAN Q9). */
-  autoNumber: ReadSignal<string | null>
   readOnly: ReadSignal<boolean>
+  types?: ObjectTypeRegistry
   onUpdate: (objectId: string, patch: Partial<PDFCanvasObject>) => void
   onRemove: (objectId: string) => void
-  /** 회전은 별도 커맨드다. Answer Box 를 거르는 불변식이 커맨드에 있다. */
+  /** 회전은 별도 커맨드다. 회전 가능 여부는 레지스트리가 정한다. */
   onRotate: (objectId: string, deg: number) => void
+  /**
+   * 커스텀 객체의 인스펙터 컨테이너를 알린다. 프레임워크 래퍼가 portal 한다.
+   *
+   * 언마운트 시 `null` 로 한 번 더 불린다.
+   */
+  onMountInspector?: (objectId: string, el: HTMLElement | null) => void
 }
 
 /** 텍스트의 글자색은 필수 필드다. 지정을 지우면 이 값으로 되돌린다. */
@@ -46,27 +53,26 @@ export function inspector(props: InspectorProps): HTMLElement {
     props.selected.value.length === 1 ? props.selected.value[0]! : null,
   )
 
-  const issues = computed<readonly string[]>(() =>
-    single.value ? validateObject(single.value) : [],
-  )
+  /** 검증 결과. 커스텀은 소비자 `validate(data)` 가 낸 메시지다. */
+  const issues = computed(() => (single.value ? validateObject(single.value, props.types) : []))
 
-  const isAnswerBox = () => {
-    const t = single.value?.type
-    return t === 'answer.short' || t === 'answer.essay' || t === 'answer.dropbox'
-  }
+  const isType = (t: PDFCanvasObject['type']) => () => single.value?.type === t
 
   /**
-   * 색 편집이 가능한 유형 (PLAN 18.8).
+   * 색 편집이 가능한 유형.
    *
-   * 도형은 자기 전용 패널에서 채움·테두리를 다루므로 여기서 제외한다. 두 곳에서 같은 값을
-   * 편집하면 어느 쪽이 이기는지 알 수 없다.
+   * 도형은 자기 패널에서 채움·테두리를 다루므로 제외한다 — 두 곳에서 같은 값을 편집하면
+   * 어느 쪽이 이기는지 알 수 없다. 커스텀은 **기본 틀**의 배경·테두리라 포함한다.
    */
-  const styleable = () => single.value?.type === 'text' || isAnswerBox()
+  const styleable = () => single.value?.type === 'text' || single.value?.type === 'custom'
 
-  /** 회전 가능한 유형만 회전 입력을 보여준다 (PLAN Q8). */
+  /** 회전 가능 여부. 커스텀은 레지스트리가 정한다 (기본 허용). */
   const rotatable = () => {
-    const t = single.value?.type
-    return t === 'text' || t === 'shape' || t === 'mask'
+    const obj = single.value
+    if (!obj) return false
+    if (obj.type === 'text' || obj.type === 'shape' || obj.type === 'mask') return true
+    if (obj.type === 'custom') return props.types?.get(obj.kind)?.rotatable !== false
+    return false
   }
 
   function patch(p: Partial<PDFCanvasObject>) {
@@ -78,7 +84,7 @@ export function inspector(props: InspectorProps): HTMLElement {
   /**
    * 현재 객체의 박스 스타일.
    *
-   * 텍스트는 `style` 안에 글꼴 속성과 색이 섞여 있고, Answer Box 는 `style` 이 색 전용이다.
+   * 텍스트는 `style` 안에 글꼴 속성과 색이 섞여 있고, 커스텀은 `style` 이 색 전용이다.
    * 패널에는 색 부분만 넘긴다.
    */
   const boxStyle = computed<BoxStyle | undefined>(() => {
@@ -92,13 +98,14 @@ export function inspector(props: InspectorProps): HTMLElement {
       if (s.strokeWidth !== undefined) out.strokeWidth = s.strokeWidth
       return out
     }
-    return 'style' in obj ? obj.style : undefined
+    if (obj.type === 'custom') return obj.style
+    return undefined
   })
 
   /**
    * 색 패치를 적용한다.
    *
-   * 텍스트는 글꼴 속성과 한 객체에 있으므로 `style` 전체를 다시 만들어야 한다. Answer Box 는
+   * 텍스트는 글꼴 속성과 한 객체에 있으므로 `style` 전체를 다시 만들어야 한다. 커스텀은
    * `style` 이 색 전용이라 `mergeBoxStyle` 결과를 그대로 넣는다.
    */
   function patchBoxStyle(p: BoxStylePatch) {
@@ -126,35 +133,41 @@ export function inspector(props: InspectorProps): HTMLElement {
   }
 
   /**
-   * 유형별 패널. **유형마다 `when` 을 따로 둔다.**
+   * 커스텀 객체 패널.
    *
-   * 하나의 `when` 안에서 `switch` 로 분기하면 조건이 "단일 선택인가" 로 고정되어, 다른 유형의
-   * 객체를 선택해도 조건이 참을 유지해 **패널이 바뀌지 않는다.** 조건을 유형으로 두면
-   * 유형이 바뀔 때만 재생성되고, 같은 유형 안에서 객체를 옮겨 선택하면 signal 만 갱신된다.
+   * `renderInspector` 가 있으면 그리고, 없으면 컨테이너만 알린다 — 프레임워크 래퍼가
+   * portal 하는 경로다 (`customObjectView` 와 같은 규칙).
    */
-  const isType = (t: PDFCanvasObject['type']) => () => single.value?.type === t
+  function customPanel(): HTMLElement {
+    const obj = single.value as CustomObject
+    const def = props.types?.get(obj.kind)
+
+    const container = el('section', { class: 'pck-panel-section' })
+
+    if (def?.renderInspector) {
+      effect(() => {
+        const current = single.value
+        if (current?.type !== 'custom') return
+        container.replaceChildren(
+          def.renderInspector!({
+            objectId: current.id,
+            data: current.data,
+            rect: current.rect,
+            selected: true,
+            onChange: (data: unknown) => patch({ data }),
+          }),
+        )
+      })
+    } else if (props.onMountInspector) {
+      const id = obj.id
+      props.onMountInspector(id, container)
+      onCleanup(() => props.onMountInspector?.(id, null))
+    }
+
+    return container
+  }
 
   const typePanels = [
-    when(isType('answer.short'), () =>
-      shortAnswerPanel(
-        computed(() => single.value as ShortAnswerBox),
-        issues,
-        patch,
-      ),
-    ),
-    when(isType('answer.essay'), () =>
-      essayPanel(
-        computed(() => single.value as EssayAnswerBox),
-        patch,
-      ),
-    ),
-    when(isType('answer.dropbox'), () =>
-      dropboxPanel(
-        computed(() => single.value as DropboxAnswerBox),
-        issues,
-        patch,
-      ),
-    ),
     when(isType('text'), () =>
       textPanel(
         computed(() => single.value as TextObject),
@@ -167,6 +180,14 @@ export function inspector(props: InspectorProps): HTMLElement {
         patch,
       ),
     ),
+    /*
+     * 커스텀은 `kind` 를 조건으로 둔다. 유형만 보면 서로 다른 kind 사이를 옮겨도 조건이
+     * 참을 유지해 패널이 바뀌지 않는다 — 유형 분기와 같은 함정이다.
+     */
+    when(
+      () => (single.value?.type === 'custom' ? single.value.kind : null),
+      () => customPanel(),
+    ),
   ]
 
   return el('aside', { class: 'pck-inspector' }, [
@@ -175,9 +196,7 @@ export function inspector(props: InspectorProps): HTMLElement {
       when(
         () => single.value !== null,
         () =>
-          el('span', { class: 'pck-panel-count' }, [
-            () => text(`inspector.type.${single.value?.type ?? ''}`),
-          ]),
+          el('span', { class: 'pck-panel-count' }, [() => typeLabel(single.value, props.types)]),
       ),
     ]),
 
@@ -195,62 +214,22 @@ export function inspector(props: InspectorProps): HTMLElement {
           ]),
       ),
 
-      /*
-       * 단일 선택 본문.
-       *
-       * 조건이 "단일 선택인가" 이므로 다른 객체를 선택해도 이 껍데기는 재생성되지 않는다 —
-       * 안쪽 입력들이 signal 을 읽어 값만 갱신한다. 유형이 바뀔 때 패널을 바꾸는 것은
-       * `typePanels` 가 유형별 `when` 으로 처리한다.
-       */
       when(
         () => single.value !== null,
         () =>
           el('div', {}, [
-            // 문항 번호 수동 오버라이드 (PLAN Q9)
-            when(isAnswerBox, () =>
-              field(
-                text('inspector.label'),
-                textInput({
-                  value: () => {
-                    const obj = single.value
-                    return obj && 'label' in obj ? (obj.label ?? '') : ''
-                  },
-                  maxlength: 12,
-                  placeholder: () => props.autoNumber.value ?? false,
-                  onInput: (label) => patch({ label }),
-                }),
-                text('inspector.labelNote'),
-              ),
-            ),
-
-            // 배점 — 1 이상 정수. 유효하지 않아도 입력을 되돌리지 않고 경고만 띄운다.
-            when(isAnswerBox, () =>
-              panelSection(null, [
-                field(
-                  text('inspector.points'),
-                  numberInput({
-                    value: () => {
-                      const obj = single.value
-                      return obj && 'points' in obj ? obj.points : 0
-                    },
-                    min: 1,
-                    step: 1,
-                    fallback: 0,
-                    invalid: () => issues.value.includes('POINTS_INVALID'),
-                    onInput: (points) => patch({ points }),
-                  }),
-                ),
-                when(
-                  () => issues.value.includes('POINTS_INVALID'),
-                  () =>
-                    el('p', { class: 'pck-field-error', attr: { role: 'alert' } }, [
-                      text('error.pointsRequired'),
-                    ]),
-                ),
-              ]),
-            ),
-
             typePanels,
+
+            /* 검증 경고. 소비자 `validate()` 가 낸 메시지를 그대로 보여준다. */
+            when(
+              () => issues.value.length > 0,
+              () =>
+                el('div', {}, [
+                  el('p', { class: 'pck-field-error', attr: { role: 'alert' } }, [
+                    () => issues.value.map((i) => i.message ?? i.code).join(' · '),
+                  ]),
+                ]),
+            ),
 
             when(styleable, () => boxStylePanel(boxStyle, patchBoxStyle)),
 
@@ -290,4 +269,11 @@ export function inspector(props: InspectorProps): HTMLElement {
       ),
     ]),
   ])
+}
+
+/** 헤더에 보이는 유형 이름. 커스텀은 레지스트리의 `label` 을 쓴다. */
+function typeLabel(obj: PDFCanvasObject | null, types?: ObjectTypeRegistry): string {
+  if (!obj) return ''
+  if (obj.type === 'custom') return types?.get(obj.kind)?.label ?? obj.kind
+  return text(`inspector.type.${obj.type}`)
 }

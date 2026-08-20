@@ -4,14 +4,23 @@
  * 클램프 규칙을 한곳에 모아 두는 이유: 생성·이동·리사이즈·키보드 이동이 모두 같은 규칙을 지켜야
  * 하는데, 각자 계산하면 조금씩 어긋나서 "드래그로는 되는데 방향키로는 안 되는" 종류의 버그가 난다.
  */
-import { EDITOR_DEFAULTS, LIMITS } from '../config/defaults'
+import { EDITOR_DEFAULTS } from '../config/defaults'
 import type { Pt, Rect, Size, PDFCanvasObjectType } from '../model/types'
 
-/** 유형별 최소 크기(pt). Answer Box는 학생이 탭할 수 있어야 해서 더 크다. */
-export function minSizeFor(type: PDFCanvasObjectType): { w: Pt; h: Pt } {
-  if (type === 'answer.short' || type === 'answer.essay' || type === 'answer.dropbox') {
-    return LIMITS.minAnswerBoxSize
-  }
+/**
+ * 유형별 최소 크기(pt).
+ *
+ * 커스텀 객체는 소비자가 `objectType.minSize` 로 더 크게 요구할 수 있다 — 예컨대 학생이
+ * 탭해야 하는 입력은 손가락보다 커야 한다. 그래서 `override` 를 받는다.
+ *
+ * 레지스트리를 여기서 조회하지 않는 이유: 이 모듈은 순수 기하이고, 레지스트리를 import 하면
+ * 드래그 수학이 UI 설정에 의존하게 된다. 호출자가 값만 넘긴다.
+ */
+export function minSizeFor(
+  type: PDFCanvasObjectType,
+  override?: { w: Pt; h: Pt },
+): { w: Pt; h: Pt } {
+  if (type === 'custom' && override) return override
   return EDITOR_DEFAULTS.minObjectSize
 }
 
@@ -44,8 +53,13 @@ export function clampIntoPage(rect: Rect, page: Size): Rect {
  *
  * 최소 크기를 먼저 적용한 뒤 경계로 자른다. 순서를 뒤집으면 경계에서 최소 크기가 깨진다.
  */
-export function constrainRect(rect: Rect, page: Size, type: PDFCanvasObjectType): Rect {
-  const min = minSizeFor(type)
+export function constrainRect(
+  rect: Rect,
+  page: Size,
+  type: PDFCanvasObjectType,
+  minOverride?: { w: Pt; h: Pt },
+): Rect {
+  const min = minSizeFor(type, minOverride)
   // 페이지가 최소 크기보다 작은 극단적인 경우에도 폭·높이가 음수가 되지 않게 한다.
   const w = clamp(Math.max(rect.w, min.w), 0, Math.max(page.width, min.w))
   const h = clamp(Math.max(rect.h, min.h), 0, Math.max(page.height, min.h))

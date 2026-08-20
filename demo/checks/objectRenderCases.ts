@@ -12,15 +12,21 @@ import { objectView } from '../../src/dom/editor/objects/objectView'
 import { pageFrame } from '../../src/dom/editor/pageFrame'
 import { selectionOverlay } from '../../src/dom/editor/selectionOverlay'
 import { scope, signal } from '../../src/dom/reactive'
-import { configureStrings, createId, createPage, resetStrings, A4_PT } from 'pdf-canvas-kit'
+import {
+  createId,
+  createObjectTypeRegistry,
+  createPage,
+  defineObjectType,
+  A4_PT,
+} from 'pdf-canvas-kit'
+import type { AnyObjectTypeDef } from 'pdf-canvas-kit'
 import type {
-  DropboxAnswerBox,
+  CustomObject,
   PageViewport,
   PDFCanvasObject,
   PDFCanvasPage,
   Rect,
   ShapeObject,
-  ShortAnswerBox,
   TextObject,
 } from 'pdf-canvas-kit'
 import type { CaseGroup } from './cases'
@@ -47,29 +53,41 @@ function textObj(over: Partial<TextObject> = {}): TextObject {
   }
 }
 
-function shortObj(over: Partial<ShortAnswerBox> = {}): ShortAnswerBox {
+function customObj(over: Partial<CustomObject> = {}): CustomObject {
   return {
     id: createId(),
-    type: 'answer.short',
+    type: 'custom',
+    kind: 'demo.box',
     rect: RECT,
-    points: 5,
-    answers: [],
-    style: {},
+    data: {},
     ...over,
   }
 }
 
-function dropboxObj(over: Partial<DropboxAnswerBox> = {}): DropboxAnswerBox {
-  return {
-    id: createId(),
-    type: 'answer.dropbox',
-    rect: RECT,
-    points: 3,
-    choices: [],
-    correctChoiceIds: [],
-    style: {},
-    ...over,
-  }
+/** 커스텀 객체를 레지스트리와 함께 렌더하고 정리한다. */
+function renderCustom<T>(
+  over: Partial<CustomObject>,
+  defs: readonly AnyObjectTypeDef[],
+  fn: (root: HTMLElement) => T,
+  opts: { onMountCustom?: (id: string, el: HTMLElement | null) => void } = {},
+): T {
+  const types = createObjectTypeRegistry(defs)
+  const [result, dispose] = scope(() => {
+    const node = objectView({
+      object: signal<PDFCanvasObject>(customObj(over)),
+      selected: () => false,
+      invalid: () => false,
+      previewRect: () => null,
+      previewRotation: () => null,
+      editing: () => false,
+      onEditText: () => {},
+      types,
+      ...(opts.onMountCustom ? { onMountCustom: opts.onMountCustom } : {}),
+    })
+    return fn(node)
+  })
+  dispose()
+  return result
 }
 
 function shapeObj(shape: ShapeObject['shape']): ShapeObject {
@@ -92,7 +110,6 @@ function render<T>(
     previewRect: Rect | null
     previewRotation: number | null
     editing: boolean
-    questionNumber: string | null
   }> = {},
 ): T {
   const [result, dispose] = scope(() => {
@@ -103,7 +120,6 @@ function render<T>(
       previewRect: () => over.previewRect ?? null,
       previewRotation: () => over.previewRotation ?? null,
       editing: () => over.editing ?? false,
-      questionNumber: () => over.questionNumber ?? null,
       onEditText: () => {},
     })
     return fn(node)
@@ -163,9 +179,12 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
     title: 'render — 객체 클래스·상태',
     cases: [
       {
-        name: '유형 클래스가 붙는다 (점은 하이픈으로)',
-        expected: true,
-        actual: () => render(shortObj(), (n) => n.classList.contains('is-answer-short')),
+        name: '유형 클래스가 붙는다',
+        expected: [true, true],
+        actual: () => [
+          render(textObj(), (n) => n.classList.contains('is-text')),
+          render(customObj(), (n) => n.classList.contains('is-custom')),
+        ],
       },
       {
         name: 'selected · invalid · editing 클래스',
@@ -194,7 +213,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRect: () => null,
               previewRotation: () => null,
               editing: () => false,
-              questionNumber: () => null,
               onEditText: () => {},
             })
             const before = n.classList.contains('is-selected')
@@ -217,75 +235,156 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'render — Answer Box 배지·문구 (i18n)',
-    note: 'Vue 판은 이 문구들을 컴포넌트에 한국어로 하드코딩했다. locale: en 으로 써도 캔버스에만 한국어가 남았다 (기획 3.2).',
+    title: 'render — 커스텀 객체 (PLAN D25) ★',
+    note: '이 패키지가 그리는 것은 기본 틀뿐이다. 콘텐츠는 objectType.render 가 그리거나(vanilla) 프레임워크 래퍼가 portal 한다. 포인터 이벤트는 기본적으로 프레임이 먹는다.',
     cases: [
       {
-        name: '배점 배지가 나온다',
-        expected: '5',
+        name: 'render 슬롯이 콘텐츠를 그린다 (vanilla 경로)',
+        expected: '내 컴포넌트',
         actual: () =>
-          render(shortObj(), (n) => n.querySelector('.pck-answer-badge')?.textContent ?? null),
+          renderCustom(
+            { kind: 'demo.box' },
+            [
+              defineObjectType({
+                kind: 'demo.box',
+                label: '데모',
+                defaultSize: { w: 100, h: 40 },
+                defaultData: () => ({}),
+                render: () => {
+                  const s = document.createElement('span')
+                  s.textContent = '내 컴포넌트'
+                  return s
+                },
+              }),
+            ],
+            (root) => root.querySelector('.pck-obj-custom-content')?.textContent ?? null,
+          ),
       },
       {
-        name: '문항 번호가 없으면 배지를 그리지 않는다',
-        expected: null,
-        actual: () =>
-          render(shortObj(), (n) => n.querySelector('.pck-answer-no')?.textContent ?? null),
-      },
-      {
-        name: '문항 번호가 있으면 그린다',
-        expected: '3',
-        actual: () =>
-          render(shortObj(), (n) => n.querySelector('.pck-answer-no')?.textContent ?? null, {
-            questionNumber: '3',
-          }),
-      },
-      {
-        name: '정답이 없으면 안내 문구 (ko)',
-        expected: '정답 미입력',
-        actual: () =>
-          render(shortObj(), (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null),
-      },
-      {
-        /*
-         * i18n 시스템을 제거한 뒤에도(2026.08.20) 문구가 컴포넌트에 박혀 있지 않다는 것을
-         * 고정한다. `configureStrings()` 로 덮이면 하드코딩이 아니다.
-         */
-        name: '★ 문구가 하드코딩이 아니다 — configureStrings 로 덮인다',
-        expected: 'OVERRIDDEN',
+        name: 'render 가 없으면 컨테이너를 비워 두고 마운트를 알린다 (portal 경로)',
+        expected: [true, ''],
         actual: () => {
-          configureStrings({ 'canvas.noAnswer': 'OVERRIDDEN' })
-          const got = render(
-            shortObj(),
-            (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null,
+          let mounted: HTMLElement | null = null
+          const got = renderCustom(
+            { kind: 'demo.box' },
+            [
+              defineObjectType({
+                kind: 'demo.box',
+                label: '데모',
+                defaultSize: { w: 100, h: 40 },
+                defaultData: () => ({}),
+              }),
+            ],
+            (root) => root.querySelector('.pck-obj-custom-content')?.textContent ?? null,
+            { onMountCustom: (_id, el) => (mounted = el ?? mounted) },
           )
-          resetStrings()
-          return got
+          return [(mounted as unknown as HTMLElement | null) !== null, got]
         },
       },
       {
-        name: '정답이 있으면 안내 문구가 사라진다',
-        expected: null,
+        name: '★ 기본은 콘텐츠가 포인터를 먹지 않는다 (클릭이 객체 선택으로 간다)',
+        expected: false,
         actual: () =>
-          render(
-            shortObj({ answers: ['답'] }),
-            (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null,
+          renderCustom(
+            { kind: 'demo.box' },
+            [
+              defineObjectType({
+                kind: 'demo.box',
+                label: '데모',
+                defaultSize: { w: 100, h: 40 },
+                defaultData: () => ({}),
+              }),
+            ],
+            (root) =>
+              root.querySelector('.pck-obj-custom-content')?.classList.contains('is-interactive') ??
+              null,
           ),
       },
       {
-        name: '드롭박스는 보기가 부족하면 미완성 문구',
-        expected: '보기·정답 미완성',
+        name: '★ interactive: true 면 콘텐츠가 먹는다',
+        expected: true,
         actual: () =>
-          render(dropboxObj(), (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null),
+          renderCustom(
+            { kind: 'demo.box' },
+            [
+              defineObjectType({
+                kind: 'demo.box',
+                label: '데모',
+                defaultSize: { w: 100, h: 40 },
+                defaultData: () => ({}),
+                interactive: true,
+              }),
+            ],
+            (root) =>
+              root.querySelector('.pck-obj-custom-content')?.classList.contains('is-interactive') ??
+              null,
+          ),
       },
       {
-        name: '드롭박스 캐럿은 aria-hidden',
-        expected: 'true',
+        name: '★ 등록되지 않은 kind 는 객체를 버리지 않고 자리를 지킨다',
+        expected: [true, true],
         actual: () =>
-          render(
-            dropboxObj(),
-            (n) => n.querySelector('.pck-answer-caret')?.getAttribute('aria-hidden') ?? null,
+          renderCustom({ kind: 'gone' }, [], (root) => [
+            root.querySelector('.pck-obj-custom--unknown') !== null,
+            // 프레임 자체는 그대로 있어야 한다 — 버리면 저장할 때 데이터가 사라진다.
+            root.classList.contains('pck-obj'),
+          ]),
+      },
+      {
+        // happy-dom 은 색을 정규화하지 않고 그대로 돌려준다. 브라우저는 rgb() 로 바꾼다.
+        name: '기본 틀의 BoxStyle 이 인라인 스타일로 나간다',
+        expected: '#ff0000',
+        actual: () =>
+          renderCustom(
+            { kind: 'demo.box', style: { fill: '#ff0000' } },
+            [
+              defineObjectType({
+                kind: 'demo.box',
+                label: '데모',
+                defaultSize: { w: 100, h: 40 },
+                defaultData: () => ({}),
+              }),
+            ],
+            (root) =>
+              root.querySelector<HTMLElement>('.pck-obj-custom')?.style.backgroundColor ?? null,
           ),
+      },
+      {
+        name: 'data 가 바뀌면 render 가 다시 불린다',
+        expected: ['1', '2'],
+        actual: () => {
+          const obj = signal<PDFCanvasObject>(customObj({ data: { n: 1 } }))
+          const types = createObjectTypeRegistry([
+            defineObjectType<{ n: number }>({
+              kind: 'demo.box',
+              label: '데모',
+              defaultSize: { w: 100, h: 40 },
+              defaultData: () => ({ n: 0 }),
+              render: ({ data }) => {
+                const s = document.createElement('span')
+                s.textContent = String(data.n)
+                return s
+              },
+            }),
+          ])
+          const [res, dispose] = scope(() => {
+            const node = objectView({
+              object: obj,
+              selected: () => false,
+              invalid: () => false,
+              previewRect: () => null,
+              previewRotation: () => null,
+              editing: () => false,
+              onEditText: () => {},
+              types,
+            })
+            const before = node.querySelector('.pck-obj-custom-content')?.textContent ?? null
+            obj.value = { ...(obj.value as CustomObject), data: { n: 2 } }
+            return [before, node.querySelector('.pck-obj-custom-content')?.textContent ?? null]
+          })
+          dispose()
+          return res
+        },
       },
     ],
   },
@@ -379,7 +478,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRect: () => null,
               previewRotation: () => null,
               editing: () => true, // 편집 중
-              questionNumber: () => null,
               onEditText: () => {},
             })
             // 편집 중에 문서가 바뀌어도 DOM 을 덮지 않는다.
@@ -403,7 +501,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRect: () => null,
               previewRotation: () => null,
               editing: () => false,
-              questionNumber: () => null,
               onEditText: () => {},
             })
             const before = n.querySelector('.pck-obj-text')?.textContent ?? null

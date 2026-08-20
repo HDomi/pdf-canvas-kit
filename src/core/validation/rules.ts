@@ -1,34 +1,49 @@
 /**
- * 내보내기 검증 규칙 (PLAN 12).
+ * 검증 규칙 (PLAN 12, D25).
  *
- * 인스펙터의 실시간 경고와 내보내기 차단이 **같은 함수**를 쓴다. 두 곳에서 따로 판단하면
- * "인스펙터는 통과인데 내보내기가 막히는" 상태가 생기고, 교사는 이유를 알 수 없다.
+ * 인스펙터의 실시간 경고와 저장·내보내기 게이트가 **같은 함수**를 쓴다. 두 곳에서 따로 판단하면
+ * "인스펙터는 통과인데 게이트가 막히는" 상태가 생기고, 사용자는 이유를 알 수 없다.
  *
- * 규칙은 순수 함수이며 문서만 입력으로 받는다. 그래서 서버가 같은 규칙을 재사용할 수 있다.
+ * ## 이 패키지가 아는 규칙과 모르는 규칙
+ *
+ * | | 누가 판단하나 |
+ * | --- | --- |
+ * | 문서가 비었다 · 페이지 한도 초과 | **이 패키지** |
+ * | 등록되지 않은 `kind` | **이 패키지** — 레지스트리를 보면 안다 |
+ * | 커스텀 객체의 내용이 유효한가 | **소비자** — `objectType.validate(data)` |
+ *
+ * 이전 판은 정답·배점·보기 개수를 코어에서 검증했다. 그 규칙들은 문제지 도메인의 것이고
+ * 이 패키지는 `data` 를 해석하지 않으므로 소비자에게 넘겼다 (PLAN D25).
  */
 import { LIMITS } from '../config/defaults'
+import type { ObjectTypeRegistry } from '../objectTypes'
+import { UNKNOWN_KIND_ISSUE } from '../objectTypes'
 import type { PDFCanvasDoc, PDFCanvasObject } from '../model/types'
-import { countAnswerBoxes, isAnswerBox } from '../commands/objects'
 
-/** 검증 실패 코드. UI가 i18n 키로 매핑한다. */
-export type IssueCode =
-  | 'EMPTY_DOC'
-  | 'SHORT_NO_ANSWER'
-  | 'SHORT_ANSWER_TOO_LONG'
-  | 'DROPBOX_FEW_CHOICES'
-  | 'DROPBOX_NO_CORRECT'
-  | 'DROPBOX_DUPLICATE_CHOICE'
-  | 'CHOICE_TOO_LONG'
-  | 'POINTS_INVALID'
-  | 'BOX_LIMIT_PAGE'
-  | 'BOX_LIMIT_DOC'
-  | 'PAGE_LIMIT'
+/** 이 패키지가 내는 검증 코드. 소비자 규칙은 문자열 메시지로 온다. */
+export type IssueCode = 'EMPTY_DOC' | 'PAGE_LIMIT' | 'OBJECT_LIMIT_PAGE' | typeof UNKNOWN_KIND_ISSUE
+
+/**
+ * 소비자 `objectType.validate()` 가 낸 위반.
+ *
+ * 코드는 하나로 고정하고 사람이 읽는 내용은 `message` 에 담는다. 소비자가 임의 코드를 내면
+ * UI 가 분기할 수 없고, 문자열 유니온이 사실상 `string` 이 되어 타입이 무의미해진다.
+ */
+export const CUSTOM_INVALID = 'CUSTOM_INVALID'
 
 export interface ValidationIssue {
-  code: IssueCode
+  /**
+   * 이 패키지의 코드이거나 `'CUSTOM_INVALID'`(소비자 규칙).
+   *
+   * `IssueCode | string` 으로 두면 리터럴이 무의미해진다 — 소비자 코드를 하나로 고정해
+   * 분기할 수 있게 한다.
+   */
+  code: IssueCode | typeof CUSTOM_INVALID
+  /** 소비자 규칙이면 그 메시지. 이 패키지 코드면 `strings.ts` 의 문구를 UI 가 찾는다. */
+  message?: string
   /** 문제가 있는 페이지. 문서 전체 문제면 null. */
   pageId: string | null
-  /** 0-based 페이지 인덱스. UI가 해당 페이지로 이동할 때 쓴다. */
+  /** 0-based 페이지 인덱스. UI 가 해당 페이지로 이동할 때 쓴다. */
   pageIndex: number | null
   /** 문제가 있는 객체. 페이지·문서 수준 문제면 null. */
   objectId: string | null
@@ -39,78 +54,45 @@ export interface ValidationResult {
   issues: ValidationIssue[]
 }
 
-/** 코드 → i18n 키. 인스펙터와 내보내기가 같은 문구를 쓴다. */
+/** 이 패키지 코드 → 문구 키. 소비자 메시지는 그대로 보여진다. */
 export const ISSUE_MESSAGE_KEYS: Record<IssueCode, string> = {
   EMPTY_DOC: 'error.emptyDoc',
-  SHORT_NO_ANSWER: 'error.answerRequired',
-  SHORT_ANSWER_TOO_LONG: 'error.max50',
-  DROPBOX_FEW_CHOICES: 'error.dropboxIncomplete',
-  DROPBOX_NO_CORRECT: 'error.dropboxIncomplete',
-  DROPBOX_DUPLICATE_CHOICE: 'error.duplicateChoice',
-  CHOICE_TOO_LONG: 'error.max50',
-  POINTS_INVALID: 'error.pointsRequired',
-  BOX_LIMIT_PAGE: 'error.boxLimit',
-  BOX_LIMIT_DOC: 'error.boxLimit',
   PAGE_LIMIT: 'error.pageLimit',
-}
-
-/** 배점은 1 이상 정수여야 한다 (기획 6.4). */
-function invalidPoints(points: number): boolean {
-  return !Number.isInteger(points) || points < 1
+  OBJECT_LIMIT_PAGE: 'error.objectLimit',
+  [UNKNOWN_KIND_ISSUE]: 'error.unknownKind',
 }
 
 /**
  * 객체 하나를 검증한다.
  *
- * 인스펙터가 이 함수를 직접 호출해 실시간 경고를 띄운다. 그래서 문서 전체를 훑지 않는다.
+ * 인스펙터가 직접 호출해 실시간 경고를 띄운다. 그래서 문서 전체를 훑지 않는다.
+ *
+ * 커스텀 객체는 두 단계로 본다. 먼저 `kind` 가 등록됐는지 — 저장된 문서가 지금 없는 타입을
+ * 담고 있을 수 있다. 그다음 소비자 `validate(data)`.
  */
-export function validateObject(obj: PDFCanvasObject): IssueCode[] {
-  const codes: IssueCode[] = []
+export function validateObject(
+  obj: PDFCanvasObject,
+  types?: ObjectTypeRegistry,
+): { code: IssueCode | typeof CUSTOM_INVALID; message?: string }[] {
+  if (obj.type !== 'custom') return []
 
-  if (isAnswerBox(obj) && invalidPoints(obj.points)) codes.push('POINTS_INVALID')
-
-  switch (obj.type) {
-    case 'answer.short': {
-      const filled = obj.answers.filter((a) => a.trim().length > 0)
-      if (filled.length === 0) codes.push('SHORT_NO_ANSWER')
-      if (filled.some((a) => a.length > LIMITS.choiceChars)) codes.push('SHORT_ANSWER_TOO_LONG')
-      break
-    }
-
-    case 'answer.dropbox': {
-      const filled = obj.choices.filter((c) => c.label.trim().length > 0)
-      if (filled.length < LIMITS.dropboxChoices.min) codes.push('DROPBOX_FEW_CHOICES')
-      if (filled.some((c) => c.label.length > LIMITS.choiceChars)) codes.push('CHOICE_TOO_LONG')
-
-      // 중복 판정은 채점과 같은 정규화를 쓰지 않는다. 학생에게 보이는 라벨이 다르면
-      // 서로 다른 보기로 취급하는 편이 자연스럽고, 공백만 다른 보기는 사실상 실수다.
-      const labels = filled.map((c) => c.label.trim())
-      if (new Set(labels).size !== labels.length) codes.push('DROPBOX_DUPLICATE_CHOICE')
-
-      // 비어 있는 보기가 정답으로 지정돼 있으면 정답이 없는 것과 같다.
-      const validCorrect = obj.correctChoiceIds.filter((id) => filled.some((c) => c.id === id))
-      if (validCorrect.length === 0) codes.push('DROPBOX_NO_CORRECT')
-      break
-    }
-
-    // 서술형은 교사가 Report에서 채점하므로 정답 관련 검증이 없다 (기획 3.3).
-    case 'answer.essay':
-    case 'text':
-    case 'shape':
-    case 'mask':
-      break
+  const def = types?.get(obj.kind)
+  if (types && !def) {
+    return [{ code: UNKNOWN_KIND_ISSUE, message: obj.kind }]
   }
 
-  return codes
+  const messages = def?.validate?.(obj.data) ?? null
+  if (!messages || messages.length === 0) return []
+  return messages.map((message) => ({ code: CUSTOM_INVALID, message }))
 }
 
 /**
- * 문서 전체를 검증한다. 내보내기 게이트가 호출한다.
+ * 문서 전체를 검증한다. 저장·내보내기 게이트가 호출한다.
  *
- * 페이지가 0인 경우는 버튼 비활성으로도 막지만, 여기서도 코드를 낸다. 호출 경로가 여럿이므로
+ * 페이지가 0인 경우는 버튼 비활성으로도 막지만 여기서도 코드를 낸다. 호출 경로가 여럿이므로
  * 한 곳에서 판단해야 한다.
  */
-export function validateDoc(doc: PDFCanvasDoc): ValidationResult {
+export function validateDoc(doc: PDFCanvasDoc, types?: ObjectTypeRegistry): ValidationResult {
   const issues: ValidationIssue[] = []
 
   if (doc.pages.length === 0) {
@@ -120,18 +102,19 @@ export function validateDoc(doc: PDFCanvasDoc): ValidationResult {
     issues.push({ code: 'PAGE_LIMIT', pageId: null, pageIndex: null, objectId: null })
   }
 
-  const counts = countAnswerBoxes(doc)
-  if (counts.total > LIMITS.answerBoxesPerDoc) {
-    issues.push({ code: 'BOX_LIMIT_DOC', pageId: null, pageIndex: null, objectId: null })
-  }
-
   doc.pages.forEach((page, pageIndex) => {
-    if ((counts.perPage.get(page.id) ?? 0) > LIMITS.answerBoxesPerPage) {
-      issues.push({ code: 'BOX_LIMIT_PAGE', pageId: page.id, pageIndex, objectId: null })
+    if (page.objects.length > LIMITS.objectsPerPage) {
+      issues.push({ code: 'OBJECT_LIMIT_PAGE', pageId: page.id, pageIndex, objectId: null })
     }
     for (const obj of page.objects) {
-      for (const code of validateObject(obj)) {
-        issues.push({ code, pageId: page.id, pageIndex, objectId: obj.id })
+      for (const issue of validateObject(obj, types)) {
+        issues.push({
+          code: issue.code,
+          ...(issue.message !== undefined ? { message: issue.message } : {}),
+          pageId: page.id,
+          pageIndex,
+          objectId: obj.id,
+        })
       }
     }
   })
@@ -139,7 +122,7 @@ export function validateDoc(doc: PDFCanvasDoc): ValidationResult {
   return { ok: issues.length === 0, issues }
 }
 
-/** 내보내기를 막는 객체 id 집합. 캔버스 하이라이트에 쓴다. */
+/** 게이트를 막는 객체 id 집합. 캔버스 하이라이트에 쓴다. */
 export function invalidObjectIds(result: ValidationResult): Set<string> {
   const ids = new Set<string>()
   for (const issue of result.issues) if (issue.objectId) ids.add(issue.objectId)

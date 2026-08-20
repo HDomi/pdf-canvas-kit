@@ -15,9 +15,9 @@ import { touch, type Command } from './commands'
 import { appendPages } from './commands/pages'
 import { applyFileNameToTitle } from './commands/doc'
 import { createPDFCanvasDoc } from './model/defaults'
-import { toPublicDoc, type PublicPDFCanvasDoc } from './model/publicDoc'
 import type { PageBackground, PDFCanvasDoc, PDFCanvasPage } from './model/types'
 import { createPdfjsConverter } from './pdf/pdfjsConverter'
+import type { ObjectTypeRegistry } from './objectTypes'
 import type { AssetPort, ConverterPort, StoragePort } from './ports'
 import { ConvertError, type ConvertProgress } from './ports/ConverterPort'
 import { noopStoragePort } from './ports/StoragePort'
@@ -34,6 +34,12 @@ export interface EnginePorts {
 export interface EngineOptions {
   doc?: PDFCanvasDoc | null
   ports?: EnginePorts
+  /**
+   * 커스텀 객체 타입 레지스트리 (PLAN D25).
+   *
+   * `toPublicDoc()` 이 이걸 통해 비밀을 제거한다. 주지 않으면 데이터가 그대로 나간다.
+   */
+  objectTypes?: ObjectTypeRegistry
   /** undo 깊이. 기본값은 `EDITOR_DEFAULTS.historyLimit`. */
   historyLimit?: number
   /**
@@ -99,8 +105,13 @@ export interface PDFCanvasEngine {
   /** 진행 중인 import를 취소한다. 유휴 상태에서 호출해도 안전하다. */
   cancelImport(): void
 
-  /** 정답을 제거한 문서. 뷰어 프리뷰용 (PLAN D14). */
-  toPublicDoc(): PublicPDFCanvasDoc
+  /**
+   * 커스텀 객체의 비밀을 제거한 문서. 뷰어에 넘기는 스냅샷이다.
+   *
+   * 각 타입의 `toPublic(data)` 를 거친다. 구현하지 않은 타입은 데이터가 그대로 나간다 —
+   * 이 패키지는 `data` 안에 무엇이 비밀인지 모른다 (PLAN D25).
+   */
+  toPublicDoc(): PDFCanvasDoc
 
   /** blob URL을 해제하고 대기 중인 작업을 중단한다. */
   destroy(): void
@@ -286,7 +297,22 @@ export function createPDFCanvasEngine(options: EngineOptions = {}): PDFCanvasEng
       controller = null
     },
 
-    toPublicDoc: () => toPublicDoc(doc.get()),
+    toPublicDoc: () => {
+      const types = options.objectTypes
+      if (!types) return doc.get()
+      const current = doc.get()
+      return {
+        ...current,
+        pages: current.pages.map((page) => ({
+          ...page,
+          objects: page.objects.map((obj) => {
+            if (obj.type !== 'custom') return obj
+            const strip = types.get(obj.kind)?.toPublic
+            return strip ? { ...obj, data: strip(obj.data) } : obj
+          }),
+        })),
+      }
+    },
 
     destroy() {
       saver?.cancel()

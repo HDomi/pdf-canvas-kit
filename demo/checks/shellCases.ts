@@ -146,8 +146,12 @@ export const SHELL_GROUPS: CaseGroup[] = [
           ),
       },
       {
-        name: '툴바 도구 6개 + 복제·삭제 2개',
-        expected: 8,
+        /*
+         * 내장 도구는 텍스트·도형·지우개 셋뿐이다 (PLAN D25). 커스텀 타입을 등록하면 그만큼
+         * 늘어난다 — 툴바가 레지스트리에서 만들어지므로 하드코딩된 개수가 없다.
+         */
+        name: '내장 도구 3개 + 복제·삭제 2개',
+        expected: 5,
         actual: () =>
           withShell(docWithPages(1), (root) => root.querySelectorAll('.pck-tool').length),
       },
@@ -157,7 +161,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
         actual: () =>
           withShell(docWithPages(1), (root) => {
             const tools = root.querySelectorAll<HTMLButtonElement>('.pck-tool')
-            return [tools[6]!.disabled, tools[7]!.disabled]
+            return [tools[3]!.disabled, tools[4]!.disabled]
           }),
       },
       {

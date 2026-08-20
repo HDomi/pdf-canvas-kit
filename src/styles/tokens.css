@@ -96,9 +96,9 @@
   --pck-invalid-stroke: var(--pck-state-danger);
 
   /* ---- 캔버스의 Answer Box --------------------------------------------- */
-  --pck-answerbox-bg: rgb(255 255 255 / 85%);
-  --pck-answerbox-border: var(--pck-line-strong);
-  --pck-answerbox-ink: var(--pck-ink);
+  --pck-custom-bg: rgb(255 255 255 / 85%);
+  --pck-custom-border: var(--pck-line-strong);
+  --pck-custom-ink: var(--pck-ink);
 
   /* ---- 인스펙터 --------------------------------------------------------- */
   --pck-inspector-bg: var(--pck-surface);

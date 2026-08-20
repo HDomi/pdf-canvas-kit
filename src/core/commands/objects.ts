@@ -1,47 +1,41 @@
 /**
  * 객체 단위 커맨드. 추가·변형·삭제·복제·z-order.
  *
- * 모두 Answer Box 수량 한도(페이지 30 / 문서 200, 기획 6.2)를 지킨다.
+ * 모두 객체 수량 한도(페이지 30 / 문서 200)를 지킨다. 이 상한은 DOM 렌더(PLAN D2)의 전제이고,
+ * 드래그 중 rAF 코얼레싱을 쓰지 않는 판단(PLAN 18.6)도 여기에 기댄다.
+ *
+ * 이전 판은 한도를 Answer Box 에만 적용했다. 커스텀 객체는 소비자가 무엇이든 넣을 수 있으므로
+ * (PLAN D25) 전체 객체 수로 바꿨다 — 성능 상한은 유형과 무관하다.
  */
 import { createId } from '../util/id'
 import { EDITOR_DEFAULTS, LIMITS } from '../config/defaults'
 import { clampIntoPage } from '../geometry/constrain'
-import type { AnswerBox, Rect, PDFCanvasDoc, PDFCanvasObject } from '../model/types'
+import type { Rect, PDFCanvasDoc, PDFCanvasObject } from '../model/types'
 import { replacePage, touch, type Command } from './index'
 
-/** Answer Box 수량 한도를 넘길 때 던진다. UI가 기획 6.3 문구를 보여준다. */
-export class AnswerBoxLimitError extends Error {
+/** 객체 수량 한도를 넘길 때 던진다. UI 가 안내 문구를 보여준다. */
+export class ObjectLimitError extends Error {
   readonly scope: 'page' | 'doc'
   constructor(scope: 'page' | 'doc') {
     super(
       scope === 'page'
-        ? `[pdf-canvas-kit] page answer box limit is ${LIMITS.answerBoxesPerPage}`
-        : `[pdf-canvas-kit] document answer box limit is ${LIMITS.answerBoxesPerDoc}`,
+        ? `[pdf-canvas-kit] page object limit is ${LIMITS.objectsPerPage}`
+        : `[pdf-canvas-kit] document object limit is ${LIMITS.objectsPerDoc}`,
     )
-    this.name = 'AnswerBoxLimitError'
+    this.name = 'ObjectLimitError'
     this.scope = scope
   }
 }
 
-/**
- * Answer Box 계열인지. 수량 한도는 이 세 유형에만 적용된다.
- *
- * 타입 가드로 선언해 호출부에서 `points` 같은 공통 필드에 접근할 수 있게 한다.
- */
-export function isAnswerBox(obj: PDFCanvasObject): obj is AnswerBox {
-  return obj.type === 'answer.short' || obj.type === 'answer.essay' || obj.type === 'answer.dropbox'
-}
-
-export function countAnswerBoxes(doc: PDFCanvasDoc): {
+export function countObjects(doc: PDFCanvasDoc): {
   perPage: Map<string, number>
   total: number
 } {
   const perPage = new Map<string, number>()
   let total = 0
   for (const page of doc.pages) {
-    const n = page.objects.filter(isAnswerBox).length
-    perPage.set(page.id, n)
-    total += n
+    perPage.set(page.id, page.objects.length)
+    total += page.objects.length
   }
   return { perPage, total }
 }
@@ -49,7 +43,7 @@ export function countAnswerBoxes(doc: PDFCanvasDoc): {
 /**
  * 페이지에 객체를 추가한다.
  *
- * @throws {AnswerBoxLimitError} Answer Box 수량 한도를 넘기면. 조용히 무시하지 않고 던지는 이유는,
+ * @throws {ObjectLimitError} 수량 한도를 넘기면. 조용히 무시하지 않고 던지는 이유는,
  * 드래그했는데 아무 일도 일어나지 않으면 사용자가 원인을 알 수 없기 때문이다.
  */
 export function addObject(pageIndex: number, obj: PDFCanvasObject): Command {
@@ -57,14 +51,12 @@ export function addObject(pageIndex: number, obj: PDFCanvasObject): Command {
     const page = doc.pages[pageIndex]
     if (!page) return null
 
-    if (isAnswerBox(obj)) {
-      const counts = countAnswerBoxes(doc)
-      if ((counts.perPage.get(page.id) ?? 0) + 1 > LIMITS.answerBoxesPerPage) {
-        throw new AnswerBoxLimitError('page')
-      }
-      if (counts.total + 1 > LIMITS.answerBoxesPerDoc) {
-        throw new AnswerBoxLimitError('doc')
-      }
+    const counts = countObjects(doc)
+    if ((counts.perPage.get(page.id) ?? 0) + 1 > LIMITS.objectsPerPage) {
+      throw new ObjectLimitError('page')
+    }
+    if (counts.total + 1 > LIMITS.objectsPerDoc) {
+      throw new ObjectLimitError('doc')
     }
 
     const next = replacePage(doc, pageIndex, (p) => ({ ...p, objects: [...p.objects, obj] }))
@@ -155,15 +147,12 @@ export function duplicateObjects(pageIndex: number, ids: readonly string[]): Com
     const sources = page.objects.filter((o) => idSet.has(o.id))
     if (sources.length === 0) return null
 
-    const answerBoxCount = sources.filter(isAnswerBox).length
-    if (answerBoxCount > 0) {
-      const counts = countAnswerBoxes(doc)
-      if ((counts.perPage.get(page.id) ?? 0) + answerBoxCount > LIMITS.answerBoxesPerPage) {
-        throw new AnswerBoxLimitError('page')
-      }
-      if (counts.total + answerBoxCount > LIMITS.answerBoxesPerDoc) {
-        throw new AnswerBoxLimitError('doc')
-      }
+    const counts = countObjects(doc)
+    if ((counts.perPage.get(page.id) ?? 0) + sources.length > LIMITS.objectsPerPage) {
+      throw new ObjectLimitError('page')
+    }
+    if (counts.total + sources.length > LIMITS.objectsPerDoc) {
+      throw new ObjectLimitError('doc')
     }
 
     const offset = EDITOR_DEFAULTS.duplicateOffset
@@ -191,15 +180,29 @@ export function newIdsAfterDuplicate(
 /**
  * 객체 회전을 설정한다.
  *
- * Answer Box는 회전하지 않는다 (PLAN Q8). 학생 폼 요소가 기울면 입력과 모바일 렌더가 깨진다.
- * 호출부에서 막더라도 커맨드에서 한 번 더 거른다 — 문서 불변식은 커맨드가 지켜야 한다.
+ * ## `canRotate` 를 받는 이유
+ *
+ * 이전 판은 "Answer Box 는 회전하지 않는다"(PLAN Q8)를 커맨드에 박아 뒀다. 학생 폼 요소가
+ * 기울면 입력과 모바일 렌더가 깨지기 때문이다.
+ *
+ * 커스텀 객체(PLAN D25)에서는 그 판단이 **소비자 것**이다 — `objectType.rotatable` 이 그것을
+ * 표현한다. 그런데 이 모듈은 순수 커맨드이고 레지스트리를 모르므로, 술어를 받아 한 번 더
+ * 거른다. 문서 불변식은 커맨드가 지켜야 하지만, 모르는 규칙을 아는 척할 수는 없다.
+ *
+ * 술어를 주지 않으면 모두 허용한다.
  */
-export function setRotation(pageIndex: number, objectId: string, deg: number): Command {
+export function setRotation(
+  pageIndex: number,
+  objectId: string,
+  deg: number,
+  canRotate?: (obj: PDFCanvasObject) => boolean,
+): Command {
   return (doc) => {
     const next = replacePage(doc, pageIndex, (page) => {
       const index = page.objects.findIndex((o) => o.id === objectId)
       const target = page.objects[index]
-      if (!target || isAnswerBox(target)) return page
+      if (!target) return page
+      if (canRotate && !canRotate(target)) return page
       const rotation = (((Math.round(deg * 10) / 10) % 360) + 360) % 360
       if ((target.rotation ?? 0) === rotation) return page
       const objects = [...page.objects]

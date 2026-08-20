@@ -33,7 +33,7 @@ import { text } from '../core/config/strings'
 import { setTitle } from '../core/commands/doc'
 import {
   addObject,
-  AnswerBoxLimitError,
+  ObjectLimitError,
   duplicateObjects,
   newIdsAfterDuplicate,
   removeObjects,
@@ -52,20 +52,19 @@ import { moveRect, type HandleId } from '../core/geometry/handles'
 import { isMeaningfulDrag } from '../core/geometry/constrain'
 import { pickObject } from '../core/geometry/hitTest'
 import { clientToPage } from '../core/geometry/units'
-import { createObjectForTool, defaultRectAt } from '../core/interaction/tools'
+import { createObjectForTool, defaultRectAt, defaultSizeForTool } from '../core/interaction/tools'
 import type { PointerCommit } from '../core/interaction/pointerMachine'
-import { questionNumberMap } from '../core/model/numbering'
 import type { PDFCanvasDoc, PDFCanvasObject, Rect } from '../core/model/types'
 import type { SaveState, ToolId } from '../core/model/viewState'
 import { ConvertError } from '../core/ports/ConverterPort'
 import type { AssetPort } from '../core/ports/AssetPort'
-import {
-  guardExport,
-  type ExportGuardResult,
-  type ExportPayload,
-} from '../core/validation/exportGuard'
 import { invalidObjectIds, validateDoc } from '../core/validation/rules'
 import type { EnginePorts, ImportProgress } from '../core/engine'
+import {
+  createObjectTypeRegistry,
+  type AnyObjectTypeDef,
+  type ObjectTypeRegistry,
+} from '../core/objectTypes'
 // ⚠️ 프로토타입 저장. 실서버가 붙으면 이 import 와 아래 `savePrototypeDoc` 을 함께 지운다 (PLAN 18.5).
 import { PrototypeQuotaError, savePrototype } from '../prototype/localStorageStore'
 
@@ -92,6 +91,13 @@ export interface EditorProps {
   doc?: PDFCanvasDoc | null
   ports?: EnginePorts
   readOnly?: boolean
+  /**
+   * 커스텀 객체 타입 (PLAN D25). **최초 1회만 읽는다.**
+   *
+   * 툴바 도구·인스펙터 패널·검증이 모두 이 목록에서 나온다. 런타임에 바꾸려면 컴포넌트를
+   * 다시 마운트한다 — 도구가 도중에 생기고 사라지면 사용자가 방향을 잃는다.
+   */
+  objectTypes?: readonly AnyObjectTypeDef[]
   /** 시작 배율. 기본값 `'fit-page'` — 불러오는 즉시 페이지 전체가 보인다. **최초 1회만 읽는다.** */
   initialScale?: number | 'fit-width' | 'fit-page'
   /**
@@ -113,8 +119,16 @@ export interface EditorProps {
 
   onChange?: (doc: PDFCanvasDoc) => void
   onSaveStateChange?: (state: SaveState) => void
-  onRequestExport?: (payload: ExportPayload) => void
   onBack?: () => void
+  /**
+   * 커스텀 객체의 콘텐츠 컨테이너가 생기거나 사라질 때 (PLAN D25).
+   *
+   * 프레임워크 래퍼가 여기로 받은 엘리먼트에 `createPortal` · `Teleport` 한다.
+   * vanilla 로 쓰는 경우 `objectType.render` 를 주면 이 콜백이 불리지 않는다.
+   */
+  onMountCustom?: (objectId: string, el: HTMLElement | null) => void
+  /** 커스텀 객체의 인스펙터 컨테이너. 위와 같은 규칙. */
+  onMountInspector?: (objectId: string, el: HTMLElement | null) => void
 }
 
 /* ----------------------------------------------------------------- 반환 계약 -- */
@@ -203,14 +217,23 @@ export interface EditorController {
   rotateObject: (objectId: string, deg: number) => void
   editText: (objectId: string, value: string) => void
 
-  /* 검증·내보내기 */
+  /* 검증 */
   validation: ReadSignal<ReturnType<typeof validateDoc>>
   invalidIds: ReadSignal<ReadonlySet<string>>
-  questionNumbers: ReadSignal<ReturnType<typeof questionNumberMap>>
-  autoNumber: ReadSignal<string | null>
   canExport: ReadSignal<boolean>
-  requestExport: () => void
-  validateForExport: () => ExportGuardResult
+  /**
+   * 검증 게이트. 통과하면 `true`.
+   *
+   * 실패하면 문제가 있는 첫 객체로 페이지를 옮기고 선택·스크롤한 뒤 안내 문구를 세운다.
+   */
+  checkBeforeExport: () => boolean
+
+  /* 커스텀 객체 (PLAN D25) */
+  objectTypes: ObjectTypeRegistry | undefined
+  onMountCustom: ((objectId: string, el: HTMLElement | null) => void) | undefined
+  onMountInspector: ((objectId: string, el: HTMLElement | null) => void) | undefined
+  /** 비밀을 제거한 문서. 뷰어에 넘기는 스냅샷이다. */
+  toPublicDoc: () => PDFCanvasDoc
 
   /* 불러오기 */
   uploadOpen: ReadSignal<boolean>
@@ -294,6 +317,16 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     }
   }
 
+  /**
+   * 커스텀 객체 타입 레지스트리 (PLAN D25). **최초 1회만 만든다.**
+   *
+   * 툴바 도구·인스펙터 패널·검증이 이 목록에서 나오므로 런타임에 바뀌면 화면이 흔들린다.
+   */
+  const objectTypes =
+    initialProps.objectTypes && initialProps.objectTypes.length > 0
+      ? createObjectTypeRegistry(initialProps.objectTypes)
+      : undefined
+
   const startAsset = resolveAssetPort(initialProps)
   const engineState = createEngineState({
     ...(initialProps.doc ? { doc: initialProps.doc } : {}),
@@ -302,6 +335,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
       ...(startAsset ? { asset: startAsset } : {}),
     },
     ...(initialProps.autosave !== undefined ? { autosave: initialProps.autosave } : {}),
+    ...(objectTypes ? { objectTypes } : {}),
   })
   const { engine, doc, saveState, pages, pageCount, canUndo, canRedo, run } = engineState
 
@@ -366,14 +400,6 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     () => nav.currentPage.value?.objects ?? [],
   )
 
-  /**
-   * 문항 번호. 문서 전체를 훑어 페이지 순·읽는 순으로 부여한다 (PLAN Q9).
-   *
-   * 문서에 저장하지 않는 파생값이다. 객체를 옮기면 번호도 따라 바뀌므로 다시 계산해야 한다.
-   * Answer Box 상한이 200개라 문서 변경마다 계산해도 비용이 작다.
-   */
-  const questionNumbers = computed(() => questionNumberMap(doc.value))
-
   /** 팬 중이거나 읽기 전용이면 도구 입력을 받지 않는다. 팬이 좌클릭과 겹치지 않게. */
   const toolsDisabled = computed(
     () => readOnly.value || modalOpen.value || panArmed.value || panning.value,
@@ -408,15 +434,26 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         // 의미 있는 드래그가 아니면 클릭으로 보고 기본 크기 객체를 놓는다.
         const rect = isMeaningfulDrag(commit.rect)
           ? commit.rect
-          : defaultRectAt({ x: commit.rect.x, y: commit.rect.y })
-        const obj = createObjectForTool(commit.tool, rect)
+          : defaultRectAt(
+              { x: commit.rect.x, y: commit.rect.y },
+              defaultSizeForTool(commit.tool, objectTypes),
+            )
+        /*
+         * 등록되지 않은 커스텀 도구면 `null` 이다 — 타입이 사라진 뒤에도 툴바 상태가 남은 경우.
+         * 조용히 빈 객체를 만들면 문서에 해석 불가한 데이터가 들어간다.
+         */
+        const obj = createObjectForTool(commit.tool, rect, objectTypes)
+        if (!obj) {
+          activeTool.value = 'select'
+          return
+        }
         try {
           if (run(`add ${obj.type}`, addObject(pageIndex, obj))) {
             selectedObjectIds.value = [obj.id]
           }
         } catch (err) {
           toolError.value =
-            err instanceof AnswerBoxLimitError ? text('error.boxLimit') : String(err)
+            err instanceof ObjectLimitError ? text('error.objectLimit') : String(err)
           return
         }
         // 도구는 한 번 쓰면 select 로 돌아간다. Shift 를 누르고 있으면 유지한다 (PLAN Q3).
@@ -429,7 +466,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         break
 
       case 'rotate':
-        run('rotate object', setRotation(pageIndex, commit.id, commit.deg))
+        run('rotate object', setRotation(pageIndex, commit.id, commit.deg, canRotate))
         break
 
       case 'select':
@@ -869,7 +906,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         selectedObjectIds.value = newIdsAfterDuplicate(before, doc.value, pageIndex)
       }
     } catch (err) {
-      toolError.value = err instanceof AnswerBoxLimitError ? text('error.boxLimit') : String(err)
+      toolError.value = err instanceof ObjectLimitError ? text('error.objectLimit') : String(err)
     }
   }
 
@@ -917,42 +954,49 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    *
    * 문서가 바뀔 때마다 다시 계산한다. 500페이지 문서에서도 객체 상한이 200개라 비용이 작다.
    */
-  const validation = computed(() => validateDoc(doc.value))
+  const validation = computed(() => validateDoc(doc.value, objectTypes))
 
   /** 내보내기를 막는 객체들. 캔버스에서 테두리로 표시한다. */
   const invalidIds = computed(() => invalidObjectIds(validation.value))
 
   /**
-   * 내보내기 버튼. 검증에 실패하면 팝업을 열지 않고 문제가 있는 첫 객체로 데려간다 (기획 3.5).
+   * 회전 허용 판단. 커맨드에 넘겨 문서 불변식을 커맨드가 지키게 한다.
+   *
+   * 커스텀 객체는 소비자가 `rotatable` 로 정한다 (PLAN D25). 기본은 허용이다.
    */
-  function requestExport() {
+  function canRotate(obj: PDFCanvasObject): boolean {
+    if (obj.type !== 'custom') return true
+    return objectTypes?.get(obj.kind)?.rotatable !== false
+  }
+
+  /**
+   * 검증 게이트. 실패하면 문제가 있는 첫 객체로 데려간다 (기획 3.5).
+   *
+   * 이전 판은 `guardExport` 가 정답 미지정을 막고 학생용 문서를 만들었다. 그 규칙은 문제지
+   * 도메인이므로 소비자의 `objectType.validate` 로 옮겼다 (PLAN D25). 여기 남은 것은
+   * **문제 지점으로 데려가는 UX** 다.
+   */
+  function checkBeforeExport(): boolean {
     exportError.value = null
-    const result = guardExport(doc.value)
+    const result = validation.value
+    if (result.ok) return true
 
-    if (!result.ok) {
-      const issue = result.firstIssue
-      if (issue?.pageIndex !== null && issue?.pageIndex !== undefined) nav.goTo(issue.pageIndex)
-      if (issue?.objectId) {
-        selectedObjectIds.value = [issue.objectId]
-        // 확대 상태에서 문제 객체가 화면 밖이면 선택만으로는 알 수 없다 (기획 3.5).
-        const target = nav.currentPage.value?.objects.find((o) => o.id === issue.objectId)
-        if (target) stage.scrollRectIntoView(target.rect)
-      }
-      exportError.value = text('error.exportBlocked', { count: result.invalidIds.size })
-      return
+    const issue = result.issues.find((i) => i.objectId !== null) ?? result.issues[0]
+    if (issue?.pageIndex !== null && issue?.pageIndex !== undefined) nav.goTo(issue.pageIndex)
+    if (issue?.objectId) {
+      selectedObjectIds.value = [issue.objectId]
+      // 확대 상태에서 문제 객체가 화면 밖이면 선택만으로는 알 수 없다 (기획 3.5).
+      const target = nav.currentPage.value?.objects.find((o) => o.id === issue.objectId)
+      if (target) stage.scrollRectIntoView(target.rect)
     }
-
-    if (result.payload) props.value.onRequestExport?.(result.payload)
+    exportError.value = text('error.exportBlocked', {
+      count: invalidObjectIds(result).size,
+    })
+    return false
   }
 
   /** 페이지가 있으면 버튼을 활성화한다. 검증 실패는 클릭 후 안내한다 — 왜 막혔는지 알려야 한다. */
   const canExport = computed(() => pageCount.value > 0)
-
-  const autoNumber = computed(() => {
-    if (selectedObjectIds.value.length !== 1) return null
-    const id = selectedObjectIds.value[0]!
-    return questionNumbers.value.get(id)?.number.toString() ?? null
-  })
 
   /* --------------------------------------------------- 프로토타입 저장 ⚠️ -- */
 
@@ -1070,7 +1114,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
       run('edit object', updateObject(currentPageIndex.value, objectId, patch))
     },
     rotateObject: (objectId, deg) => {
-      run('rotate object', setRotation(currentPageIndex.value, objectId, deg))
+      run('rotate object', setRotation(currentPageIndex.value, objectId, deg, canRotate))
     },
     editText: (objectId, value) => {
       if (readOnly.value) return
@@ -1079,11 +1123,14 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
     validation,
     invalidIds,
-    questionNumbers,
-    autoNumber,
     canExport,
-    requestExport,
-    validateForExport: () => guardExport(doc.value),
+
+    checkBeforeExport,
+
+    objectTypes,
+    onMountCustom: props.value.onMountCustom,
+    onMountInspector: props.value.onMountInspector,
+    toPublicDoc: () => engine.toPublicDoc(),
 
     uploadOpen,
     importProgress,

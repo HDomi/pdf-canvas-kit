@@ -38,8 +38,10 @@ export function stageArea(c: EditorController): HTMLElement {
           return p?.id === object.value.id ? p.deg : null
         },
         editing: () => c.editingObjectId.value === object.value.id,
-        questionNumber: () => c.questionNumbers.value.get(object.value.id)?.display ?? null,
         onEditText: (value) => c.editText(object.value.id, value),
+        ...(c.objectTypes ? { types: c.objectTypes } : {}),
+        onChangeData: (next) => c.updateObject(object.value.id, { data: next }),
+        ...(c.onMountCustom ? { onMountCustom: c.onMountCustom } : {}),
       }),
   )
 

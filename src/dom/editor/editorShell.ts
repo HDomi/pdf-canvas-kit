@@ -101,6 +101,7 @@ export function editorShell(c: EditorController): HTMLElement {
                 activeTool: c.activeTool,
                 enabled: computed(() => !c.readOnly.value && c.currentPage.value !== null),
                 hasSelection: computed(() => c.selectedObjectIds.value.length > 0),
+                customTypes: c.objectTypes?.all() ?? [],
                 onPick: c.setActiveTool,
                 onDuplicate: c.duplicateSelection,
                 onRemove: () => c.deleteSelection(),
@@ -156,8 +157,9 @@ export function editorShell(c: EditorController): HTMLElement {
 
         inspector({
           selected: c.selectedObjects,
-          autoNumber: c.autoNumber,
           readOnly: c.readOnly,
+          ...(c.objectTypes ? { types: c.objectTypes } : {}),
+          ...(c.onMountInspector ? { onMountInspector: c.onMountInspector } : {}),
           onUpdate: c.updateObject,
           onRemove: (id) => c.deleteSelection([id]),
           onRotate: c.rotateObject,

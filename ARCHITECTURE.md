@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.2 |
+| 문서 버전 | arch-2.3 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R7 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R8 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -544,7 +544,8 @@ src/
 │    dialogs/{confirmDialog,uploadDialog}.ts
 │    inspector/inspector.ts   ★ 유형별 분기 — when 조건을 **유형**으로 둔다 (§13.2)
 │    inspector/fields.ts       공용 폼 위젯 — 패널 6개가 공유
-│    inspector/{answerPanels,objectPanels,boxStylePanel}.ts
+│    inspector/{objectPanels,boxStylePanel}.ts
+│    objects/customObjectView.ts ★ 기본 틀 + 콘텐츠 컨테이너 (§16)
 │    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
@@ -690,12 +691,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **295 케이스 / 40 그룹** (순수 101 + 반응성 35 + DOM 35 + 컨트롤러 36 + 렌더 39 + 셸 20 + 인스펙터 29)
+   **234 케이스 / 33 그룹** (순수 71 + 반응성 35 + DOM 35 + 컨트롤러 35 + 렌더 38 + 셸 20)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 295 / 295 passed · 40 groups · ok  (실패 시 exit 1)
+npm run checks                    # 234 / 234 passed · 33 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -715,8 +716,7 @@ PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 | `demo/checks/controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션. DOM 이 필요하다 |
 | `demo/checks/objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조. DOM 이 필요하다 |
 | `demo/checks/shellCases.ts` | 편집기 셸 조립 — 컨트롤러↔컴포넌트 계약. DOM 이 필요하다 |
-| `demo/checks/inspectorCases.ts` | 인스펙터 — 유형별 분기·패치 내용·BoxStyle 3상태. DOM 이 필요하다 |
-| `demo/checks/allCases.ts` | 일곱을 합친 단일 출처 |
+| `demo/checks/allCases.ts` | 여섯을 합친 단일 출처 |
 
 DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
@@ -996,6 +996,87 @@ configureStrings({ 'topbar.export': '과제로 내보내기' })
 
 컴포넌트에 하드코딩하는 안은 버렸다 — R4 에서 걷어낸 위반(캔버스 문구 3건이 한국어로 박혀 있어
 `locale: 'en'` 에서도 한국어가 남았다)을 되돌리는 것이기 때문이다.
+
+---
+
+## 16. 커스텀 객체 (`core/objectTypes.ts`) ★
+
+이 패키지가 그리는 것은 **기본 틀**뿐이다 — pt 사각형, 리사이즈 핸들, 배경·테두리(`BoxStyle`),
+회전. 그 안에 무엇을 그릴지는 소비자가 정한다 (PLAN D25).
+
+```ts
+const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
+  kind: 'answer.short',            // 문서에 저장. Editor↔Viewer 계약이다
+  label: '단답형',                 // 툴바가 읽는다
+  defaultSize: { w: 160, h: 40 },
+  minSize: { w: 80, h: 32 },
+  defaultData: () => ({ answers: [], points: 1 }),
+  interactive: false,              // §16.2
+  rotatable: false,
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  toPublic: ({ answers: _a, ...rest }) => rest,
+})
+
+<PDFCanvasEditor objectTypes={[shortAnswer]} />
+<PDFCanvasViewer objectTypes={[shortAnswer]} />
+```
+
+**같은 레지스트리를 Editor 와 Viewer 에 넘긴다.** `kind` 가 둘 사이의 계약이다.
+
+| 이 패키지가 아는 것 | 소비자가 아는 것 |
+| --- | --- |
+| 자리·크기·회전·배경·테두리 | `data` 의 내용 |
+| 문서·페이지 한도 · 등록되지 않은 `kind` | `validate(data)` · `toPublic(data)` |
+| 도구 목록(레지스트리에서 만든다) | 렌더 |
+
+### 16.1 렌더 경로가 둘이다
+
+| `render` | 누가 채우나 |
+| --- | --- |
+| 있다 | 렌더 층이 부른다 (vanilla) |
+| 없다 | **컨테이너를 비워 두고 알린다.** 래퍼가 `createPortal` · `Teleport` 로 꽂는다 |
+
+프레임워크 래퍼는 `render` 를 주지 않는다 — portal 은 컨테이너 노드에 컴포넌트를 꽂는 방식이라
+렌더 층이 내용을 만들면 안 된다. 마운트 통지는 `onMountCustom(objectId, el)` 이고,
+객체가 사라지면 `el: null` 로 한 번 더 불린다.
+
+### 16.2 ★ 포인터 이벤트 소유권
+
+편집기에서 콘텐츠는 기본적으로 `pointer-events: none` 이다. 클릭이 **객체 선택·드래그**로 가야
+하기 때문이다 — 안쪽 `<input>` 이 포커스를 가로채면 객체를 옮길 수 없다.
+
+| | 편집기 | 뷰어 |
+| --- | --- | --- |
+| 기본 | **프레임**이 먹는다 | 콘텐츠가 먹는다 |
+| `interactive: true` | 콘텐츠가 먹는다 (테두리·핸들로만 선택) | 콘텐츠가 먹는다 |
+
+### 16.3 ⚠️ `position: fixed` 는 갇힌다 — 우회 불가
+
+콘텐츠는 페이지 컨테이너의 `transform: scale()` **안**에 있다. CSS 는 transform 이 걸린 조상을
+`fixed` 의 containing block 으로 만들므로, 소비자 컴포넌트 안의 드롭다운·툴팁·모달이 화면
+기준이 아니라 **프레임 기준으로 갇힌다.** 스펙이라 우회할 수 없다.
+
+그런 UI 는 소비자가 자기 portal 로 `document.body` 에 띄운다.
+
+반대로 배율이 콘텐츠를 함께 줄이는 것은 의도한 동작이다. 컨테이너 쿼리는 **pt 박스 크기**를
+보므로 배율과 무관하게 레이아웃이 일정하다.
+
+### 16.4 리사이즈 리플로우는 공짜다
+
+프레임의 `width`/`height` 가 pt 인라인 스타일이고 드래그 중에는 `previewRect` 를 쓴다.
+핸들을 끌면 프레임 폭이 실시간으로 바뀌고 콘텐츠는 평범한 DOM 자식이므로 **flex 줄바꿈이
+알아서 일어난다.**
+
+⚠️ 드래그 중 rAF 코얼레싱을 쓰지 않는 판단(§10.1)은 **가벼운 박스를 전제로 했다.** 무거운
+소비자 컴포넌트가 매 `pointermove` 마다 리플로우하면 그 판단이 되돌아올 수 있다 — 실측 필요.
+
+### 16.5 등록되지 않은 `kind`
+
+**객체를 버리지 않는다.** 자리와 크기는 그리고 점선 테두리로 표시한 뒤 검증에서 잡는다.
+저장된 문서가 지금 없는 타입을 담고 있을 수 있고(타입을 지웠거나 다른 앱이 만든 문서),
+버리면 저장할 때 데이터가 사라진다.
+
+---
 
 ### 15.4 ★ 호스트가 컨테이너에 **높이를 줘야 한다**
 

@@ -31,10 +31,7 @@ export type {
   ShapeKind,
   MaskObject,
   BoxStyle,
-  AnswerBox,
-  ShortAnswerBox,
-  EssayAnswerBox,
-  DropboxAnswerBox,
+  CustomObject,
 } from './core/model/types'
 
 /* ----------------------------------------------------------------- 설정 -- */
@@ -114,25 +111,12 @@ export {
   A4_PT,
 } from './core/model/defaults'
 export {
-  numberQuestions,
-  questionNumberMap,
-  numberQuestionsOnPage,
-  Y_TOLERANCE_PT,
-} from './core/model/numbering'
-export type { QuestionNumber } from './core/model/numbering'
-export {
   boxStyleToCss,
   mergeBoxStyle,
   hasBoxStyle,
   DEFAULT_BOX_STROKE_WIDTH,
 } from './core/model/boxStyle'
 export type { BoxStyleCss, BoxStylePatch } from './core/model/boxStyle'
-export { toPublicDoc, findAnswerFieldPaths } from './core/model/publicDoc'
-export type {
-  PublicPDFCanvasDoc,
-  PublicPDFCanvasPage,
-  PublicPDFCanvasObject,
-} from './core/model/publicDoc'
 export {
   serializeDoc,
   deserializeDoc,
@@ -140,10 +124,28 @@ export {
   findBlobBackgrounds,
   BlobBackgroundError,
 } from './core/model/serialize'
-export { createViewState, clampPageIndex, clampScale, stepZoom } from './core/model/viewState'
+export {
+  createViewState,
+  clampPageIndex,
+  clampScale,
+  stepZoom,
+  kindFromTool,
+  toolForKind,
+} from './core/model/viewState'
 export type { EditorViewState, FitMode, ToolId, SaveState } from './core/model/viewState'
 
-/* ------------------------------------------------------------- 검증·채점 -- */
+/* ------------------------------------------------- 커스텀 객체 (D25) -- */
+
+export { defineObjectType, createObjectTypeRegistry, UNKNOWN_KIND_ISSUE } from './core/objectTypes'
+export type {
+  ObjectTypeDef,
+  AnyObjectTypeDef,
+  ObjectTypeRegistry,
+  ObjectRenderContext,
+  ObjectSize,
+} from './core/objectTypes'
+
+/* ------------------------------------------------------------------ 검증 -- */
 
 export {
   validateDoc,
@@ -152,12 +154,6 @@ export {
   ISSUE_MESSAGE_KEYS,
 } from './core/validation/rules'
 export type { IssueCode, ValidationIssue, ValidationResult } from './core/validation/rules'
-export { guardExport } from './core/validation/exportGuard'
-export type { ExportPayload, ExportGuardResult } from './core/validation/exportGuard'
-
-export { normalizeAnswer, matchesAnyAnswer, matchesChoiceSet } from './core/grading/normalize'
-export { scoreItem, scoreAttempt, isGradableObject } from './core/grading/score'
-export type { Response, EssayVerdict, ItemScore, AttemptScore } from './core/grading/score'
 
 /* ------------------------------------------------ 프로토타입 (임시) ⚠️ -- */
 
@@ -197,8 +193,8 @@ export type {
 export {
   createObjectForTool,
   defaultRectAt,
+  defaultSizeForTool,
   isCreationTool,
-  objectTypeForTool,
 } from './core/interaction/tools'
 export type { CreationToolId } from './core/interaction/tools'
 

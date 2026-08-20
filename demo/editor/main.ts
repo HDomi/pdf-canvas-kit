@@ -8,12 +8,16 @@
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
- * **R7 시점 — 편집기 UI 가 전부 붙었다.** 상단바·툴바·페이지 목록·줌 컨트롤·다이얼로그·인스펙터.
- * 아래 dev 바는 픽스처를 빨리 띄우기 위한 것이고, 편집기 안의 [문서 불러오기] 도 동작한다.
+ * **R8 시점 — 커스텀 객체 레지스트리** (PLAN D25). 아래 `shortAnswer` · `sticky` 가 소비자 앱이
+ * 타입을 정의하는 방식의 예제다. 툴바 도구도 이 목록에서 만들어진다.
+ *
+ * 이 데모는 프레임워크가 없으므로 `render` 슬롯으로 vanilla DOM 을 그린다. React·Vue 래퍼는
+ * 그 슬롯을 주지 않고 컨테이너에 portal 한다 (R9).
  */
 import {
   clearPrototypeSave,
   configurePdfResources,
+  defineObjectType,
   createConsoleStoragePort,
   hasPrototypeSave,
   loadPrototype,
@@ -48,6 +52,84 @@ configurePdfResources({
  */
 const storage = createConsoleStoragePort({ label: '[demo]' })
 
+/**
+ * 커스텀 객체 타입 예제 (PLAN D25).
+ *
+ * 이 데모는 프레임워크가 없으므로 `render` · `renderInspector` 로 vanilla DOM 을 그린다.
+ * React·Vue 래퍼는 이 슬롯을 주지 않고 컨테이너에 portal 한다 (R9).
+ *
+ * **`interactive` 를 켠 타입과 끈 타입을 하나씩 둔다** — 편집기에서 포인터 소유권이 어떻게
+ * 갈리는지 브라우저에서 직접 비교할 수 있어야 한다.
+ */
+interface AnswerData {
+  answers: string[]
+  points: number
+}
+
+const shortAnswer = defineObjectType<AnswerData>({
+  kind: 'demo.shortAnswer',
+  label: '단답형',
+  defaultSize: { w: 160, h: 40 },
+  minSize: { w: 80, h: 32 },
+  defaultData: () => ({ answers: [], points: 1 }),
+  // 편집기에서는 자리만 보여준다. 클릭이 객체 선택으로 가야 한다.
+  interactive: false,
+  rotatable: false,
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  toPublic: ({ answers: _answers, ...rest }) => rest,
+  render: ({ data }) => {
+    const box = document.createElement('div')
+    box.style.cssText =
+      'display:flex;align-items:center;gap:6px;padding:0 8px;height:100%;font-size:11px'
+    const badge = document.createElement('b')
+    badge.textContent = String(data.points)
+    const hint = document.createElement('span')
+    hint.style.color = '#b4342b'
+    hint.textContent = data.answers.some((a) => a.trim()) ? '' : '정답 미입력'
+    box.append(badge, hint)
+    return box
+  },
+  renderInspector: ({ data, onChange }) => {
+    const wrap = document.createElement('div')
+    const input = document.createElement('input')
+    input.className = 'pck-input'
+    input.value = data.answers[0] ?? ''
+    input.placeholder = '정답'
+    input.addEventListener('input', () => onChange({ ...data, answers: [input.value] }))
+    const points = document.createElement('input')
+    points.className = 'pck-input pck-input--num'
+    points.type = 'number'
+    points.min = '1'
+    points.value = String(data.points)
+    points.addEventListener('input', () => onChange({ ...data, points: Number(points.value) || 1 }))
+    wrap.append(input, points)
+    return wrap
+  },
+})
+
+/**
+ * 상호작용형 예제.
+ *
+ * `interactive: true` 라 편집기에서도 콘텐츠가 포인터를 먹는다 — 이 객체는 테두리와 핸들로만
+ * 선택된다. 가운데를 끌어 옮길 수 없다는 것을 눈으로 확인하기 위한 것이다.
+ */
+const sticky = defineObjectType<{ text: string }>({
+  kind: 'demo.sticky',
+  label: '메모(상호작용)',
+  defaultSize: { w: 180, h: 90 },
+  defaultData: () => ({ text: '' }),
+  interactive: true,
+  render: ({ data, onChange }) => {
+    const ta = document.createElement('textarea')
+    ta.style.cssText =
+      'width:100%;height:100%;border:0;background:transparent;resize:none;font:inherit;padding:6px'
+    ta.value = data.text
+    ta.placeholder = '메모를 입력한다'
+    ta.addEventListener('input', () => onChange({ text: ta.value }))
+    return ta
+  },
+})
+
 const FIXTURES = [
   ['a4-3page.pdf', 'A4 3p'],
   ['mixed-size.pdf', '크기 혼합 6p'],
@@ -81,6 +163,7 @@ function mountEditor(doc: PDFCanvasDoc | null) {
     const c = createEditorController({
       ...(doc ? { doc } : {}),
       ports: { storage },
+      objectTypes: [shortAnswer, sticky],
       onSaveStateChange: (s) => (saveState.value = s),
       onChange: (next) => {
         status.value = `${next.pages.length} 페이지 · "${next.title}"`
@@ -126,7 +209,7 @@ async function loadFixture(name: string): Promise<void> {
  */
 const [nodes] = scope(() => [
   el('div', { class: 'devbar' }, [
-    el('strong', {}, ['editor (R7)']),
+    el('strong', {}, ['editor (R8)']),
     ...FIXTURES.map(([file, label]) =>
       el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
         label,

@@ -9,9 +9,23 @@ import { EDITOR_DEFAULTS } from '../config/defaults'
 /** 배율 산출 방식. `none` 은 사용자가 직접 지정했다는 뜻이다. */
 export type FitMode = 'width' | 'page' | 'none'
 
-/** 툴바의 도구들. `select` 가 기본 상태다. */
-export type ToolId =
-  'select' | 'text' | 'shape' | 'answer.short' | 'answer.essay' | 'answer.dropbox' | 'eraser'
+/**
+ * 툴바의 도구들. `select` 가 기본 상태다.
+ *
+ * 커스텀 객체 도구는 `custom:<kind>` 다 (PLAN D25). 레지스트리에 등록된 타입마다 도구가
+ * 하나씩 생기므로, 도구 목록을 하드코딩하지 않고 레지스트리에서 만든다.
+ */
+export type ToolId = 'select' | 'text' | 'shape' | 'eraser' | `custom:${string}`
+
+/** `custom:<kind>` 에서 `kind` 를 뽑는다. 커스텀 도구가 아니면 null. */
+export function kindFromTool(tool: ToolId): string | null {
+  return tool.startsWith('custom:') ? tool.slice('custom:'.length) : null
+}
+
+/** `kind` 로 도구 id 를 만든다. */
+export function toolForKind(kind: string): ToolId {
+  return `custom:${kind}`
+}
 
 /** 저장 배지 상태. `disabled` 는 StoragePort가 연결되지 않았다는 뜻이다 (PLAN 12). */
 export type SaveState = 'saved' | 'saving' | 'error' | 'disabled'

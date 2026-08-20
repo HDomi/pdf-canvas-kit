@@ -51,6 +51,7 @@ import { PDFCanvasEditor, PDFCanvasViewer } from 'pdf-canvas-kit/vue'
 | D15 | **Editor는 데스크탑 전용, Viewer만 반응형** | 기획 3.1(Teacher Web PC / Student PC·태블릿·모바일) | — |
 | D16 | **Nuxt에서는 클라이언트 전용 컴포넌트** | pdfjs·pointer 이벤트·`URL.createObjectURL`이 브라우저 전용 | SSR 지원: 얻는 게 없다. `<ClientOnly>` 안내로 끝 |
 | **D24** | **i18n 시스템을 제거하고 문구 표 하나만 둔다** (2026.08.20, D18 대체) | `I18nPort` + `createI18n` + ko/en 두 표 + locale 전환이 컴포넌트·컨트롤러 시그니처마다 `t` 를 끌고 다니는 배선 비용을 만들었고, 실제로 쓰이는 것은 한국어 표 하나였다. `core/config/strings.ts` 의 `text(key, vars)` 는 모듈 수준 조회이므로 `t` 가 모든 시그니처에서 사라진다. 다국어는 나중에 다시 설계하며, 문구가 한곳에 모여 있는 것이 그 전제다 | (a) 컴포넌트에 하드코딩: 나중에 다시 걷어내야 하고, 방금 R4 에서 걷어낸 위반을 되돌리는 것이다 (b) 기존 구조 유지: 쓰지 않는 추상화의 배선 비용을 계속 낸다 |
+| **D25** | **Answer Box 3종을 제거하고 소비자가 정의하는 커스텀 객체 레지스트리로 바꾼다** (2026.08.20) | 이 패키지의 이름과 범위는 "PDF 위에 객체를 배치하는 도구" 인데, 내용은 **문제지 편집기**였다 — 채점·문항 번호·정답 제거·정답 검증이 코어에 있었다. 그 도메인을 소비자 앱으로 옮기면 패키지가 일관돼지고, 소비자는 자기 React·Vue 컴포넌트를 객체로 꽂을 수 있다. 기본 틀(pt 사각형·리사이즈·배경·테두리·회전)만 패키지가 제공한다 | (a) Answer Box 를 남기고 커스텀을 추가: 두 체계가 공존해 "왜 이건 내장이고 저건 아닌가" 가 임의적이다 (b) 도메인 로직을 dead code 로 남기기: 아무도 쓰지 않는 850줄이 코어에 남아 다음 사람이 "왜 있나" 를 묻는다. 상세 20.13 |
 | D17 | **테스트 러너 미도입. TS strict + ESLint + 데모 검증 화면으로 대체** (확정) | 팀이 운용하지 않는 도구는 방치된다. 타입·린트로 정적 안전망을 두껍게 깔고, 데모에 눈으로 확인하는 검증 화면을 만든다 | **리스크 인정**: geometry·validation 회귀를 자동으로 못 잡는다. 완화책 17장 |
 | ~~D18~~ | ~~i18n은 키 기반 + 주입 가능한 `I18nPort`, 기본 ko/en 내장~~ **철회(2026.08.20)** — 시스템을 걷어내고 문구 표 하나만 남겼다(D24) | 기획 3.2 하드코딩 금지 | — |
 | **D19** | **UI 렌더 층을 vanilla DOM 으로 다시 쓴다. Vue·React 는 얇은 래퍼만** (2026.08.20 결정, D1 대체) | 소비처가 Nuxt 하나라는 D1 의 전제가 깨졌다 — 이제 Vue·React 양쪽에서 쓰여야 한다. UI 를 프레임워크 없이 한 벌만 두면 구현이 하나고 프레임워크 런타임이 0KB 다. 래퍼는 각 ~100줄이라 세 번째 프레임워크가 와도 같은 비용이다 | (a) **Vue 를 내부 엔진으로 쓰고 양쪽 래퍼**: 기존 4,771줄을 그대로 살리지만 React 사용자 번들에 Vue 런타임 ~40KB gzip 이 강제로 들어간다 (b) **React 층 별도 구현**: UI 가 영구히 두 벌이 되고 반드시 갈라진다. 상세 20장 |
@@ -1903,8 +1904,10 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R5** ✅ | 스테이지 · i18n 제거 · Vue 삭제 | `canvasStage` · `stageArea` ✅. **i18n 시스템 제거**(D24) · **`src/vue` 삭제**(D23 철회) ✅. `/editor/` 가 새 렌더 층으로 뜬다 — 편집기 번들 152KB → 4.8KB. 상세 20.10 |
 | **R6** ✅ | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 + `editorShell` ✅. `/checks/` **266 케이스 / 37 그룹**. 상세 20.11 |
 | **R7** ✅ | 인스펙터 | 패널 8개 → 파일 5개 ✅. 검증 경고 · BoxStyle 3상태 포함. `/checks/` **295 케이스 / 40 그룹**. 상세 20.12 |
-| **R8** | 프레임워크 래퍼 | `/react` · `/vue` 엔트리 + 데모 2개. **양쪽에서 같은 조작이 다 되는지 손으로 확인** |
-| **R9** | 배포 준비 · Vue SFC 층 삭제 | `npm pack` 산출물을 React 앱·Vue 앱에 각각 설치해 동작. 구 `src/vue/editor/**` 삭제. 문서 3종 갱신 |
+| **R8** ✅ | 커스텀 객체 레지스트리 | Answer Box 제거 + `objectTypes` 레지스트리 ✅ (D25). **2,277줄 삭제 / 990줄 추가.** 상세 20.13 |
+| **R9** | 프레임워크 래퍼 | facade + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개. **양쪽에서 같은 조작이 다 되는지 손으로 확인** |
+| **R10** | 배포 준비 | `npm pack` 산출물을 React 앱·Vue 앱에 각각 설치해 동작. 문서 3종 갱신 |
+| **R11** | `PDFCanvasViewer` | 읽기 전용 렌더 + `Viewer` 슬롯. 원본 저장소에도 뷰어 코드는 없어 새로 쓴다 |
 
 **R4~R7 동안 `/editor/`(Vue)는 계속 동작한다**(D23). 신규 화면은 `/editor-dom/` 에서 따로 자란다.
 둘을 나란히 열어 대조하는 것이 이 리라이트의 유일한 회귀 검출 수단이다.
@@ -2373,3 +2376,111 @@ Answer Box 패널 셋과 텍스트·도형 패널 둘을 각각 한 파일에 �
 드롭박스 보기 삭제가 정답 목록에서도 빼는 것(유령 정답 방지) · 텍스트 정렬 변경이 `style` 을
 통째로 다시 만들며 글꼴 속성을 유지하는 것 · 배점을 비우면 `NaN` 대신 `0` 을 보내는 것 ·
 Answer Box 에 회전 입력이 없는 것(PLAN Q8) · 도형에 `BoxStyle` 패널이 없는 것(전용 패널과 충돌 방지).
+
+### 20.13 R8 — 커스텀 객체 레지스트리 (2026.08.20)
+
+**Answer Box 3종과 그에 딸린 문제지 도메인을 전부 제거하고**, 소비자가 자기 컴포넌트를 객체로
+꽂는 레지스트리로 바꿨다 (D25). 2,277줄 삭제 / 990줄 추가.
+
+#### 지운 것
+
+| 모듈 | 왜 |
+| --- | --- |
+| `core/grading/{score,normalize}.ts` | 정답 비교가 존재 이유였다 |
+| `core/model/numbering.ts` | 문항 번호는 Answer Box 만 대상 |
+| `core/model/publicDoc.ts` | 정답 제거 → `objectType.toPublic(data)` 로 위임 |
+| `core/validation/exportGuard.ts` | 정답 미지정 차단 → 소비자 `validate(data)` |
+| `validation/rules.ts` 의 12룰 중 9개 | 배점·보기 개수·중복 판정이 전부 answer 룰 |
+| 인스펙터 answer 패널 3개 · 객체 뷰 3종 | |
+| `LIMITS` 5개 필드 · i18n 26개 키 | |
+
+#### 남긴 계약
+
+```ts
+const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
+  kind: 'answer.short',              // 문서에 저장되는 식별자. Editor↔Viewer 계약이다
+  label: '단답형',                   // 툴바가 읽는다
+  defaultSize: { w: 160, h: 40 },
+  minSize: { w: 80, h: 32 },        // 구 LIMITS.minAnswerBoxSize 가 여기로
+  defaultData: () => ({ answers: [], points: 1 }),
+  interactive: false,               // ★ 아래 참고
+  rotatable: false,                 // 구 PLAN Q8 이 여기로
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  toPublic: ({ answers: _a, ...rest }) => rest,   // 구 PLAN D14 가 여기로
+  render: (ctx) => Node,            // vanilla 경로
+  renderInspector: (ctx) => Node,   // vanilla 경로
+})
+```
+
+같은 레지스트리를 Editor 와 Viewer 에 넘긴다. `kind` 가 둘 사이의 계약이다.
+
+#### 렌더 경로가 둘인 이유
+
+| 경로 | 누가 채우나 |
+| --- | --- |
+| `render` 가 있다 | 렌더 층이 부른다 (vanilla) |
+| 없다 | **컨테이너를 비워 두고 `onMountCustom` 으로 알린다.** 래퍼가 portal 한다 |
+
+프레임워크 래퍼는 `render` 를 쓰지 않는다. React 의 `createPortal` · Vue 의 `Teleport` 가
+컨테이너 노드에 컴포넌트를 꽂는 방식이라, 렌더 층이 내용을 만들면 안 된다.
+
+**이 분리 덕분에 R8 이 프레임워크 없이 독립 검증된다** — 데모가 `render` 슬롯으로 도는 것을
+확인했고, R9 는 portal 만 얹는다.
+
+#### ★ 포인터 이벤트 소유권
+
+편집기에서 콘텐츠는 기본적으로 `pointer-events: none` 이다. 클릭이 **객체 선택·드래그**로 가야
+하기 때문이다. 재밌는 것은 **구 코드가 이미 이 문제를 피하려고 진짜 `<input>` 을 쓰지 않았다는
+점**이다 — `ShortAnswerView` 주석에 "입력 요소를 두면 포커스를 가로채고 드래그도 막는다" 고
+적혀 있었다. 그 판단을 계약으로 올렸다.
+
+`interactive: true` 면 그 타입만 콘텐츠가 먹고, 그 객체는 테두리·핸들로만 선택된다.
+뷰어에서는 이 값과 무관하게 항상 콘텐츠가 먹는다 — 뷰어는 응답을 받는 화면이다.
+
+데모에 `interactive` 를 켠 타입과 끈 타입을 하나씩 뒀다. 브라우저에서 차이를 눈으로 비교할
+수 있어야 한다.
+
+#### ⚠️ `position: fixed` 함정 — 우회 불가
+
+콘텐츠는 페이지 컨테이너의 `transform: scale()` **안**에 있다. CSS 는 transform 이 걸린 조상을
+`fixed` 의 containing block 으로 만들므로, 소비자 컴포넌트 안의 드롭다운·툴팁·모달이 화면
+기준이 아니라 **프레임 기준으로 갇힌다.** 스펙이라 우회할 방법이 없다 — 그런 UI 는 소비자가
+자기 portal 로 `document.body` 에 띄워야 한다. ARCHITECTURE 에 박았다.
+
+반대로 배율이 콘텐츠를 함께 줄이는 것은 의도한 동작이다("viewport 처럼"). 컨테이너 쿼리는
+**pt 박스 크기**를 보므로 배율과 무관하게 레이아웃이 일정하다.
+
+#### 리사이즈 리플로우는 공짜다
+
+프레임의 `width`/`height` 가 pt 인라인 스타일이고 드래그 중에는 `previewRect` 를 쓴다. 핸들을
+끌면 프레임 폭이 실시간으로 바뀌고 콘텐츠는 평범한 DOM 자식이므로 flex 줄바꿈이 알아서
+일어난다. 추가 작업이 없다.
+
+⚠️ **다만 실측이 필요하다.** 드래그 중 rAF 코얼레싱을 쓰지 않는 판단(PLAN 18.6)은 가벼운
+박스를 전제로 했다. 무거운 소비자 컴포넌트가 매 `pointermove` 마다 리플로우하면 그 판단이
+되돌아올 수 있다.
+
+#### 함께 정리한 것
+
+| 지점 | 변경 |
+| --- | --- |
+| 객체 수량 한도 | Answer Box 전용 → **전체 객체**. 성능 상한은 유형과 무관하다 |
+| `ToolId` | 하드코딩 6개 → `select`·`text`·`shape`·`eraser`·`` `custom:${string}` `` |
+| 툴바 | 하드코딩 → **레지스트리 주도.** 타입 추가가 곧 도구 추가다 |
+| `minSizeFor` · `resizeRect` | override 를 받는다 — 순수 기하가 레지스트리를 import 하지 않게 |
+| `setRotation` | `canRotate` 술어를 받는다. 모르는 규칙을 아는 척하지 않는다 |
+| CSS 토큰 | `--pck-answerbox-*` → `--pck-custom-*`. 죽은 `.pck-answer` 규칙 6블록 제거 |
+| 문구 | 132 → 106개. 누락 키 0 (스크립트로 확인) |
+
+#### 검증 — 234 케이스 (33 그룹)
+
+인스펙터 케이스 29건은 Answer Box 패널 전용이라 삭제했다. R9 에서 커스텀 슬롯 케이스로 새로
+쓴다 — 그때 portal 경로가 함께 붙는다.
+
+새로 고정한 것: `render` 슬롯이 콘텐츠를 그리는 것 · 없으면 컨테이너를 비우고 마운트를 알리는
+것 · **기본은 콘텐츠가 포인터를 먹지 않는 것** · `interactive: true` 면 먹는 것 ·
+**등록되지 않은 `kind` 를 버리지 않고 자리를 지키는 것** · 중복 `kind` 등록이 던지는 것 ·
+소비자 `validate` 메시지가 그대로 전달되는 것.
+
+등록되지 않은 `kind` 를 버리지 않는 이유: 저장된 문서가 지금 없는 타입을 담고 있을 수 있고
+(타입을 지웠거나 다른 앱이 만든 문서), 버리면 저장할 때 데이터가 사라진다.

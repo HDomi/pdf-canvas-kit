@@ -737,55 +737,9 @@
  * 편집기에서는 실제 input/select를 쓰지 않는다. 클릭이 객체 선택으로 가야 하기 때문이다.
  * 학생용 뷰어에서 진짜 폼 요소가 된다 (M10).
  */
-.pck-answer {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 2px 6px;
-  background: var(--pck-answerbox-bg);
-  border: 1px solid var(--pck-answerbox-border);
-  border-radius: 2px;
-  color: var(--pck-answerbox-ink);
-  font-size: 10px;
-  overflow: hidden;
-}
-
-.pck-answer--essay {
-  align-items: flex-start;
-}
-
-.pck-answer-badge {
-  flex: none;
-  min-width: 14px;
-  height: 14px;
-  padding: 0 3px;
-  display: inline-grid;
-  place-items: center;
-  background: var(--pck-accent);
-  color: var(--pck-accent-ink);
-  border-radius: 7px;
-  font-size: 9px;
-  font-variant-numeric: tabular-nums;
-}
-
-.pck-answer-caret {
-  margin-left: auto;
-  opacity: 0.5;
-}
-
-.pck-answer-hint {
-  color: var(--pck-state-danger);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
 
 /* 내보내기를 막는 객체는 테두리로도 알려 준다 (기획 6.3). */
-.pck-obj.is-invalid .pck-answer {
+.pck-obj.is-invalid .pck-obj-custom {
   border-color: var(--pck-invalid-stroke);
   box-shadow: 0 0 0 1px var(--pck-invalid-stroke);
 }
@@ -1205,13 +1159,6 @@
 /*
  * 문서에 저장되지 않는 파생값이다. 위치에서 계산되므로 객체를 옮기면 번호도 따라 바뀐다.
  */
-.pck-answer-no {
-  flex: none;
-  font-weight: 700;
-  font-size: 10px;
-  color: var(--pck-ink);
-  font-variant-numeric: tabular-nums;
-}
 
 /* ---- 페이지 드래그 순서 변경 ------------------------------------------ */
 
@@ -1309,4 +1256,57 @@
   background: var(--pck-accent);
   border-color: var(--pck-accent);
   color: var(--pck-accent-ink);
+}
+
+/* ------------------------------------------------- 커스텀 객체 (D25) --- */
+
+/**
+ * 기본 틀. 배경·테두리는 인라인 스타일(`BoxStyle`)이 덮고, 미지정이면 아래 토큰이 살아 있다.
+ */
+.pck-obj-custom {
+  width: 100%;
+  height: 100%;
+  background: var(--pck-custom-bg);
+  border: 1px solid var(--pck-custom-border);
+  border-radius: var(--pck-radius-sm);
+  color: var(--pck-custom-ink);
+  overflow: hidden;
+}
+
+/**
+ * 콘텐츠 컨테이너.
+ *
+ * ★ 기본적으로 포인터 이벤트를 받지 않는다. 클릭이 **객체 선택·드래그**로 가야 하기 때문이다
+ * (PLAN D25). 안쪽 `<input>` 이 포커스를 가로채면 객체를 옮길 수 없다.
+ *
+ * 프레임 크기가 pt 로 바뀌면 이 박스도 함께 바뀌므로, 소비자 컴포넌트가 자기 CSS 대로
+ * 리플로우한다 — flex 줄바꿈 같은 것이 공짜로 동작한다.
+ */
+.pck-obj-custom-content {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+/** `objectType.interactive: true` 인 타입만. 그 객체는 테두리·핸들로만 선택된다. */
+.pck-obj-custom-content.is-interactive {
+  pointer-events: auto;
+}
+
+/**
+ * 등록되지 않은 `kind`.
+ *
+ * 객체를 버리지 않고 자리를 지킨다 — 버리면 저장할 때 데이터가 사라진다.
+ */
+.pck-obj-custom--unknown {
+  display: grid;
+  place-items: center;
+  border-style: dashed;
+  border-color: var(--pck-state-danger);
+  background: color-mix(in srgb, var(--pck-state-danger) 8%, transparent);
+}
+
+.pck-obj-custom-unknown-mark {
+  color: var(--pck-state-danger);
+  font-weight: 700;
 }

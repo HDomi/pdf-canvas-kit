@@ -12,32 +12,26 @@ import {
   clientToPage,
   constrainRect,
   createId,
+  createObjectTypeRegistry,
   createPage,
   createPDFCanvasDoc,
-  findAnswerFieldPaths,
+  defineObjectType,
+  LIMITS,
+  UNKNOWN_KIND_ISSUE,
+  validateDoc,
   formatPaperLabel,
   hitTestObject,
-  matchesAnyAnswer,
-  matchesChoiceSet,
   mergeBoxStyle,
   moveRect,
-  normalizeAnswer,
-  numberQuestions,
   rotationFromPointer,
   pageToFrame,
   pickObjectsInRect,
   rectFromPoints,
   resizeRect,
-  scoreAttempt,
-  scoreItem,
-  serializeDoc,
   stepZoom,
-  toPublicDoc,
   validateObject,
+  type CustomObject,
   type PageViewport,
-  type ShortAnswerBox,
-  type DropboxAnswerBox,
-  type EssayAnswerBox,
   type PDFCanvasObject,
 } from 'pdf-canvas-kit'
 
@@ -72,35 +66,20 @@ const vp = (scale: number, left = 100, top = 50): PageViewport => ({
 /** 소수 오차를 흡수해 비교한다. 좌표 왕복은 부동소수 계산이다. */
 const round = (n: number, digits = 4) => Number(n.toFixed(digits))
 
-function shortBox(answers: string[], points = 1): ShortAnswerBox {
+/**
+ * 커스텀 객체 (PLAN D25).
+ *
+ * 구 `shortBox` · `dropboxBox` · `essayBox` 를 대신한다. 이 패키지는 `data` 를 해석하지 않으므로
+ * 케이스도 내용을 신경 쓰지 않는다 — 확인하는 것은 기본 틀의 기하와 스타일이다.
+ */
+function customBox(over: Partial<CustomObject> = {}): CustomObject {
   return {
-    id: 'short-1',
-    type: 'answer.short',
+    id: 'custom-1',
+    type: 'custom',
+    kind: 'demo.box',
     rect: { x: 0, y: 0, w: 160, h: 40 },
-    points,
-    answers,
-  }
-}
-
-function dropboxBox(labels: string[], correctIndexes: number[], points = 1): DropboxAnswerBox {
-  const choices = labels.map((label, i) => ({ id: `c${i}`, label }))
-  return {
-    id: 'drop-1',
-    type: 'answer.dropbox',
-    rect: { x: 0, y: 0, w: 160, h: 40 },
-    points,
-    choices,
-    correctChoiceIds: correctIndexes.map((i) => `c${i}`),
-  }
-}
-
-function essayBox(points = 5): EssayAnswerBox {
-  return {
-    id: 'essay-1',
-    type: 'answer.essay',
-    rect: { x: 0, y: 0, w: 200, h: 80 },
-    points,
-    rubric: '모범답안',
+    data: {},
+    ...over,
   }
 }
 
@@ -149,9 +128,19 @@ export const GROUPS: CaseGroup[] = [
         actual: () => clampIntoPage({ x: -50, y: -20, w: 100, h: 50 }, A4),
       },
       {
-        name: 'Answer Box 최소 크기 적용',
+        /*
+         * 구 판은 Answer Box 에 80×32pt 최소 크기를 코어에 박아 뒀다(학생이 탭할 수 있어야
+         * 하므로). 그 판단은 콘텐츠를 아는 쪽의 것이라 `objectType.minSize` 로 옮겼고,
+         * `minSizeFor` 는 override 를 받는다 (PLAN D25).
+         */
+        name: '커스텀 최소 크기는 override 로 들어온다',
         expected: { x: 10, y: 10, w: 80, h: 32 },
-        actual: () => constrainRect({ x: 10, y: 10, w: 5, h: 5 }, A4, 'answer.short'),
+        actual: () => constrainRect({ x: 10, y: 10, w: 5, h: 5 }, A4, 'custom', { w: 80, h: 32 }),
+      },
+      {
+        name: 'override 가 없으면 공통 최소 크기',
+        expected: { x: 10, y: 10, w: 8, h: 8 },
+        actual: () => constrainRect({ x: 10, y: 10, w: 1, h: 1 }, A4, 'custom'),
       },
       {
         name: '도형 최소 크기 적용',
@@ -238,7 +227,8 @@ export const GROUPS: CaseGroup[] = [
             'se',
             { dx: -500, dy: -500 },
             A4,
-            'answer.short',
+            'custom',
+            { minSize: { w: 80, h: 32 } },
           )
           return { w: r.w, h: r.h }
         },
@@ -528,152 +518,98 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '검증 규칙 (PLAN 12)',
-    note: '인스펙터 경고와 내보내기 차단이 같은 함수를 쓴다.',
+    title: '검증 규칙 (PLAN 12, D25)',
+    note: '이 패키지가 아는 것은 문서·페이지 수준 규칙과 등록되지 않은 kind 뿐이다. 커스텀 객체의 내용 검증은 소비자 objectType.validate(data) 가 한다.',
     cases: [
       {
-        name: '단답형 정답 없음',
-        expected: ['SHORT_NO_ANSWER'],
-        actual: () => validateObject(shortBox([])),
+        name: '빈 문서',
+        expected: ['EMPTY_DOC'],
+        actual: () => validateDoc(createPDFCanvasDoc()).issues.map((i) => i.code),
       },
       {
-        name: '단답형 공백만',
-        expected: ['SHORT_NO_ANSWER'],
-        actual: () => validateObject(shortBox(['  '])),
-      },
-      { name: '단답형 정상', expected: [], actual: () => validateObject(shortBox(['서울'])) },
-      {
-        name: '단답형 50자 초과',
-        expected: ['SHORT_ANSWER_TOO_LONG'],
-        actual: () => validateObject(shortBox(['a'.repeat(51)])),
-      },
-      {
-        name: '배점 0',
-        expected: ['POINTS_INVALID', 'SHORT_NO_ANSWER'],
-        actual: () => validateObject(shortBox([], 0)),
-      },
-      {
-        name: '배점 소수',
-        expected: ['POINTS_INVALID'],
-        actual: () => validateObject(shortBox(['답'], 1.5)),
-      },
-      {
-        name: '드롭박스 보기 부족',
-        expected: ['DROPBOX_FEW_CHOICES', 'DROPBOX_NO_CORRECT'],
-        actual: () => validateObject(dropboxBox(['하나', ''], [])),
-      },
-      {
-        name: '드롭박스 정답 미지정',
-        expected: ['DROPBOX_NO_CORRECT'],
-        actual: () => validateObject(dropboxBox(['가', '나'], [])),
-      },
-      {
-        name: '드롭박스 중복 보기',
-        expected: ['DROPBOX_DUPLICATE_CHOICE'],
-        actual: () => validateObject(dropboxBox(['가', '가'], [0])),
-      },
-      {
-        name: '드롭박스 정상 (복수 정답)',
+        name: '페이지가 있으면 통과',
         expected: [],
-        actual: () => validateObject(dropboxBox(['가', '나', '다'], [0, 2])),
+        actual: () =>
+          validateDoc(createPDFCanvasDoc({ pages: [createPage()] })).issues.map((i) => i.code),
       },
       {
-        name: '빈 보기가 정답이면 정답 없음으로',
-        expected: ['DROPBOX_NO_CORRECT'],
-        actual: () => validateObject(dropboxBox(['가', '나', ''], [2])),
+        name: '레지스트리 없이 검증하면 커스텀을 건너뛴다',
+        expected: [],
+        actual: () => validateObject(customBox()),
       },
-      { name: '서술형은 정답 검증 없음', expected: [], actual: () => validateObject(essayBox()) },
-    ],
-  },
-
-  {
-    title: '채점 정규화 (기획 3.3)',
-    note: '공백 제거 · 대소문자 무시 · 전각/반각 통일(NFKC).',
-    cases: [
-      { name: '공백 제거', expected: 'seoul', actual: () => normalizeAnswer(' Se oul ') },
-      { name: '줄바꿈·탭도 공백', expected: 'ab', actual: () => normalizeAnswer('a\n\tb') },
       {
-        name: '전각 영숫자 → 반각',
-        expected: 'abc123',
-        actual: () => normalizeAnswer('ＡＢＣ１２３'),
+        name: '★ 등록되지 않은 kind 를 잡는다 (객체를 버리지 않는다)',
+        expected: [UNKNOWN_KIND_ISSUE],
+        actual: () => {
+          const types = createObjectTypeRegistry([
+            defineObjectType({
+              kind: 'other',
+              label: '다른 것',
+              defaultSize: { w: 10, h: 10 },
+              defaultData: () => ({}),
+            }),
+          ])
+          return validateObject(customBox({ kind: 'demo.box' }), types).map((i) => i.code)
+        },
       },
-      { name: '한글 유지', expected: '대한민국', actual: () => normalizeAnswer('대한 민국') },
       {
-        name: '허용 답안 중 하나와 일치',
+        name: '소비자 validate 가 낸 메시지를 그대로 전달한다',
+        expected: [{ code: 'CUSTOM_INVALID', message: '정답을 입력하세요' }],
+        actual: () => {
+          const types = createObjectTypeRegistry([
+            defineObjectType<{ answers: string[] }>({
+              kind: 'demo.box',
+              label: '단답형',
+              defaultSize: { w: 160, h: 40 },
+              defaultData: () => ({ answers: [] }),
+              validate: (d) => (d.answers.length > 0 ? null : ['정답을 입력하세요']),
+            }),
+          ])
+          return validateObject(customBox({ data: { answers: [] } }), types)
+        },
+      },
+      {
+        name: 'validate 가 통과하면 빈 배열',
+        expected: [],
+        actual: () => {
+          const types = createObjectTypeRegistry([
+            defineObjectType<{ answers: string[] }>({
+              kind: 'demo.box',
+              label: '단답형',
+              defaultSize: { w: 160, h: 40 },
+              defaultData: () => ({ answers: [] }),
+              validate: (d) => (d.answers.length > 0 ? null : ['정답을 입력하세요']),
+            }),
+          ])
+          return validateObject(customBox({ data: { answers: ['서울'] } }), types)
+        },
+      },
+      {
+        name: '페이지당 객체 한도를 넘기면 잡는다',
+        expected: ['OBJECT_LIMIT_PAGE'],
+        actual: () => {
+          const objects = Array.from({ length: LIMITS.objectsPerPage + 1 }, (_, i) =>
+            customBox({ id: `o${i}` }),
+          )
+          const doc = createPDFCanvasDoc({ pages: [createPage({ objects })] })
+          return validateDoc(doc).issues.map((i) => i.code)
+        },
+      },
+      {
+        name: '중복 kind 등록은 던진다',
         expected: true,
-        actual: () => matchesAnyAnswer('SEOUL', ['서울', 'seoul']),
-      },
-      { name: '빈 답안은 오답', expected: false, actual: () => matchesAnyAnswer('   ', ['서울']) },
-      {
-        name: '허용 답안에 빈 값이 있어도 오답',
-        expected: false,
-        actual: () => matchesAnyAnswer('', ['']),
-      },
-      {
-        name: '드롭박스 정확히 일치',
-        expected: true,
-        actual: () => matchesChoiceSet(['c0', 'c2'], ['c2', 'c0']),
-      },
-      {
-        name: '드롭박스 부분 선택은 오답',
-        expected: false,
-        actual: () => matchesChoiceSet(['c0'], ['c0', 'c2']),
-      },
-      {
-        name: '드롭박스 초과 선택도 오답',
-        expected: false,
-        actual: () => matchesChoiceSet(['c0', 'c1', 'c2'], ['c0', 'c2']),
-      },
-    ],
-  },
-
-  {
-    title: '채점 (기획 3.3)',
-    note: '배점 전액 또는 0. 미채점 서술형은 집계에서 제외된다.',
-    cases: [
-      {
-        name: '단답형 정답 → 배점 전액',
-        expected: { score: 3, correct: true, graded: true },
         actual: () => {
-          const s = scoreItem(shortBox(['서울'], 3), { type: 'answer.short', value: '서 울' })
-          return { score: s.score, correct: s.correct, graded: s.graded }
-        },
-      },
-      {
-        name: '단답형 미응답 → 0점',
-        expected: { score: 0, correct: false },
-        actual: () => {
-          const s = scoreItem(shortBox(['서울'], 3), undefined)
-          return { score: s.score, correct: s.correct }
-        },
-      },
-      {
-        name: '서술형 미채점 → graded false',
-        expected: { score: 0, correct: null, graded: false },
-        actual: () => {
-          const s = scoreItem(essayBox(5), { type: 'answer.essay', value: '답안' })
-          return { score: s.score, correct: s.correct, graded: s.graded }
-        },
-      },
-      {
-        name: '서술형 정답 지정 → 배점 반영',
-        expected: { score: 5, graded: true },
-        actual: () => {
-          const s = scoreItem(essayBox(5), { type: 'answer.essay', value: '답안' }, 'correct')
-          return { score: s.score, graded: s.graded }
-        },
-      },
-      {
-        name: '집계: 미채점 서술형은 분모에서 제외',
-        expected: { score: 1, gradedPoints: 1, totalPoints: 6, pendingEssays: 1 },
-        actual: () => {
-          const objs: PDFCanvasObject[] = [shortBox(['가'], 1), essayBox(5)]
-          const r = scoreAttempt(objs, { 'short-1': { type: 'answer.short', value: '가' } })
-          return {
-            score: r.score,
-            gradedPoints: r.gradedPoints,
-            totalPoints: r.totalPoints,
-            pendingEssays: r.pendingEssays,
+          const def = defineObjectType({
+            kind: 'dup',
+            label: 'x',
+            defaultSize: { w: 10, h: 10 },
+            defaultData: () => ({}),
+          })
+          try {
+            createObjectTypeRegistry([def, def])
+            return false
+          } catch {
+            return true
           }
         },
       },
@@ -784,232 +720,6 @@ export const GROUPS: CaseGroup[] = [
             { stroke: '#000', strokeWidth: 3 },
             { stroke: undefined, strokeWidth: undefined },
           ),
-      },
-      {
-        name: '학생용 문서에 스타일이 유지된다 (교사가 맞춘 색을 학생도 본다)',
-        expected: '#abcdef',
-        actual: () => {
-          const box: ShortAnswerBox = { ...shortBox(['a']), style: { fill: '#abcdef' } }
-          const doc = createPDFCanvasDoc({ pages: [createPage({ objects: [box] })] })
-          const pub = toPublicDoc(doc)
-          const obj = pub.pages[0]!.objects[0] as { style?: { fill?: string | null } }
-          return obj.style?.fill
-        },
-      },
-    ],
-  },
-
-  {
-    title: '문항 번호 자동 부여 (PLAN Q9)',
-    note: '페이지 순 → 같은 페이지 안에서 위에서 아래, 같은 줄이면 왼쪽에서 오른쪽. 수동 label 우선.',
-    cases: [
-      {
-        name: '한 페이지 위→아래 순서',
-        expected: ['1', '2', '3'],
-        actual: () => {
-          const mk = (id: string, y: number): ShortAnswerBox => ({
-            id,
-            type: 'answer.short',
-            rect: { x: 100, y, w: 80, h: 32 },
-            points: 1,
-            answers: ['a'],
-          })
-          const doc = createPDFCanvasDoc({
-            pages: [createPage({ objects: [mk('c', 300), mk('a', 100), mk('b', 200)] })],
-          })
-          return numberQuestions(doc).map((q) => q.display)
-        },
-      },
-      {
-        name: '같은 줄이면 왼쪽부터 (y 오차 8pt 안)',
-        expected: ['left', 'right'],
-        actual: () => {
-          const mk = (id: string, x: number, y: number): ShortAnswerBox => ({
-            id,
-            type: 'answer.short',
-            rect: { x, y, w: 80, h: 32 },
-            points: 1,
-            answers: ['a'],
-          })
-          const doc = createPDFCanvasDoc({
-            // y가 5pt 어긋났지만 같은 줄로 봐야 한다.
-            pages: [createPage({ objects: [mk('right', 300, 105), mk('left', 100, 100)] })],
-          })
-          return numberQuestions(doc).map((q) => q.objectId)
-        },
-      },
-      {
-        name: 'y 오차를 넘으면 다른 줄',
-        expected: ['upper', 'lower'],
-        actual: () => {
-          const mk = (id: string, x: number, y: number): ShortAnswerBox => ({
-            id,
-            type: 'answer.short',
-            rect: { x, y, w: 80, h: 32 },
-            points: 1,
-            answers: ['a'],
-          })
-          const doc = createPDFCanvasDoc({
-            // 20pt 차이면 다른 줄이므로 x가 커도 upper가 먼저다.
-            pages: [createPage({ objects: [mk('lower', 100, 130), mk('upper', 300, 100)] })],
-          })
-          return numberQuestions(doc).map((q) => q.objectId)
-        },
-      },
-      {
-        name: '페이지를 넘어 통과 번호',
-        expected: [1, 2, 3],
-        actual: () => {
-          const mk = (id: string): ShortAnswerBox => ({
-            id,
-            type: 'answer.short',
-            rect: { x: 0, y: 0, w: 80, h: 32 },
-            points: 1,
-            answers: ['a'],
-          })
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({ objects: [mk('p1a')] }),
-              createPage({ objects: [mk('p2a'), mk('p2b')] }),
-            ],
-          })
-          return numberQuestions(doc).map((q) => q.number)
-        },
-      },
-      {
-        name: '수동 label 이 자동 번호를 덮는다',
-        expected: [
-          { display: '가', manual: true, number: 1 },
-          { display: '2', manual: false, number: 2 },
-        ],
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                objects: [
-                  { ...shortBox(['a']), id: 'x', label: '가', rect: { x: 0, y: 0, w: 80, h: 32 } },
-                  { ...shortBox(['b']), id: 'y', rect: { x: 0, y: 100, w: 80, h: 32 } },
-                ],
-              }),
-            ],
-          })
-          return numberQuestions(doc).map((q) => ({
-            display: q.display,
-            manual: q.manual,
-            number: q.number,
-          }))
-        },
-      },
-      {
-        name: '공백만 있는 label 은 수동으로 보지 않는다',
-        expected: { display: '1', manual: false },
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [createPage({ objects: [{ ...shortBox(['a']), id: 'x', label: '   ' }] })],
-          })
-          const q = numberQuestions(doc)[0]!
-          return { display: q.display, manual: q.manual }
-        },
-      },
-      {
-        name: 'Answer Box 가 아닌 객체는 번호에서 제외',
-        expected: 1,
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                objects: [
-                  { id: 'm', type: 'mask', fill: '#fff', rect: { x: 0, y: 0, w: 10, h: 10 } },
-                  shortBox(['a']),
-                ],
-              }),
-            ],
-          })
-          return numberQuestions(doc).length
-        },
-      },
-    ],
-  },
-
-  {
-    title: '학생용 문서 · 직렬화 (PLAN D14, 4.1)',
-    note: '정답 필드가 학생 번들에 남으면 안 된다. blob 배경은 저장을 거부한다.',
-    cases: [
-      {
-        name: 'toPublicDoc 후 정답 필드 부재',
-        expected: [],
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                objects: [shortBox(['정답']), dropboxBox(['가', '나'], [0]), essayBox()],
-              }),
-            ],
-          })
-          return findAnswerFieldPaths(toPublicDoc(doc))
-        },
-      },
-      {
-        name: '원본에는 정답 필드가 있다 (대조군)',
-        expected: 3,
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                objects: [shortBox(['정답']), dropboxBox(['가', '나'], [0]), essayBox()],
-              }),
-            ],
-          })
-          return findAnswerFieldPaths(doc).length
-        },
-      },
-      {
-        name: 'blob 배경 직렬화 → 에러',
-        expected: 'BlobBackgroundError',
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                background: {
-                  kind: 'image',
-                  url: 'blob:http://x/1',
-                  origin: 'blob',
-                  naturalWidth: 100,
-                  naturalHeight: 100,
-                  renderScale: 1,
-                },
-              }),
-            ],
-          })
-          try {
-            serializeDoc(doc)
-            return 'no error'
-          } catch (e) {
-            return e instanceof Error ? e.name : 'unknown'
-          }
-        },
-      },
-      {
-        name: 'remote 배경은 직렬화 가능',
-        expected: true,
-        actual: () => {
-          const doc = createPDFCanvasDoc({
-            pages: [
-              createPage({
-                background: {
-                  kind: 'image',
-                  url: 'https://cdn/1.jpg',
-                  origin: 'remote',
-                  assetId: 'a1',
-                  naturalWidth: 100,
-                  naturalHeight: 100,
-                  renderScale: 1,
-                },
-              }),
-            ],
-          })
-          return serializeDoc(doc).length > 0
-        },
       },
     ],
   },

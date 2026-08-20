@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-1.9 |
+| 문서 버전 | arch-2.0 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R3 완료, R4 부분 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R5 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -51,9 +51,11 @@
 
 **래퍼는 `EditorHandle` 계약 하나만 안다.** 그래서 세 번째 프레임워크가 와도 비용이 같다.
 
-> ⚠️ **R 트랙 진행 중이다** (PLAN 20.4). 지금 `src/vue/editor/**` 의 Vue SFC 34개가 아직 UI 를
-> 담당하고, `src/dom/` 은 `reactive.ts` 까지 만들어졌다. 새 렌더러가 완성되는 R9 에서 SFC 층을
-> 삭제한다. 그때까지 두 구현이 나란히 있는 것은 의도다 — 회귀를 대조할 기준이 필요하다(PLAN D23).
+> ⚠️ **R 트랙 진행 중이다** (PLAN 20.4). `src/vue/**` 는 2026.08.20 에 **삭제됐다** —
+> 원본은 `_LumiTeach/lumiteach-worksheet-system` 에 git 으로 보존돼 있다.
+> `src/react/` · `src/vue/` 의 얇은 래퍼와 `EditorHandle` facade 는 **R8 에서 만들어진다.**
+> 현재 소비 경로는 `createEditorController()` + `stageWrap()` 직접 마운트뿐이고,
+> 상단바·툴바·페이지 목록·인스펙터는 R6·R7 에서 붙는다.
 
 ---
 
@@ -72,7 +74,7 @@
 | 패널 폭 기본값 | `LAYOUT_DEFAULTS` + `tokens.css` | 사용자가 조정하면 localStorage가 우선(§7.6) |
 | 문항 번호 규칙 | `core/model/numbering.ts` → `Y_TOLERANCE_PT` | 문서에 저장되지 않는 파생값 |
 | 박스 기본 색 | `tokens.css` → `--pck-answerbox-*` | 객체가 색을 지정하지 않았을 때만 적용(§3.3) |
-| UI 문구 | `src/core/i18n/{ko,en}.ts` | 하드코딩 금지(기획 3.2) |
+| UI 문구 | [src/core/config/strings.ts](src/core/config/strings.ts) | **§15.** `configureStrings()` 로 키별 교체. i18n 시스템은 제거했다(PLAN D24) |
 | 반응성 동작 (signal·effect) | [src/dom/reactive.ts](src/dom/reactive.ts) | **§12.** 깊은 반응성이 없다는 함정을 먼저 읽는다 |
 | 편집기 동작·단축키·액션 | [src/controller/editor.ts](src/controller/editor.ts) | **§14.** UI 가 아니라 여기가 동작을 정한다 |
 
@@ -530,6 +532,8 @@ src/
 │  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
 │  h.ts                      ★ el · svg · when · list — DOM 바인딩 (§13)
 │  editor/                    재작성된 UI (구 src/vue/editor/**)
+│    canvasStage.ts            스크롤 컨테이너 — 한 페이지만 (D8)
+│    stageArea.ts             ★ 컨트롤러 ↔ 렌더 층이 만나는 유일한 지점
 │    pageFrame.ts            ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
 │    pageBackground.ts         배경 이미지 또는 빈 종이
 │    selectionOverlay.ts      ★ 스케일 밖 — 선택 테두리·마퀴
@@ -542,7 +546,6 @@ src/
 │  pointerTool.ts             포인터 → 상태 머신
 │  pageNav.ts pan.ts panelSizes.ts pageReorder.ts
 │  engineState.ts i18n.ts editorState.ts textEntry.ts
-├─ vue/                      구 Vue SFC 층  ⚠️ R9 에서 삭제 예정 (PLAN D23)
 │  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
 │  ├─ composables/
 │  │   useEngine.ts           engine → Vue reactive 브릿지
@@ -930,3 +933,54 @@ DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어�
 1. **깊은 반응성이 없다** — `view.value.activeTool = x` 는 아무 일도 하지 않는다(§12.1)
 2. **`nextTick()` 이 사라진다** — effect 가 동기라 대입 직후 스타일이 갱신돼 있다
 3. **레이아웃을 읽는 `watch` 는 `defer: true`** — 아니면 낡은 좌표를 캐시한다(§12.1 ②)
+
+---
+
+## 15. UI 문구 (`core/config/strings.ts`)
+
+**i18n 시스템은 제거됐다** (PLAN D24, 2026.08.20). `I18nPort` · `createI18n` · ko/en 두 표 ·
+locale 전환이 모두 없어지고, 문구 표 하나와 조회 함수만 남았다.
+
+```ts
+import { text } from 'pdf-canvas-kit'   // 내부에서는 core/config/strings
+text('error.pageLimit')
+text('error.exportBlocked', { count: 3 })   // {count} 자리를 채운다
+```
+
+`t` 가 컴포넌트·컨트롤러 시그니처에서 전부 사라졌다. 모듈 수준 조회이므로 배선이 없다.
+
+### 15.1 문구 바꾸기
+
+```ts
+import { configureStrings } from 'pdf-canvas-kit'
+
+// 앱 부트스트랩에서 한 번. 지정한 키만 덮는다.
+configureStrings({ 'topbar.export': '과제로 내보내기' })
+```
+
+`configurePdfResources()` 와 같은 형태다 — 모듈 수준 설정을 한 번 주입한다.
+
+⚠️ **반응형이 아니다.** 편집기가 떠 있는 상태에서 바꾸면 이미 렌더된 문구는 갱신되지 않는다.
+검증·테스트에서는 `resetStrings()` 로 되돌려 상태가 새지 않게 한다.
+
+없는 키는 **키 자체를 돌려준다.** UI 에 `topbar.export` 가 그대로 보이는 편이 빈 엘리먼트보다
+발견하고 고치기 쉽다.
+
+### 15.2 다국어를 나중에 다시 하는 이유
+
+쓰이는 표가 하나였는데 추상화가 세 겹이었다. 그 배선 비용을 계속 내는 대신 걷어냈고, **문구가
+컴포넌트에 흩어져 있지 않고 한곳에 모여 있는 것**이 나중에 제대로 설계할 때의 출발점이다.
+
+컴포넌트에 하드코딩하는 안은 버렸다 — R4 에서 걷어낸 위반(캔버스 문구 3건이 한국어로 박혀 있어
+`locale: 'en'` 에서도 한국어가 남았다)을 되돌리는 것이기 때문이다.
+
+### 15.3 스타일 배포
+
+`dist/styles.css` 는 CSS 전용 엔트리(`src/styles.ts`)에서 나온다.
+
+**코어 엔트리는 CSS 를 import 하지 않는다.** 채점 함수만 가져다 쓰는 소비자에게 19KB 스타일을
+딸려 보내지 않기 위해서다. 소비자가 명시적으로 가져간다.
+
+```ts
+import 'pdf-canvas-kit/styles.css'
+```

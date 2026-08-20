@@ -16,7 +16,7 @@
  *
  * 구 `src/vue/editor/PageFrame.vue` 의 이식.
  */
-import { el, type Child } from '../h'
+import { el, type Child, type ElProps } from '../h'
 import type { ReadSignal } from '../reactive'
 import { frameSize } from '../../core/geometry/units'
 import type { PDFCanvasPage } from '../../core/model/types'
@@ -35,6 +35,13 @@ export interface PageFrameProps {
    * 좌표 변환이 이 요소의 `getBoundingClientRect()` 를 기준으로 하기 때문이다 (PLAN 5.4).
    */
   ref: (el: HTMLElement | null) => void
+  /**
+   * 프레임에 붙일 이벤트.
+   *
+   * 스테이지가 아니라 **프레임**에 붙인다. 스테이지에 붙이면 페이지 밖 여백을 클릭해도
+   * 객체 생성 드래그가 시작된다.
+   */
+  on?: ElProps<HTMLDivElement>['on']
 }
 
 export function pageFrame(props: PageFrameProps): HTMLElement {
@@ -45,6 +52,7 @@ export function pageFrame(props: PageFrameProps): HTMLElement {
     {
       class: 'pck-page-frame',
       attr: { 'data-page-id': () => props.page.value.id },
+      ...(props.on ? { on: props.on } : {}),
       style: {
         width: () => frame().width,
         height: () => frame().height,

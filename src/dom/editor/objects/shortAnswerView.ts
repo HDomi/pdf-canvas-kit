@@ -8,15 +8,14 @@
  */
 import { el, when } from '../../h'
 import type { ReadSignal } from '../../reactive'
+import { text } from '../../../core/config/strings'
 import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { ShortAnswerBox } from '../../../core/model/types'
-import type { Translate } from '../../../controller/i18n'
 import { answerBadges } from './objectView'
 
 export interface ShortAnswerViewProps {
   object: ReadSignal<ShortAnswerBox>
   questionNumber: () => string | null
-  t: ReadSignal<Translate>
 }
 
 export function shortAnswerView(props: ShortAnswerViewProps): HTMLElement {
@@ -34,7 +33,7 @@ export function shortAnswerView(props: ShortAnswerViewProps): HTMLElement {
       answerBadges(props.questionNumber, () => props.object.value.points),
       when(
         () => !hasAnswer(),
-        () => el('span', { class: 'pck-answer-hint' }, [() => props.t.value('canvas.noAnswer')]),
+        () => el('span', { class: 'pck-answer-hint' }, [() => text('canvas.noAnswer')]),
       ),
     ],
   )

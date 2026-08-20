@@ -3,7 +3,7 @@
  *
  * Vue 컴포넌트는 `/vue` 서브패스에 있다.
  * ```ts
- * import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
+ * import { PDFCanvasEditor } from 'pdf-canvas-kit/react'   // 또는 /vue
  * ```
  *
  * 이 엔트리는 문서 모델, 좌표 헬퍼, PDF 파이프라인, 호스트가 주입하는 port들을 내보낸다.
@@ -183,8 +183,8 @@ export type { ImageMap, SaveResult } from './prototype/localStorageStore'
 
 export { createId, copyText } from './core/util/id'
 
-export { createI18n } from './core/i18n/createI18n'
-export type { Locale, I18nKey } from './core/i18n/createI18n'
+export { DEFAULT_STRINGS, configureStrings, resetStrings, text } from './core/config/strings'
+export type { StringKey } from './core/config/strings'
 
 export { createPointerMachine } from './core/interaction/pointerMachine'
 export type {
@@ -214,7 +214,6 @@ export type {
   ConvertErrorCode,
   RasterPage,
   StoragePort,
-  I18nPort,
 } from './core/ports'
 export { ConvertError, noopStoragePort, createConsoleStoragePort } from './core/ports'
 export type { ConsoleStorageOptions } from './core/ports'

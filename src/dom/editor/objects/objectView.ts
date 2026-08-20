@@ -15,7 +15,6 @@
 import { el, when, type Child } from '../../h'
 import type { ReadSignal } from '../../reactive'
 import type { PDFCanvasObject, Rect } from '../../../core/model/types'
-import type { Translate } from '../../../controller/i18n'
 import { dropboxAnswerView } from './dropboxAnswerView'
 import { essayAnswerView } from './essayAnswerView'
 import { maskView } from './maskView'
@@ -37,7 +36,6 @@ export interface ObjectViewProps {
   editing: () => boolean
   /** 자동 부여된 문항 번호. Answer Box 에만 표시한다 (PLAN Q9). */
   questionNumber: () => string | null
-  t: ReadSignal<Translate>
   onEditText: (value: string) => void
 }
 
@@ -81,7 +79,6 @@ export function objectView(props: ObjectViewProps): HTMLElement {
 
 function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
   const questionNumber = props.questionNumber
-  const t = props.t
 
   switch (type) {
     case 'text':
@@ -105,21 +102,18 @@ function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
       return shortAnswerView({
         object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.short' }>>,
         questionNumber,
-        t,
       })
 
     case 'answer.essay':
       return essayAnswerView({
         object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.essay' }>>,
         questionNumber,
-        t,
       })
 
     case 'answer.dropbox':
       return dropboxAnswerView({
         object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'answer.dropbox' }>>,
         questionNumber,
-        t,
       })
   }
 }

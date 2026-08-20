@@ -7,15 +7,14 @@
  */
 import { el } from '../../h'
 import type { ReadSignal } from '../../reactive'
+import { text } from '../../../core/config/strings'
 import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { EssayAnswerBox } from '../../../core/model/types'
-import type { Translate } from '../../../controller/i18n'
 import { answerBadges } from './objectView'
 
 export interface EssayAnswerViewProps {
   object: ReadSignal<EssayAnswerBox>
   questionNumber: () => string | null
-  t: ReadSignal<Translate>
 }
 
 export function essayAnswerView(props: EssayAnswerViewProps): HTMLElement {
@@ -27,7 +26,7 @@ export function essayAnswerView(props: EssayAnswerViewProps): HTMLElement {
     },
     [
       answerBadges(props.questionNumber, () => props.object.value.points),
-      el('span', { class: 'pck-answer-hint' }, [() => props.t.value('canvas.essayManual')]),
+      el('span', { class: 'pck-answer-hint' }, [() => text('canvas.essayManual')]),
     ],
   )
 }

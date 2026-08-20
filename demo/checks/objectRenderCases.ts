@@ -11,9 +11,8 @@
 import { objectView } from '../../src/dom/editor/objects/objectView'
 import { pageFrame } from '../../src/dom/editor/pageFrame'
 import { selectionOverlay } from '../../src/dom/editor/selectionOverlay'
-import { scope, signal, type ReadSignal } from '../../src/dom/reactive'
-import { createTranslator } from '../../src/controller/i18n'
-import { createId, createPage, A4_PT } from 'pdf-canvas-kit'
+import { scope, signal } from '../../src/dom/reactive'
+import { configureStrings, createId, createPage, resetStrings, A4_PT } from 'pdf-canvas-kit'
 import type {
   DropboxAnswerBox,
   PageViewport,
@@ -25,9 +24,6 @@ import type {
   TextObject,
 } from 'pdf-canvas-kit'
 import type { CaseGroup } from './cases'
-
-const t = createTranslator(signal<'ko' | 'en' | undefined>('ko'), signal(undefined))
-const tEn = createTranslator(signal<'ko' | 'en' | undefined>('en'), signal(undefined))
 
 const RECT: Rect = { x: 120, y: 300, w: 160, h: 40 }
 
@@ -97,7 +93,6 @@ function render<T>(
     previewRotation: number | null
     editing: boolean
     questionNumber: string | null
-    t: ReadSignal<ReturnType<typeof createTranslator> extends ReadSignal<infer U> ? U : never>
   }> = {},
 ): T {
   const [result, dispose] = scope(() => {
@@ -109,7 +104,6 @@ function render<T>(
       previewRotation: () => over.previewRotation ?? null,
       editing: () => over.editing ?? false,
       questionNumber: () => over.questionNumber ?? null,
-      t: over.t ?? t,
       onEditText: () => {},
     })
     return fn(node)
@@ -201,7 +195,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRotation: () => null,
               editing: () => false,
               questionNumber: () => null,
-              t,
               onEditText: () => {},
             })
             const before = n.classList.contains('is-selected')
@@ -254,12 +247,21 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
           render(shortObj(), (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null),
       },
       {
-        name: '★ 같은 문구가 en 에서는 영어로 나온다 (하드코딩 제거 확인)',
-        expected: 'No answer set',
-        actual: () =>
-          render(shortObj(), (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null, {
-            t: tEn,
-          }),
+        /*
+         * i18n 시스템을 제거한 뒤에도(2026.08.20) 문구가 컴포넌트에 박혀 있지 않다는 것을
+         * 고정한다. `configureStrings()` 로 덮이면 하드코딩이 아니다.
+         */
+        name: '★ 문구가 하드코딩이 아니다 — configureStrings 로 덮인다',
+        expected: 'OVERRIDDEN',
+        actual: () => {
+          configureStrings({ 'canvas.noAnswer': 'OVERRIDDEN' })
+          const got = render(
+            shortObj(),
+            (n) => n.querySelector('.pck-answer-hint')?.textContent ?? null,
+          )
+          resetStrings()
+          return got
+        },
       },
       {
         name: '정답이 있으면 안내 문구가 사라진다',
@@ -378,7 +380,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRotation: () => null,
               editing: () => true, // 편집 중
               questionNumber: () => null,
-              t,
               onEditText: () => {},
             })
             // 편집 중에 문서가 바뀌어도 DOM 을 덮지 않는다.
@@ -403,7 +404,6 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               previewRotation: () => null,
               editing: () => false,
               questionNumber: () => null,
-              t,
               onEditText: () => {},
             })
             const before = n.querySelector('.pck-obj-text')?.textContent ?? null

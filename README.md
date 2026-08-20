@@ -38,20 +38,21 @@ import { createPDFCanvasEditor } from 'pdf-canvas-kit'
 프로토타입, **미배포.** 기능은 M0~M7 완료 + M8 부분이고, 편집 기능은 전부 동작한다.
 
 > ⚠️ **프레임워크 무관 재구조화(R 트랙)가 진행 중이다** — PLAN 20장.
-> **지금 실제로 동작하는 것은 Vue 경로(`pdf-canvas-kit/vue`)뿐이다.**
-> 위의 React 예제와 `createPDFCanvasEditor` 는 R8 에서 만들어진다.
+> **위 세 예제 모두 아직 동작하지 않는다.** 프레임워크 래퍼와 facade 는 R8 에서 만들어진다.
+> 현재는 `createEditorController()` + `stageWrap()` 을 직접 마운트하는 경로만 있다 (`demo/editor/main.ts` 참고).
 > 진행 상황은 [PLAN 20.4 의 R 트랙 표](PLAN.md)에 있다.
 
 | 항목 | 상태 |
 | --- | --- |
-| Vue 래퍼 (`/vue`) | 동작 — 단 아직 SFC 구현이며 R9 에서 새 렌더러 위로 얇아진다 |
+| Vue 래퍼 (`/vue`) | **미구현** (R8). 구 SFC 구현은 R5 에서 삭제됐다 |
 | React 래퍼 (`/react`) | **미구현** (R8) |
 | vanilla facade (`createPDFCanvasEditor`) | **미구현** (R8) |
 | 렌더 층 바닥 (`src/dom/reactive.ts` · `h.ts`) | 완료 (R2) — 검증 케이스 68건 |
+| 객체·페이지·스테이지 렌더 | 완료 (R4·R5) — 검증 케이스 39건 |
 | 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) — 검증 케이스 33건 |
 | npm 배포 | **미배포.** `npm pack` 검증은 R9 |
 
-아래 기능 표는 **Vue 경로 기준**이다.
+아래 기능 표는 **구 Vue 구현 기준**이다 — 새 렌더 층으로 옮겨진 항목은 R 트랙 표를 본다.
 
 | | 상태 |
 | --- | --- |

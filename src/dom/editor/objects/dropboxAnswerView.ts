@@ -8,15 +8,14 @@
 import { el, when } from '../../h'
 import type { ReadSignal } from '../../reactive'
 import { LIMITS } from '../../../core/config/defaults'
+import { text } from '../../../core/config/strings'
 import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { DropboxAnswerBox } from '../../../core/model/types'
-import type { Translate } from '../../../controller/i18n'
 import { answerBadges } from './objectView'
 
 export interface DropboxAnswerViewProps {
   object: ReadSignal<DropboxAnswerBox>
   questionNumber: () => string | null
-  t: ReadSignal<Translate>
 }
 
 export function dropboxAnswerView(props: DropboxAnswerViewProps): HTMLElement {
@@ -37,7 +36,7 @@ export function dropboxAnswerView(props: DropboxAnswerViewProps): HTMLElement {
       answerBadges(props.questionNumber, () => props.object.value.points),
       el('span', { class: 'pck-answer-caret', attr: { 'aria-hidden': 'true' } }, ['▾']),
       when(incomplete, () =>
-        el('span', { class: 'pck-answer-hint' }, [() => props.t.value('canvas.dropboxIncomplete')]),
+        el('span', { class: 'pck-answer-hint' }, [() => text('canvas.dropboxIncomplete')]),
       ),
     ],
   )

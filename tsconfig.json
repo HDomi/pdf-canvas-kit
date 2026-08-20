@@ -19,7 +19,6 @@
     "baseUrl": ".",
     "paths": {
       "pdf-canvas-kit": ["./src/index.ts"],
-      "pdf-canvas-kit/vue": ["./src/vue/index.ts"],
       "pdf-canvas-kit/*": ["./src/*"]
     },
 

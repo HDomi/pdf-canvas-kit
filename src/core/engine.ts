@@ -18,7 +18,7 @@ import { createPDFCanvasDoc } from './model/defaults'
 import { toPublicDoc, type PublicPDFCanvasDoc } from './model/publicDoc'
 import type { PageBackground, PDFCanvasDoc, PDFCanvasPage } from './model/types'
 import { createPdfjsConverter } from './pdf/pdfjsConverter'
-import type { AssetPort, ConverterPort, I18nPort, StoragePort } from './ports'
+import type { AssetPort, ConverterPort, StoragePort } from './ports'
 import { ConvertError, type ConvertProgress } from './ports/ConverterPort'
 import { noopStoragePort } from './ports/StoragePort'
 import type { SaveState } from './model/viewState'
@@ -29,7 +29,6 @@ export interface EnginePorts {
   asset?: AssetPort
   converter?: ConverterPort
   storage?: StoragePort
-  i18n?: I18nPort
 }
 
 export interface EngineOptions {

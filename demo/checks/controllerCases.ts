@@ -15,8 +15,8 @@
 import { createEditorController } from '../../src/controller/editor'
 import { createEditorViewSignals } from '../../src/controller/editorState'
 import { createPageNav } from '../../src/controller/pageNav'
-import { createTranslator } from '../../src/controller/i18n'
 import { isTextEntry } from '../../src/controller/textEntry'
+import { configureStrings, resetStrings, text } from 'pdf-canvas-kit'
 import { computed, scope, signal } from '../../src/dom/reactive'
 import { createPage, createPDFCanvasDoc, createViewState, A4_PT } from 'pdf-canvas-kit'
 import type { PDFCanvasDoc, PDFCanvasPage } from 'pdf-canvas-kit'
@@ -213,36 +213,48 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'controller — i18n · textEntry',
+    title: 'strings — 단일 문구 표 · textEntry',
+    note: 'i18n 시스템(I18nPort · createI18n · ko/en 두 표 · locale 전환)을 제거하고 문구만 남겼다 (2026.08.20). 다국어는 나중에 다시 설계한다.',
     cases: [
       {
-        name: '내장 ko 표를 쓴다',
+        name: '기본 표에서 문구를 읽는다',
         expected: true,
+        actual: () => text('error.pageLimit').length > 0,
+      },
+      {
+        name: '없는 키는 키 자체를 돌려준다 (빈 화면보다 발견하기 쉽다)',
+        expected: 'nope.missing.key',
+        actual: () => text('nope.missing.key'),
+      },
+      {
+        name: '{name} 자리를 vars 로 채운다',
+        expected: true,
+        actual: () => text('error.exportBlocked', { count: 3 }).includes('3'),
+      },
+      {
+        name: 'vars 에 없는 자리는 그대로 남긴다',
+        expected: true,
+        actual: () => text('error.exportBlocked').includes('{count}'),
+      },
+      {
+        name: 'configureStrings 는 지정한 키만 덮는다',
+        expected: ['덮음', true],
         actual: () => {
-          const t = createTranslator(signal<'ko' | 'en' | undefined>('ko'), signal(undefined))
-          return t.value('error.pageLimit').length > 0
+          const other = text('error.pageLimit')
+          configureStrings({ 'error.format': '덮음' })
+          const result = [text('error.format'), text('error.pageLimit') === other]
+          resetStrings()
+          return result
         },
       },
       {
-        name: 'locale 이 바뀌면 문구도 바뀐다',
+        name: 'resetStrings 가 기본값으로 되돌린다',
         expected: true,
         actual: () => {
-          const locale = signal<'ko' | 'en' | undefined>('ko')
-          const t = createTranslator(locale, signal(undefined))
-          const ko = t.value('error.pageLimit')
-          locale.value = 'en'
-          return ko !== t.value('error.pageLimit')
-        },
-      },
-      {
-        name: '주입한 I18nPort 가 내장 표를 이긴다',
-        expected: 'INJECTED',
-        actual: () => {
-          const t = createTranslator(
-            signal<'ko' | 'en' | undefined>('ko'),
-            signal({ t: () => 'INJECTED' }),
-          )
-          return t.value('error.pageLimit')
+          const before = text('error.format')
+          configureStrings({ 'error.format': '임시' })
+          resetStrings()
+          return text('error.format') === before
         },
       },
       {
@@ -254,12 +266,11 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
             if (editable) e.setAttribute('contenteditable', 'true')
             return e
           }
-          const ce = mk('div', true)
           return [
             isTextEntry(mk('input')),
             isTextEntry(mk('textarea')),
             isTextEntry(mk('select')),
-            isTextEntry(ce),
+            isTextEntry(mk('div', true)),
             isTextEntry(mk('div')),
             isTextEntry(null),
           ]

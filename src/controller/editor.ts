@@ -13,8 +13,11 @@
  *
  * | prop | 갱신 |
  * | --- | --- |
- * | `locale` · `readOnly` · `autosave` | 반영된다 |
+ * | `readOnly` · `autosave` | 반영된다 |
  * | `on*` 콜백 | 반영된다 (React 는 렌더마다 함수 신원이 바뀐다) |
+ *
+ * UI 문구는 prop 이 아니다. `configureStrings()` 로 모듈 수준에서 한 번 설정한다
+ * (`core/config/strings.ts`).
  * | `ports` · `uploadFile` | 반영된다 — 단 엔진에 이미 넘어간 port 는 교체되지 않는다 |
  * | **`doc`** | **최초 1회만.** 이후 변경은 무시된다 |
  * | **`initialScale`** | **최초 1회만.** 이름 그대로다 |
@@ -26,6 +29,7 @@
  */
 import { batch, computed, onCleanup, signal, watch, type ReadSignal } from '../dom/reactive'
 import { EDITOR_DEFAULTS } from '../core/config/defaults'
+import { text } from '../core/config/strings'
 import { setTitle } from '../core/commands/doc'
 import {
   addObject,
@@ -48,7 +52,6 @@ import { moveRect, type HandleId } from '../core/geometry/handles'
 import { isMeaningfulDrag } from '../core/geometry/constrain'
 import { pickObject } from '../core/geometry/hitTest'
 import { clientToPage } from '../core/geometry/units'
-import type { Locale } from '../core/i18n/createI18n'
 import { createObjectForTool, defaultRectAt } from '../core/interaction/tools'
 import type { PointerCommit } from '../core/interaction/pointerMachine'
 import { questionNumberMap } from '../core/model/numbering'
@@ -75,7 +78,6 @@ import { createPan } from './pan'
 import { createPanelSizes } from './panelSizes'
 import { createPointerTool } from './pointerTool'
 import { createStage } from './stage'
-import { createTranslator, type Translate } from './i18n'
 import { isTextEntry } from './textEntry'
 
 /* ------------------------------------------------------------------ props -- */
@@ -89,7 +91,6 @@ export interface EditorProps {
   /** 초기 문서. `null` 이면 빈 상태로 시작해 문서 불러오기 안내를 띄운다. **최초 1회만 읽는다.** */
   doc?: PDFCanvasDoc | null
   ports?: EnginePorts
-  locale?: Locale
   readOnly?: boolean
   /** 시작 배율. 기본값 `'fit-page'` — 불러오는 즉시 페이지 전체가 보인다. **최초 1회만 읽는다.** */
   initialScale?: number | 'fit-width' | 'fit-page'
@@ -120,8 +121,6 @@ export interface EditorProps {
 
 /** 렌더 층이 쓰는 표면. 여기에 없는 것은 렌더 층이 알 필요가 없다. */
 export interface EditorController {
-  t: ReadSignal<Translate>
-
   /* 문서 */
   doc: ReadSignal<PDFCanvasDoc>
   pages: EngineStatePages
@@ -162,6 +161,8 @@ export interface EditorController {
   viewport: ReadSignal<ViewportOrNull>
   preview: ReadSignal<PreviewOrNull>
   previewRects: ReadSignal<ReadonlyMap<string, Rect>>
+  /** 회전 드래그 중인 객체의 미리보기 각도. 객체 뷰가 자기 것인지 확인해 쓴다. */
+  previewRotation: ReadSignal<{ id: string; deg: number } | null>
   selectedRects: ReadSignal<readonly { rect: Rect; rotation: number }[]>
   handleRect: ReadSignal<Rect | null>
   handleRotation: ReadSignal<number>
@@ -263,11 +264,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    * React 가 렌더마다 새 함수를 만들기 때문에 최초 값을 붙들면 오래된 setState 를 부르게 된다.
    */
   const props = signal<EditorProps>(initialProps)
-  const locale = computed(() => props.value.locale)
-  const injectedI18n = computed(() => props.value.ports?.i18n)
   const readOnly = computed(() => props.value.readOnly === true)
-
-  const t = createTranslator(locale, injectedI18n)
 
   /* ---------------------------------------------------------------- engine -- */
 
@@ -411,7 +408,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
           }
         } catch (err) {
           toolError.value =
-            err instanceof AnswerBoxLimitError ? t.value('error.boxLimit') : String(err)
+            err instanceof AnswerBoxLimitError ? text('error.boxLimit') : String(err)
           return
         }
         // 도구는 한 번 쓰면 select 로 돌아간다. Shift 를 누르고 있으면 유지한다 (PLAN Q3).
@@ -739,26 +736,26 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
   /** 실패를 기획이 정한 문구로 옮긴다 (기획 2.4). */
   function describeImportError(err: unknown): string {
-    if (err instanceof PageLimitError) return t.value('error.pageLimit')
+    if (err instanceof PageLimitError) return text('error.pageLimit')
     if (err instanceof ConvertError) {
       switch (err.code) {
         case 'unsupported-format':
-          return t.value('error.format')
+          return text('error.format')
         case 'file-too-large':
-          return t.value('error.size')
+          return text('error.size')
         case 'page-limit':
-          return t.value('error.pageLimit')
+          return text('error.pageLimit')
         case 'encrypted':
-          return t.value('error.encrypted')
+          return text('error.encrypted')
         case 'aborted':
-          return t.value('error.aborted')
+          return text('error.aborted')
         case 'worker-unavailable':
         case 'corrupt':
         default:
-          return t.value('error.convertFailed')
+          return text('error.convertFailed')
       }
     }
-    return t.value('error.convertFailed')
+    return text('error.convertFailed')
   }
 
   async function pickFile(file: File) {
@@ -805,7 +802,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     if (!page) return
 
     if (pages.value.length <= 1) {
-      toolError.value = t.value('error.minPages')
+      toolError.value = text('error.minPages')
       return
     }
 
@@ -850,7 +847,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         nav.goTo(currentPageIndex.value + 1)
       }
     } catch {
-      importError.value = t.value('error.pageLimit')
+      importError.value = text('error.pageLimit')
     }
   }
 
@@ -864,7 +861,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         selectedObjectIds.value = newIdsAfterDuplicate(before, doc.value, pageIndex)
       }
     } catch (err) {
-      toolError.value = err instanceof AnswerBoxLimitError ? t.value('error.boxLimit') : String(err)
+      toolError.value = err instanceof AnswerBoxLimitError ? text('error.boxLimit') : String(err)
     }
   }
 
@@ -933,7 +930,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
         const target = nav.currentPage.value?.objects.find((o) => o.id === issue.objectId)
         if (target) stage.scrollRectIntoView(target.rect)
       }
-      exportError.value = t.value('error.exportBlocked', { count: result.invalidIds.size })
+      exportError.value = text('error.exportBlocked', { count: result.invalidIds.size })
       return
     }
 
@@ -988,8 +985,6 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /* ---------------------------------------------------------------- 반환 -- */
 
   return {
-    t,
-
     doc,
     pages,
     pageCount,
@@ -1026,6 +1021,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     viewport,
     preview: pointer.preview,
     previewRects: pointer.previewRects,
+    previewRotation: pointer.previewRotation,
     selectedRects,
     handleRect,
     handleRotation,

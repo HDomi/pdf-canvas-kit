@@ -10,12 +10,12 @@ export default defineConfig({
   plugins: [vue()],
   resolve: {
     /**
-     * 객체가 아니라 배열 형태를 쓴다. 순서가 중요하다. `/vue` 서브패스가 패키지 이름보다 먼저
-     * 해석돼야 하며, 그러지 않으면 `src/index.ts/vue` 가 된다.
-     * package.json 의 `exports` 맵과 같은 구조다.
+     * 배열 형태를 쓴다. 순서가 중요하다 — 서브패스가 패키지 이름보다 먼저 해석돼야 하며,
+     * 그러지 않으면 `src/index.ts/react` 가 된다. package.json 의 `exports` 맵과 같은 구조다.
+     *
+     * `/react` · `/vue` 서브패스는 R8 에서 추가한다.
      */
     alias: [
-      { find: 'pdf-canvas-kit/vue', replacement: r('src/vue/index.ts') },
       { find: 'pdf-canvas-kit', replacement: r('src/index.ts') },
       { find: '@core', replacement: r('src/core') },
     ],

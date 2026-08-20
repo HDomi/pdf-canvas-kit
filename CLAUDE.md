@@ -120,7 +120,7 @@ export를 추가하면 ARCHITECTURE §9 예제도 갱신한다.
 npm run typecheck     # vue-tsc + tsc (node config)
 npm run lint          # eslint + prettier --check
 npm run build         # 라이브러리 빌드 + d.ts
-npm run checks        # 검증 케이스 129건 (브라우저 없이. 실패 시 exit 1)
+npm run checks        # 검증 케이스 162건 (브라우저 없이. 실패 시 exit 1)
 ```
 
 그리고 **직접 확인한다**:

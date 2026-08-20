@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-1.6 |
+| 문서 버전 | arch-1.7 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0·R1 완료, R2 부분 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R2 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -521,7 +521,8 @@ src/
 │      normalize.ts          공백·대소문자·NFKC 정규화
 │      score.ts              문항·응시 채점 (서버와 공유 가능)
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
-│  reactive.ts               ★ signal · computed · effect · watch · batch (§12)
+│  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
+│  h.ts                      ★ el · svg · when · list — DOM 바인딩 (§13)
 ├─ vue/                      모든 UI  ⚠️ R9 에서 삭제 예정 (PLAN D23)
 │  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
 │  ├─ composables/
@@ -660,12 +661,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **129 케이스 / 19 그룹** (순수 함수 79 + 반응성 50 — §12)
+   **162 케이스 / 23 그룹** (순수 함수 79 + 반응성 50 + DOM 33 — §12·§13)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks     # 129 / 129 passed · 19 groups · ok  (실패 시 exit 1)
+npm run checks     # 162 / 162 passed · 23 groups · ok  (실패 시 exit 1)
 ```
 
 케이스는 `demo/checks/allCases.ts` 가 단일 출처다 —
@@ -676,7 +677,14 @@ npm run checks     # 129 / 129 passed · 19 groups · ok  (실패 시 exit 1)
 | --- | --- |
 | `demo/checks/cases.ts` | 순수 함수 케이스 — 입력 → 출력 한 줄 |
 | `demo/checks/reactiveCases.ts` | 반응성 케이스 — 상태 변화 **순서**를 확인 |
-| `demo/checks/allCases.ts` | 위 둘을 합친 단일 출처 |
+| `demo/checks/domCases.ts` | 렌더 층 케이스 — 바인딩·조건부·**키 리스트 재조정**. DOM 이 필요하다 |
+| `demo/checks/allCases.ts` | 셋을 합친 단일 출처 |
+
+DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
+빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
+
+⚠️ **happy-dom 은 `getBoundingClientRect()` 가 전부 0 이다.** 좌표 변환·맞춤 배율·줌 앵커링은
+헤드리스로 검증되지 않는다 — 실제 레이아웃이 필요하다.
 
 번들러로 **vite** 를 쓴다(`scripts/run-checks.mjs`). esbuild 를 직접 부르는 편이 짧지만
 esbuild 는 이 저장소의 의존성이 아니며 — vite 8 은 esbuild 를 끌고 오지 않는다 —
@@ -735,3 +743,109 @@ previewRects.value = new Map(next)            // ✓ .set() 이 아니라 대입
 
 `reactive.ts` 는 `src/index.ts` 에 내보내지 않는다 — 라이브러리 소비자가 아니라 UI 층이 쓰는 것이다.
 `/checks/` 는 내부 모듈을 직접 import 한다.
+
+### 12.3 scope — 정리가 기본값
+
+`effect` 와 `computed` 는 **열려 있는 `scope` 에 자기 정리 함수를 스스로 등록한다.**
+컴포넌트가 dispose 를 반환하거나 모을 필요가 없다.
+
+```ts
+const [root, dispose] = scope(() => buildEditor(props))
+container.append(root)
+dispose()   // buildEditor 안에서 만든 effect·리스너 전부 정리
+```
+
+중첩된다 — 리스트 항목 하나를 지우면 그 항목의 effect 만 끊긴다.
+`onCleanup(fn)` 으로 임의의 정리를 등록할 수 있고, scope 밖에서 부르면 아무 일도 하지 않는다.
+
+**`computed` 도 등록한다.** 수동적이라 끊을 것이 없어 보이지만, 자기가 읽은 signal 의 구독 집합에
+자신이 들어 있다. 리스트 항목마다 만든 computed 를 정리하지 않으면 문서 signal 이 지워진 항목의
+computed 를 계속 붙든다.
+
+---
+
+## 13. DOM 바인딩 (`h.ts`)
+
+Vue 템플릿을 대체한다. 템플릿 컴파일러도 VDOM 도 없다 — **바인딩마다 effect 하나**가 붙어
+자기 노드만 갱신한다.
+
+| 함수 | Vue 대응 |
+| --- | --- |
+| `el(tag, props, children)` | 엘리먼트 + 디렉티브 |
+| `svg(tag, props, children)` | 같음, SVG 네임스페이스 |
+| `when(cond, render)` | `v-if` |
+| `list(items, key, render)` | `v-for` + `:key` |
+| `text(value)` | `{{ }}` |
+
+**컴포넌트는 `Element` 를 반환하는 평범한 함수다.** 클래스도 라이프사이클 훅도 없다.
+
+```ts
+function saveBadge(state: ReadSignal<SaveState>): HTMLElement {
+  return el('span', { class: () => `pck-badge is-${state.value}` }, [() => label(state.value)])
+}
+```
+
+**값 자리에 함수를 넣으면 반응형이 된다.** 정적인 값은 그대로 쓴다.
+
+| 쓰는 법 | 결과 |
+| --- | --- |
+| `class: 'pck-page'` | 한 번만 설정 |
+| `class: () => …` | 값이 바뀔 때마다 갱신 |
+| `class: { 'is-on': () => sel.value }` | 조건이 바뀐 클래스만 토글 |
+| 자식으로 `'제목'` | 정적 텍스트 |
+| 자식으로 `() => doc.value.title` | 반응형 텍스트 노드 |
+
+### 13.1 `attr` vs `prop` ★ — 추측하지 않는다
+
+```ts
+el('input', {
+  attr: { type: 'text', 'aria-label': t('title'), placeholder: () => hint.value },
+  prop: { value: () => title.value, disabled: () => readOnly.value },
+})
+```
+
+| 쓰는 곳 | 예 |
+| --- | --- |
+| `attr` | `role` · `aria-*` · `data-*` · `type` · `placeholder` · `viewBox` |
+| `prop` | 폼 컨트롤의 `value` · `checked` · `disabled` · `selectedIndex` |
+
+Vue 는 이름을 보고 어느 쪽인지 추측한다. 그 추측이 어긋나면 **"input 에 타이핑한 뒤 값이
+갱신되지 않는다"** 가 되고, 원인이 프레임워크 안쪽이라 찾기 어렵다. 호출부가 밝히면 그 종류의
+버그가 존재할 수 없다.
+
+`attr` 은 값이 `null` · `undefined` · `false` 면 속성을 **제거**한다. `true` 면 빈 문자열 속성이 된다.
+`prop` 은 값이 실제로 달라졌을 때만 대입한다 — `input.value` 재대입은 캐럿을 끝으로 보낸다.
+
+### 13.2 `when` 은 조건이 바뀔 때만 다시 그린다
+
+`truthy → truthy` 는 재생성하지 않는다. 그래야 안에서 편집 중인 텍스트 노드가 살아남는다(§6.5).
+사라질 때 그 안의 effect 는 자기 scope 와 함께 정리된다.
+
+### 13.3 `list` 는 키로 재조정한다 ★
+
+키가 같으면 노드를 재사용하고, 순서만 바뀌면 `insertBefore` 로 **옮긴다.**
+그래서 페이지 순서를 바꿀 때 썸네일 이미지가 다시 로드되며 깜빡이지 않는다.
+
+```ts
+list(
+  () => pages.value,
+  (p) => p.id,
+  (page, index) => pageThumb(page, index),   // 둘 다 signal 이다
+)
+```
+
+`render` 가 항목과 인덱스를 **signal 로** 받는 것이 핵심이다. 키가 같고 내용만 바뀌면 노드를
+다시 만들지 않고 그 signal 만 갱신하므로, 순서 변경은 DOM 이동만 일어난다.
+
+### 13.4 SVG 는 `svg()` 로만
+
+SVG 는 별도 네임스페이스라 `createElement` 로 만들면 **렌더되지 않는다.** 에러도 없이 안 보이므로
+원인을 찾기 어렵다. 선택 오버레이·핸들이 SVG 이고(§6.2), 그 자식도 `svg()` 로 만들어야 한다.
+
+### 13.5 `when`·`list` 가 앵커 주석을 남기는 이유
+
+둘은 자기 위치에 `<!--when-->` · `<!--list-->` 주석 노드를 두고 그 뒤에 내용을 넣는다.
+래퍼 엘리먼트를 쓰면 간단하지만, `pck-body` 가 grid 이므로 래퍼가 grid 항목이 되어 레이아웃이
+깨진다. 주석은 레이아웃에 영향이 없다.
+
+DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어야 한다.

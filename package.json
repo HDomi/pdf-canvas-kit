@@ -86,6 +86,7 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-vue": "^10.5.0",
     "globals": "^17.11.0",
+    "happy-dom": "^20.11.6",
     "pdf-lib": "^1.17.1",
     "prettier": "^3.6.2",
     "typescript": "^5.9.3",

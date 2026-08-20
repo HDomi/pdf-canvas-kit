@@ -7,8 +7,12 @@
  * 브라우저 화면(`/checks/`)과 **같은 데이터**를 소비한다 — 케이스가 `cases.ts` ·
  * `reactiveCases.ts` 에 데이터로 분리돼 있어서 가능한 일이다.
  *
- * ⚠️ 덮이지 않는 것: 줌·팬·스크롤·IME 는 실제 브라우저 레이아웃에 의존하므로 여기서 돌지 않는다.
- * 그건 여전히 손으로 확인해야 한다 (PLAN 17.4).
+ * DOM 케이스(`domCases.ts`)를 위해 happy-dom 으로 전역 `document` 를 세운다. 브라우저에서는
+ * 실제 DOM 을 쓰므로 같은 케이스가 두 환경에서 돈다.
+ *
+ * ⚠️ 덮이지 않는 것: 줌·팬·스크롤·IME 는 **실제 레이아웃**에 의존한다. happy-dom 은
+ * `getBoundingClientRect()` 가 전부 0 이므로 좌표 변환·맞춤 배율은 여기서 검증되지 않는다.
+ * 그건 여전히 브라우저에서 손으로 확인해야 한다 (PLAN 17.4).
  */
 /*
  * 번들러로 vite 를 쓴다. esbuild 를 직접 부르는 편이 짧지만 esbuild 는 이 저장소의 의존성이
@@ -16,6 +20,7 @@
  * 검증 스크립트가 네트워크에 의존하면 안 된다.
  */
 import { build } from 'vite'
+import { Window } from 'happy-dom'
 import { mkdtempSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -37,6 +42,23 @@ function stable(value) {
     return v
   }
   return JSON.stringify(walk(value))
+}
+
+/*
+ * DOM 을 전역에 세운다. 번들을 import 하기 **전에** 해야 한다 — 모듈 최상위에서 `document` 를
+ * 만지는 코드가 있으면 그때 이미 필요하다.
+ */
+const window = new Window({ url: 'http://localhost/' })
+for (const name of [
+  'window',
+  'document',
+  'Node',
+  'Element',
+  'HTMLElement',
+  'Event',
+  'CustomEvent',
+]) {
+  globalThis[name] = window[name]
 }
 
 const outDir = mkdtempSync(join(tmpdir(), 'pck-checks-'))

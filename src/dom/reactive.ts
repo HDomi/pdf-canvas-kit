@@ -162,6 +162,20 @@ export function computed<T>(get: () => T, set?: (v: T) => void): WritableSignal<
     },
   }
 
+  /*
+   * computed 도 scope 에 정리를 등록한다.
+   *
+   * effect 와 달리 computed 는 수동적이라 "끊을 것이 없다" 고 생각하기 쉽지만, 자기가 읽은
+   * signal 의 구독 집합에 자신이 들어 있다. 리스트 항목마다 만든 computed 를 정리하지 않으면
+   * 문서 signal 이 지워진 항목의 computed 를 계속 붙들고 있게 된다.
+   *
+   * 정리 후 다시 읽히면 `dirty` 상태에서 재계산하며 의존성을 새로 모으므로 동작은 그대로다.
+   */
+  onCleanup(() => {
+    cleanup(sub)
+    dirty = true
+  })
+
   return {
     get value() {
       track(dep)
@@ -192,11 +206,73 @@ export function computed<T>(get: () => T, set?: (v: T) => void): WritableSignal<
 /** effect · watch 를 끊는 함수. 두 번 불러도 안전하다. */
 export type Dispose = () => void
 
+/* --------------------------------------------------------------- 소유권 -- */
+
+/**
+ * 현재 열려 있는 scope 의 정리 목록.
+ *
+ * DOM 트리를 떼어낼 때 그 안에서 만든 effect 를 **전부** 끊어야 한다. 컴포넌트마다 dispose 를
+ * 손으로 모아 반환하게 하면 하나만 빠뜨려도 리스너가 남고, 그 누수는 증상이 늦게 나타난다.
+ * scope 를 두면 **누수가 아니라 정리가 기본값**이 된다.
+ */
+let currentScope: Dispose[] | null = null
+
+/**
+ * `fn` 안에서 만들어진 모든 effect 를 한 번에 끊을 수 있는 단위로 묶는다.
+ *
+ * 중첩된다 — 안쪽 scope 의 정리 함수는 안쪽에만 등록되므로, 리스트 항목 하나를 지울 때
+ * 그 항목의 effect 만 끊긴다.
+ *
+ * ```ts
+ * const [el, dispose] = scope(() => buildEditor(props))
+ * container.append(el)
+ * // 나중에
+ * dispose()   // buildEditor 안의 effect 전부 정리
+ * ```
+ */
+export function scope<T>(fn: () => T): [T, Dispose] {
+  const disposers: Dispose[] = []
+  const prev = currentScope
+  currentScope = disposers
+  let result: T
+  try {
+    result = fn()
+  } finally {
+    currentScope = prev
+  }
+  let done = false
+  return [
+    result,
+    () => {
+      if (done) return
+      done = true
+      // 역순으로 정리한다. 나중에 만든 것이 먼저 만든 것에 의존할 수 있다.
+      for (let i = disposers.length - 1; i >= 0; i--) disposers[i]!()
+      disposers.length = 0
+    },
+  ]
+}
+
+/**
+ * 현재 scope 가 닫힐 때 부를 정리 함수를 등록한다.
+ *
+ * scope 밖에서 부르면 **아무 일도 하지 않는다** — 던지지 않는다. 컴포넌트 함수를 scope 없이
+ * 단독 호출해 보는 것(디버깅·검증)을 막지 않기 위해서다. 대신 그 경우 정리는 호출자 몫이다.
+ */
+export function onCleanup(fn: Dispose): void {
+  currentScope?.push(fn)
+}
+
+/* -------------------------------------------------------------- effect -- */
+
 /**
  * 의존성이 바뀔 때마다 다시 실행되는 부수효과. **즉시 한 번 실행된다.**
  *
  * DOM 바인딩이 전부 이걸 쓴다 (`h.ts`). 읽은 signal 만 의존성이 되므로, 조건부 분기 안에서만
  * 읽는 값은 그 분기를 탈 때만 구독된다.
+ *
+ * **열려 있는 `scope` 가 있으면 자기 dispose 를 거기 등록한다.** 그래서 컴포넌트가 dispose 를
+ * 반환하거나 모으지 않아도 정리가 된다. 반환값은 개별적으로 일찍 끊고 싶을 때만 쓴다.
  */
 export function effect(fn: () => void): Dispose {
   const sub: Subscriber = {
@@ -215,11 +291,13 @@ export function effect(fn: () => void): Dispose {
     },
   }
   sub.run()
-  return () => {
+  const dispose: Dispose = () => {
     if (sub.disposed) return
     sub.disposed = true
     cleanup(sub)
   }
+  onCleanup(dispose)
+  return dispose
 }
 
 /**

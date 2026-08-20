@@ -99,11 +99,17 @@ import { PDFCanvasEditor, PDFCanvasViewer } from 'pdf-canvas-kit/vue'
 | `typescript` | Apache-2.0 | — | 필수(dev) |
 | `vite` · `@vitejs/plugin-vue` · `vue-tsc` | MIT | 빌드·타입체크 | 필수(dev) |
 | `eslint` · `typescript-eslint` · `eslint-plugin-vue` · `prettier` · `eslint-config-prettier` | MIT | 린트·포맷 | 필수(dev) |
-| `@vueuse/core` | MIT | `useResizeObserver` · `useEventListener` · `useElementSize` · `useScroll` (스테이지에 직접 필요) | 채택 |
-| `@floating-ui/vue` | MIT | 인스펙터 드롭다운 · 줌 프리셋 팝업 위치 계산 | 채택 (M4) |
-| `lucide-vue-next` | ISC | 아이콘 (tree-shakeable) | 채택 (M3) |
-| `@tanstack/vue-virtual` | MIT | 페이지 썸네일 가상 스크롤 (500페이지 대응) | 채택 (M3, 실측 후 확정) |
-| `sortablejs` | MIT | 썸네일 순서 변경 DnD | 후보 (M3에서 직접 구현과 비교) |
+| `happy-dom` | MIT | 헤드리스 DOM. `npm run checks` 가 `h.ts` 케이스를 브라우저 없이 돌린다 | 채택(dev) — **2026.08.20, R2** |
+| ~~`@vueuse/core`~~ | MIT | ~~`useResizeObserver` 등~~ | **미채택.** 필요한 4개를 직접 썼다(각 20~50줄). 그리고 D19 이후로는 프레임워크 무관 층이라 애초에 쓸 수 없다 |
+| ~~`@floating-ui/vue`~~ | MIT | ~~드롭다운·팝업 위치 계산~~ | **미채택.** 팝업이 3개뿐이고 전부 앵커 기준 고정 위치라 계산이 필요 없었다 |
+| ~~`lucide-vue-next`~~ | ISC | ~~아이콘~~ | **미채택.** 인라인 SVG 로 넣었다. 프레임워크별 아이콘 패키지는 D19 와 맞지 않는다 |
+| ~~`@tanstack/vue-virtual`~~ | MIT | ~~썸네일 가상 스크롤~~ | **미채택.** 실측 전에 필요해지지 않았다. 500페이지 스크롤은 아직 미검증(16장) |
+| ~~`sortablejs`~~ | MIT | ~~썸네일 DnD~~ | **미채택.** 직접 구현(`usePageReorder`, 111줄) |
+| `react` · `react-dom` | MIT | React 래퍼용 **optional peer** | R8 에서 devDependency 로 추가 |
+
+> **2026.08.20 정리.** 위 5개는 "채택" 으로 적혀 있었지만 `package.json` 에 없고 코드에서 import
+> 0건이었다. 문서가 계획을 적어 두고 갱신되지 않은 것이다. 실제 런타임 의존성은
+> **`pdfjs-dist` 하나**다.
 
 ### 3.4 의도적으로 안 쓰는 것
 | 대신 | 이유 |
@@ -1890,7 +1896,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | --- | --- | --- |
 | **R0** ✅ | 안전장치 · 베이스라인 | `.gitignore` · `.prettierrc` 추가 → `npm run lint` 통과 ✅ (216개 파일 불일치 → 0). 리라이트 전 전체 코드 커밋 ✅ (`c18f552`) |
 | **R1** ✅ | 리네임 · 패키징 골격 | `pdf-canvas-kit` · `pck-` · MIT · `exports` 맵 3엔트리 ✅. **코드·설정에 옛 이름 0건** ✅. 네 게이트 + 데모 빌드 통과 ✅. 상세 20.6 |
-| **R2** 🟡 | 반응성 · DOM substrate | `reactive.ts` ✅ (`/checks/` 반응성 50 케이스 추가 → **129 / 129 통과**, `npm run checks` 로 헤드리스 실행). `h.ts` 남음 |
+| **R2** ✅ | 반응성 · DOM substrate | `reactive.ts` + `h.ts` ✅. `/checks/` **162 케이스 / 23 그룹 통과** (순수 79 + 반응성 50 + DOM 33). happy-dom 으로 헤드리스 실행. 상세 20.7 |
 | **R3** | 컨트롤러 이식 | composables + 루트 스크립트 → `src/controller/`. ESLint 경계 규칙에 `controller` 추가 |
 | **R4** | 객체 · 페이지 렌더 | 객체 7종 + `PageFrame` + 배경 + 오버레이 + 핸들. `/editor-dom/` 에서 렌더·선택 확인 |
 | **R5** | 스테이지 | 줌 · 팬 · 포인터 배선. `/editor-dom/` 에서 생성·이동·리사이즈·회전 동작 |
@@ -1950,3 +1956,59 @@ grep -rniE "lumiteach|worksheet-system|\blws-" src demo scripts *.json *.ts *.js
 
 **리네임과 무관하게 확인한 것**: `pck-answer--short` · `pck-answer--dropbox` 는 CSS 규칙이 없는
 훅 클래스다. `git show HEAD:` 로 리네임 전에도 같았음을 확인했다 — 회귀가 아니다.
+
+### 20.7 R2 — 렌더 층의 바닥 (2026.08.20 완료)
+
+`src/dom/reactive.ts` (signal) + `src/dom/h.ts` (DOM 바인딩). 합쳐 ~610줄.
+상세 사용법과 함정은 ARCHITECTURE §12.
+
+| 모듈 | 내보내는 것 |
+| --- | --- |
+| `reactive.ts` | `signal` · `computed` · `effect` · `watch` · `batch` · `untrack` · **`scope` · `onCleanup`** |
+| `h.ts` | `el` · `svg` · `when` · `list` · `text` |
+
+#### 왜 `scope` 를 두었나
+
+DOM 트리를 떼어낼 때 그 안에서 만든 effect 를 전부 끊어야 한다. 컴포넌트마다 dispose 를 손으로
+모아 반환하게 하면 하나만 빠뜨려도 리스너가 남고, 그 누수는 증상이 늦게 나타난다.
+`scope` 가 있으면 **누수가 아니라 정리가 기본값**이다 — `effect` 가 스스로 현재 scope 에 등록한다.
+
+`computed` 도 등록한다. 수동적이라 "끊을 것이 없다" 고 생각하기 쉽지만, 자기가 읽은 signal 의
+구독 집합에 자신이 들어 있다. 리스트 항목마다 만든 computed 를 정리하지 않으면 문서 signal 이
+지워진 항목의 computed 를 계속 붙든다.
+
+#### `attr` 과 `prop` 을 나눈 이유
+
+Vue 는 이름을 보고 속성인지 프로퍼티인지 추측한다. 그 추측이 어긋나면 "input 에 타이핑한 뒤
+값이 갱신되지 않는다" 같은 증상이 되고, 원인이 프레임워크 안쪽이라 찾기 어렵다.
+어느 쪽인지 호출부가 밝히면 그 종류의 버그가 **존재할 수 없다.**
+
+`prop` 은 값이 실제로 달라졌을 때만 대입한다 — `input.value` 재대입은 캐럿을 끝으로 보낸다.
+
+#### `list` 는 키로 재조정한다
+
+키가 같으면 노드를 재사용하고, 순서만 바뀌면 `insertBefore` 로 **옮긴다**. 그래서 페이지 순서를
+바꿀 때 썸네일 이미지가 다시 로드되며 깜빡이지 않고, 순서 변경 드래그 중에도 노드가 유지된다.
+
+`render` 는 항목과 인덱스를 **signal 로** 받는다. 키가 같고 내용만 바뀌면 노드를 다시 만들지 않고
+그 signal 만 갱신한다.
+
+#### 검증 — 129 → 162 케이스
+
+DOM 케이스 33건을 추가했다. 가장 중요한 것은 리스트 재조정이다 — 순서 변경 시
+`render` 재호출 0회, 같은 DOM 노드 객체 유지, 삭제 항목의 effect 정리를 각각 고정했다.
+
+**`happy-dom` 을 dev 의존성으로 채택했다** (3.3). 없으면 `h.ts` 전체가 헤드리스 게이트에서
+빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.
+production 의존성이 아니므로 소비자에게 전염되지 않는다 — `npm run license-check` 가 확인한다.
+
+> **케이스 하나가 잘못 적혀 있었다.** "삭제된 항목의 effect 가 정리된다" 가 2를 기대했는데 3이
+> 나왔다. 코드가 맞았다 — 배열 리터럴을 새로 쓰면 남는 항목도 **새 객체 참조**라 item signal 이
+> 정당하게 갱신된다. 케이스를 같은 참조를 유지하도록 고치고, 참조가 바뀌는 경우를 별도 케이스로
+> 고정했다.
+
+#### 아직 덮이지 않는 것
+
+happy-dom 은 `getBoundingClientRect()` 가 전부 0 이다. **좌표 변환·맞춤 배율·줌 앵커링은
+헤드리스로 검증되지 않는다** — 실제 레이아웃이 필요하다. 브라우저에서 손으로 확인해야 하고,
+이것이 R4~R8 의 주된 위험이다(20.5).

@@ -1,0 +1,12 @@
+dist/
+node_modules/
+demo/public/pdfjs/
+demo/fixtures/
+package-lock.json
+
+# 문서는 손으로 정렬한 표가 의미를 갖는다. prettier 가 재정렬하면
+# 실제 변경이 표 정렬 diff 993줄에 묻힌다 (PLAN.md 실측).
+*.md
+
+# jsonc — 주석이 있어 prettier 의 json 파서와 맞지 않는다
+.vscode/

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>순수 함수 검증 — Worksheet System</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .group {
+        margin-top: 22px;
+      }
+      .group h2 {
+        font-size: 14px;
+        margin: 0 0 4px;
+      }
+      .group .note {
+        margin: 0 0 8px;
+        color: var(--muted);
+        font-size: 12px;
+      }
+      td.name {
+        width: 40%;
+      }
+      td.val {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        word-break: break-all;
+      }
+      tr.fail {
+        background: #fdf0ee;
+      }
+      tr.fail td {
+        color: var(--warn);
+        font-weight: 500;
+      }
+      .verdict {
+        width: 34px;
+        text-align: center;
+      }
+      #summary {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: var(--bg);
+        padding: 12px 0;
+        margin: 0;
+        border-bottom: 1px solid var(--line);
+      }
+      .pill {
+        display: inline-block;
+        padding: 3px 10px;
+        border-radius: 999px;
+        border: 1px solid var(--line);
+        font-size: 12px;
+        margin-right: 6px;
+      }
+      .pill.ok {
+        color: var(--ok);
+        border-color: currentcolor;
+      }
+      .pill.bad {
+        color: var(--warn);
+        border-color: currentcolor;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>순수 함수 검증</h1>
+      <p class="sub">
+        테스트 러너 없이 회귀를 눈에 보이게 만드는 화면 (PLAN 17.2) ·
+        <a href="/">← 목록</a>
+      </p>
+      <p id="summary"></p>
+      <div id="groups"></div>
+    </div>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

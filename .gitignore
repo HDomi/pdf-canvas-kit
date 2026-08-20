@@ -1,0 +1,15 @@
+node_modules/
+dist/
+*.tsbuildinfo
+
+# pdf.js 런타임 자산은 postinstall 이 복사한다. 커밋하지 않는다 (ARCHITECTURE §4.1)
+demo/public/pdfjs/
+
+# npm run fixtures 로 생성한다. 100페이지 픽스처는 수 MB다
+demo/fixtures/
+
+# 로컬 확인용 PDF
+temp.pdf
+*.local.pdf
+
+.DS_Store

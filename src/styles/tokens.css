@@ -1,0 +1,109 @@
+/**
+ * 워크시트 편집기·뷰어의 디자인 토큰.
+ *
+ * 모든 시각 값을 CSS 변수로 두어, 호스트 앱이 리빌드 없이 스타일을 바꿀 수 있게 한다.
+ * 감싸는 요소나 `:root` 에서 `--lws-*` 값을 덮어쓰면 된다.
+ *
+ *   .my-app .lws-editor { --lws-topbar-bg: #101014; --lws-accent: #3b82f6; }
+ *
+ * 보이는 것이 아니라 *동작*에 영향을 주는 수치(한도, 줌 단계, 최소 객체 크기)는 토큰이 아니다.
+ * 레이아웃 코드와 검증이 숫자로 필요하므로 `src/core/config/defaults.ts` 에 둔다.
+ *
+ * 이름 규칙: --lws-<영역>-<역할>. 영역은 topbar, pagelist, stage, inspector,
+ * toolbar, obj(캔버스 객체), state(피드백 색).
+ */
+
+/*
+ * 토큰 스코프.
+ *
+ * `.lws-modal-scrim` 이 함께 들어 있는 이유: 팝업은 편집기 밖(예: 앱 루트나 teleport 대상)에
+ * 렌더될 수 있다. 그 경우 `.lws-editor` 안에서만 정의된 토큰을 상속받지 못해 `background:
+ * var(--lws-surface)` 가 빈 값이 되고, 팝업이 투명하게 보인다. 실제로 그 증상을 겪었다.
+ */
+.lws-editor,
+.lws-viewer,
+.lws-modal-scrim {
+  /* ---- 색 팔레트 -------------------------------------------------------- */
+  --lws-bg: #f4f4f2;
+  --lws-surface: #ffffff;
+  --lws-surface-sunken: #eeeeeb;
+  --lws-line: #dcdcd6;
+  --lws-line-strong: #b9b9b1;
+  --lws-ink: #1c1c1a;
+  --lws-ink-muted: #77776f;
+  --lws-accent: #4b4b46;
+  --lws-accent-ink: #ffffff;
+
+  /* 피드백. --lws-state-danger 는 인스펙터 검증 색으로도 쓰인다. */
+  --lws-state-danger: #b4342b;
+  --lws-state-ok: #2f7a4a;
+  --lws-state-warn: #a86a1f;
+
+  /* ---- 타이포그래피 ----------------------------------------------------- */
+  --lws-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
+  --lws-font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+  --lws-text-sm: 12px;
+  --lws-text-md: 14px;
+  --lws-text-lg: 16px;
+
+  /* ---- 간격 / 모양 ------------------------------------------------------ */
+  --lws-space-1: 4px;
+  --lws-space-2: 8px;
+  --lws-space-3: 12px;
+  --lws-space-4: 16px;
+  --lws-radius: 4px;
+  --lws-radius-sm: 3px;
+  --lws-shadow: 0 1px 3px rgb(0 0 0 / 8%);
+
+  /* ---- 레이아웃 --------------------------------------------------------- */
+  /* src/core/config/defaults.ts 의 LAYOUT_DEFAULTS 와 같은 값을 유지해야 한다. */
+  --lws-topbar-height: 56px;
+  --lws-pagelist-width: 240px;
+  --lws-inspector-width: 280px;
+  --lws-toolbar-height: 48px;
+  /* 패널 사이 드래그 핸들의 폭. 보이는 선은 1px이고 나머지는 히트 영역이다. */
+  --lws-resizer-width: 7px;
+
+  /* ---- 상단 바 ---------------------------------------------------------- */
+  --lws-topbar-bg: var(--lws-surface);
+  --lws-topbar-ink: var(--lws-ink);
+  --lws-topbar-border: var(--lws-line);
+
+  /* ---- 페이지 목록 ------------------------------------------------------ */
+  --lws-pagelist-bg: var(--lws-bg);
+  --lws-pagelist-thumb-border: var(--lws-line);
+  /* 스테이지에 열려 있는 현재 페이지의 테두리. */
+  --lws-pagelist-thumb-active: var(--lws-ink);
+
+  /* ---- 스테이지 --------------------------------------------------------- */
+  /*
+   * 페이지와 스테이지 경계 사이의 여백. 맞춤 계산이 양축에서 이 값을 빼므로
+   * src/core/config/defaults.ts 의 EDITOR_DEFAULTS.stagePadding 과 같아야 한다
+   * (ARCHITECTURE §3.2).
+   */
+  --lws-stage-padding: 32px;
+  --lws-stage-bg: var(--lws-surface-sunken);
+  --lws-page-bg: #ffffff;
+  --lws-page-shadow: 0 1px 4px rgb(0 0 0 / 12%);
+  --lws-page-border: var(--lws-line);
+
+  /* ---- 선택 오버레이 (줌 transform 밖에 그린다) ------------------------- */
+  --lws-select-stroke: #2b6cb0;
+  --lws-select-fill: rgb(43 108 176 / 8%);
+  --lws-handle-bg: #ffffff;
+  --lws-handle-stroke: #2b6cb0;
+  /* 내보내기를 막는 객체(정답 미지정, 보기 부족)의 외곽선. */
+  --lws-invalid-stroke: var(--lws-state-danger);
+
+  /* ---- 캔버스의 Answer Box --------------------------------------------- */
+  --lws-answerbox-bg: rgb(255 255 255 / 85%);
+  --lws-answerbox-border: var(--lws-line-strong);
+  --lws-answerbox-ink: var(--lws-ink);
+
+  /* ---- 인스펙터 --------------------------------------------------------- */
+  --lws-inspector-bg: var(--lws-surface);
+  --lws-inspector-border: var(--lws-line);
+
+  font-family: var(--lws-font);
+  color: var(--lws-ink);
+}

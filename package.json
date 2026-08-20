@@ -1,0 +1,67 @@
+{
+  "name": "@lumiteach/worksheet-system",
+  "version": "0.0.0",
+  "description": "Worksheet editor/viewer components for Nuxt 3 / Vue 3",
+  "license": "UNLICENSED",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist",
+    "src"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./vue": {
+      "types": "./dist/vue/index.d.ts",
+      "import": "./dist/vue/index.js"
+    },
+    "./styles.css": "./dist/styles.css",
+    "./src/*": "./src/*"
+  },
+  "scripts": {
+    "dev": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --strictPort",
+    "build": "vite build && vue-tsc -p tsconfig.build.json",
+    "preview": "vite preview --config vite.demo.config.ts",
+    "typecheck": "vue-tsc --noEmit && tsc -p tsconfig.node.json",
+    "lint": "eslint . && prettier --check .",
+    "fix": "eslint . --fix && prettier --write .",
+    "checks": "node scripts/run-checks.mjs",
+    "fixtures": "node scripts/make-fixtures.mjs",
+    "license-check": "npx --yes license-checker-rseidelsohn --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;CC0-1.0;Unlicense;0BSD'",
+    "copy:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
+    "postinstall": "node scripts/copy-pdfjs-assets.mjs",
+    "dev:local": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --host false"
+  },
+  "peerDependencies": {
+    "vue": ">=3.4"
+  },
+  "dependencies": {
+    "pdfjs-dist": "^6.2.108"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.5",
+    "@types/node": "^26.2.0",
+    "@vitejs/plugin-vue": "^6.0.1",
+    "@vue/tsconfig": "^0.7.0",
+    "eslint": "^9.39.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.5.0",
+    "globals": "^17.11.0",
+    "pdf-lib": "^1.17.1",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.46.1",
+    "vite": "^8.2.1",
+    "vue": "^3.5.41",
+    "vue-tsc": "^3.1.2"
+  },
+  "engines": {
+    "node": ">=20.19"
+  }
+}

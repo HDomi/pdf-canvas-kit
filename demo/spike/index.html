@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>PDF → 페이지 이미지 (M1 spike)</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link rel="stylesheet" href="./spike.css" />
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>PDF → 페이지 이미지 배열</h1>
+      <p class="sub">M1 확인용 · <a href="/">← 목록</a></p>
+
+      <div class="card" id="controls">
+        <div class="row">
+          <button class="primary" id="pick">파일 선택</button>
+          <input type="file" id="file" accept=".pdf,application/pdf" hidden />
+          <span class="muted">또는 아래 픽스처</span>
+        </div>
+        <div class="row" id="fixtures" style="margin-top: 10px"></div>
+        <div class="row" style="margin-top: 10px">
+          <label class="muted">
+            targetPx
+            <input id="targetPx" type="number" value="1654" min="200" max="4000" step="50" />
+          </label>
+          <label class="muted">
+            format
+            <select id="mime">
+              <option value="image/jpeg">jpeg (기본)</option>
+              <option value="image/webp">webp (느림)</option>
+              <option value="image/png">png</option>
+            </select>
+          </label>
+          <label class="muted">
+            quality
+            <input id="quality" type="number" value="0.85" min="0.3" max="1" step="0.05" />
+          </label>
+          <button id="cancel" disabled>취소</button>
+          <span class="muted mono">
+            진단 스위치: <code>?resources=off</code> <code>?fontface=off</code>
+          </span>
+        </div>
+      </div>
+
+      <div id="status" class="card" hidden></div>
+      <div id="summary" class="card" hidden></div>
+      <div id="diagnostics" class="card" hidden></div>
+      <div id="pages"></div>
+    </div>
+
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

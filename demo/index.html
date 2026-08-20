@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Worksheet System — Demo</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <style>
+      .cards {
+        display: grid;
+        gap: 12px;
+      }
+      .card-link {
+        display: block;
+        text-decoration: none;
+        color: inherit;
+        transition: border-color 120ms ease;
+      }
+      .card-link:hover {
+        border-color: var(--accent);
+      }
+      .card-head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        flex-wrap: wrap;
+      }
+      .card-head strong {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      }
+      .tag {
+        font-size: 10px;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+        border: 1px solid var(--line);
+        border-radius: 999px;
+        padding: 2px 8px;
+        color: var(--muted);
+      }
+      .tag.ready {
+        color: var(--ok);
+        border-color: currentcolor;
+      }
+      .go {
+        margin-top: 10px;
+        font-size: 12px;
+        color: var(--accent);
+      }
+      .card.todo {
+        opacity: 0.6;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <h1>LumiTeach Worksheet System</h1>
+      <p class="sub mono">dev demo · localhost:3100</p>
+
+      <div class="cards">
+        <a class="card card-link" href="/editor/">
+          <div class="card-head">
+            <strong>/editor/</strong>
+            <span>WorksheetEditor</span>
+            <span class="tag ready">M5 · 사용 가능</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">
+            3분할 레이아웃 · 페이지 렌더·전환 · 확대/축소 · 팬 · 문서 업로드 · 객체 생성·편집(9핸들)
+            · 인스펙터(정답·배점)
+          </p>
+          <p class="go">편집기 열기 →</p>
+        </a>
+
+        <a class="card card-link" href="/spike/">
+          <div class="card-head">
+            <strong>/spike/</strong>
+            <span>PDF → 페이지 이미지 배열</span>
+            <span class="tag ready">M1 · 사용 가능</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">
+            페이지별 pt 크기 · 픽셀 크기 · renderScale · 소요시간 · 폰트 진단
+          </p>
+          <p class="go">진단 화면 열기 →</p>
+        </a>
+
+        <div class="card todo">
+          <div class="card-head">
+            <strong>/viewer/</strong>
+            <span>WorksheetViewer</span>
+            <span class="tag">M10</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">아직 미구현</p>
+        </div>
+
+        <a class="card card-link" href="/checks/">
+          <div class="card-head">
+            <strong>/checks/</strong>
+            <span>순수 함수 검증</span>
+            <span class="tag ready">M5 · 사용 가능</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">
+            좌표 변환 · 클램프 · 핸들 수학 · 히트 테스트 · 검증 12룰 · 채점 정규화 · 정답 유출 검사
+            (66 케이스)
+          </p>
+          <p class="go">검증 화면 열기 →</p>
+        </a>
+      </div>
+
+      <p class="muted" style="margin-top: 28px; font-size: 12px">
+        픽스처가 없으면 <code>npm run fixtures</code> 를 먼저 실행한다.
+      </p>
+    </div>
+  </body>
+</html>

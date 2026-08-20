@@ -29,10 +29,11 @@
  * 소비자가 자기 portal 로 `document.body` 에 띄워야 한다.
  */
 import { el } from '../../h'
-import { effect, onCleanup, type ReadSignal } from '../../reactive'
+import { onCleanup, type ReadSignal } from '../../reactive'
 import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { ObjectTypeRegistry } from '../../../core/objectTypes'
 import type { CustomObject } from '../../../core/model/types'
+import { mountRenderSlot } from './renderSlot'
 
 export interface CustomObjectViewProps {
   object: ReadSignal<CustomObject>
@@ -79,18 +80,18 @@ export function customObjectView(props: CustomObjectViewProps): HTMLElement {
     },
   })
 
-  // vanilla 경로 — 정의가 렌더를 주면 여기서 그린다.
+  // vanilla 경로 — 정의가 렌더를 주면 여기서 그린다. **한 번만** 부른다 (renderSlot.ts).
   if (def.render) {
-    effect(() => {
-      const obj = props.object.value
-      const node = def.render!({
-        objectId: obj.id,
-        data: obj.data,
-        rect: obj.rect,
+    mountRenderSlot({
+      objectId: props.object.value.id,
+      container: content,
+      render: def.render,
+      onChange: props.onChange,
+      read: () => ({
+        data: props.object.value.data,
+        rect: props.object.value.rect,
         selected: props.selected(),
-        onChange: props.onChange,
-      })
-      content.replaceChildren(node)
+      }),
     })
   } else if (props.onMount) {
     /*

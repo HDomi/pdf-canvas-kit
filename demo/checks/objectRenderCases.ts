@@ -251,9 +251,9 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
                 defaultSize: { w: 100, h: 40 },
                 defaultData: () => ({}),
                 render: () => {
-                  const s = document.createElement('span')
-                  s.textContent = '내 컴포넌트'
-                  return s
+                  const node = document.createElement('span')
+                  node.textContent = '내 컴포넌트'
+                  return node
                 },
               }),
             ],
@@ -350,7 +350,49 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
           ),
       },
       {
-        name: 'data 가 바뀌면 render 가 다시 불린다',
+        /*
+         * ★ 2026.08.20 버그. 데이터가 바뀔 때마다 `render` 를 다시 부르면 입력 중 노드가
+         * 파괴되어 한 글자마다 포커스가 날아간다. 노드는 한 번만 만들고 `onUpdate` 로
+         * 갱신한다 (PLAN 20.14).
+         */
+        name: '★ render 는 객체당 한 번만 불린다 (포커스 손실 방지)',
+        expected: 1,
+        actual: () => {
+          const obj = signal<PDFCanvasObject>(customObj({ data: { n: 1 } }))
+          let renders = 0
+          const types = createObjectTypeRegistry([
+            defineObjectType<{ n: number }>({
+              kind: 'demo.box',
+              label: '데모',
+              defaultSize: { w: 100, h: 40 },
+              defaultData: () => ({ n: 0 }),
+              render: () => {
+                renders++
+                return document.createElement('span')
+              },
+            }),
+          ])
+          const [res, dispose] = scope(() => {
+            objectView({
+              object: obj,
+              selected: () => false,
+              invalid: () => false,
+              previewRect: () => null,
+              previewRotation: () => null,
+              editing: () => false,
+              onEditText: () => {},
+              types,
+            })
+            obj.value = { ...(obj.value as CustomObject), data: { n: 2 } }
+            obj.value = { ...obj.value, data: { n: 3 } }
+            return renders
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        name: '★ onUpdate 로 등록한 콜백이 데이터 변경마다 불린다',
         expected: ['1', '2'],
         actual: () => {
           const obj = signal<PDFCanvasObject>(customObj({ data: { n: 1 } }))
@@ -360,10 +402,12 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               label: '데모',
               defaultSize: { w: 100, h: 40 },
               defaultData: () => ({ n: 0 }),
-              render: ({ data }) => {
-                const s = document.createElement('span')
-                s.textContent = String(data.n)
-                return s
+              render: ({ data, onUpdate }) => {
+                const node = document.createElement('span')
+                const sync = () => (node.textContent = String(data().n))
+                sync()
+                onUpdate(sync)
+                return node
               },
             }),
           ])
@@ -381,6 +425,42 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
             const before = node.querySelector('.pck-obj-custom-content')?.textContent ?? null
             obj.value = { ...(obj.value as CustomObject), data: { n: 2 } }
             return [before, node.querySelector('.pck-obj-custom-content')?.textContent ?? null]
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        name: 'onUpdate 를 등록하지 않으면 effect 를 만들지 않는다 (정적 콘텐츠)',
+        expected: '고정',
+        actual: () => {
+          const obj = signal<PDFCanvasObject>(customObj({ data: { n: 1 } }))
+          const types = createObjectTypeRegistry([
+            defineObjectType<{ n: number }>({
+              kind: 'demo.box',
+              label: '데모',
+              defaultSize: { w: 100, h: 40 },
+              defaultData: () => ({ n: 0 }),
+              render: () => {
+                const node = document.createElement('span')
+                node.textContent = '고정'
+                return node
+              },
+            }),
+          ])
+          const [res, dispose] = scope(() => {
+            const node = objectView({
+              object: obj,
+              selected: () => false,
+              invalid: () => false,
+              previewRect: () => null,
+              previewRotation: () => null,
+              editing: () => false,
+              onEditText: () => {},
+              types,
+            })
+            obj.value = { ...(obj.value as CustomObject), data: { n: 9 } }
+            return node.querySelector('.pck-obj-custom-content')?.textContent ?? null
           })
           dispose()
           return res

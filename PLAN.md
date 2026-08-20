@@ -2484,3 +2484,83 @@ const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
 
 등록되지 않은 `kind` 를 버리지 않는 이유: 저장된 문서가 지금 없는 타입을 담고 있을 수 있고
 (타입을 지웠거나 다른 앱이 만든 문서), 버리면 저장할 때 데이터가 사라진다.
+
+### 20.14 R8 후속 — 브라우저에서 잡힌 것 (2026.08.20)
+
+브라우저에서 커스텀 객체를 만들어 보니 두 가지가 나왔다. 하나는 계약 설계 실수고, 하나는
+사용자가 요구한 성질이 CSS 로 보장되지 않던 것이다.
+
+#### ★ 슬롯 계약이 틀렸다 — 한 글자마다 포커스가 날아갔다
+
+인스펙터에서 정답을 타이핑하면 **한 글자마다 입력이 끊겼다.** 원인이 명확하다.
+
+```
+타이핑 → onChange → 문서 변경 → single.value 변경 → effect 재실행
+      → container.replaceChildren(render(...)) → input 노드 파괴 → 포커스 손실
+```
+
+`render(ctx) => Node` 를 데이터 변경마다 다시 부르는 구조 자체가 틀렸다. **노드는 한 번만
+만들어야 한다** — 프레임워크 경로(portal)도 그렇게 동작한다. React·Vue 는 컨테이너를 한 번
+만들고 안쪽만 갱신한다. vanilla 경로가 그것과 달랐던 것이다.
+
+계약을 바꿨다.
+
+| | 이전 | 이후 |
+| --- | --- | --- |
+| 호출 횟수 | 데이터가 바뀔 때마다 | **객체당 한 번** |
+| `ctx.data` | 스냅샷 `Data` | **`() => Data`** — 스냅샷은 즉시 낡는다 |
+| 갱신 | (없음) | **`ctx.onUpdate(fn)`** — 등록한 콜백만 다시 돈다 |
+
+```ts
+render: ({ data, onChange, onUpdate }) => {
+  const input = document.createElement('input')
+  input.addEventListener('input', () => onChange({ ...data(), answers: [input.value] }))
+  const sync = () => {
+    // ⚠️ 포커스가 있으면 덮지 않는다. onUpdate 는 자기가 만든 변경으로도 불린다.
+    if (document.activeElement !== input) input.value = data().answers[0] ?? ''
+  }
+  sync()
+  onUpdate(sync)
+  return input
+}
+```
+
+**타입이 이 변경을 전부 잡아 줬다.** `data` 를 함수로 바꾸자 데모의 잘못된 사용 6곳이
+컴파일 에러로 떨어졌다.
+
+배선은 `dom/editor/objects/renderSlot.ts` 한곳에 모았다 — 캔버스와 인스펙터가 같은 규칙을
+쓰지 않으면 한쪽만 고쳐질 것이다.
+
+케이스로 고정했다: `render` 가 데이터 2회 변경에도 **1번만** 불리는 것 · `onUpdate` 콜백이
+변경마다 도는 것 · `onUpdate` 를 등록하지 않으면 effect 를 만들지 않는 것.
+
+#### ★ 콘텐츠를 프레임에 **갇히게** 했다
+
+요구가 명확했다 — "핸들 박스에 커스텀 컴포넌트가 바인딩되는 형태, 갇히는 것."
+
+`overflow: hidden` 만으로는 부족하다. 그건 **넘치는 것을 가릴** 뿐이고, 레이아웃 계산에서는
+내용이 박스 크기에 관여할 수 있다. 그래서 콘텐츠 컨테이너에 `container-type: size` 를 걸었다.
+
+두 가지를 한 번에 얻는다.
+
+1. **크기 격리** — 박스 크기가 내용과 **무관**해진다. 핸들 박스가 언제나 진실이다.
+2. **컨테이너 쿼리** — 소비자가 프레임 크기에 반응할 수 있다.
+
+```css
+@container pck-object (max-width: 120px) {
+  .my-fields { flex-direction: column; }
+}
+```
+
+쿼리가 보는 값은 **pt 박스 크기**다(배율이 아니다). 그래서 확대·축소해도 레이아웃이 흔들리지
+않고 핸들로 크기를 바꿀 때만 반응한다 — 사용자가 말한 "viewport 조작하듯이" 가 정확히 이것이다.
+
+#### 🟡 미해결 — 재현 절차 대기
+
+"메모를 더블클릭하니 핸들 박스보다 뒤 객체가 커졌다" 는 원인을 특정하지 못했다.
+
+`.pck-obj` 는 `position: absolute` 에 pt 크기가 인라인으로 박히므로 **구조적으로 자식이
+프레임을 키울 수 없다.** 스크린샷에서 같은 placeholder 문구가 두 번(진한 것·연한 것) 보이는
+것으로 보아 **객체가 두 개 겹친 상태**로 의심되지만, 추측으로 고치지 않는다.
+
+`container-type: size` 가 크기 격리를 강제하므로 원인이 콘텐츠 성장이었다면 함께 해결됐다.

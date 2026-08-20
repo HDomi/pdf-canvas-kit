@@ -44,15 +44,47 @@ export interface ObjectSize {
   h: Pt
 }
 
-/** 편집기 캔버스에서 커스텀 객체를 vanilla DOM 으로 그릴 때 받는 것. */
+/**
+ * vanilla DOM 렌더 슬롯이 받는 것.
+ *
+ * ## ★ `render` 는 객체당 **한 번만** 불린다
+ *
+ * 데이터가 바뀔 때마다 다시 부르면 **입력 중 노드가 파괴되어 포커스가 날아간다.** 한글 IME 는
+ * 조합까지 끊긴다 — 2026.08.20 에 실제로 그 버그를 냈다(PLAN 20.14).
+ *
+ * 그래서 값은 스냅샷이 아니라 **함수**로 준다. 스냅샷을 들고 있으면 즉시 낡는다.
+ *
+ * ```ts
+ * render: (ctx) => {
+ *   const input = document.createElement('input')
+ *   input.value = ctx.data().answers[0] ?? ''
+ *   input.addEventListener('input', () =>
+ *     ctx.onChange({ ...ctx.data(), answers: [input.value] }),
+ *   )
+ *   // 밖에서 값이 바뀌면(undo 등) 반영한다. 편집 중에는 덮지 않는다.
+ *   ctx.onUpdate(() => {
+ *     if (document.activeElement !== input) input.value = ctx.data().answers[0] ?? ''
+ *   })
+ *   return input
+ * }
+ * ```
+ */
 export interface ObjectRenderContext<Data = unknown> {
   objectId: string
-  data: Data
+  /** 현재 데이터. **함수다** — `render` 가 한 번만 불리므로 스냅샷은 낡는다. */
+  data: () => Data
   /** pt 단위. 배율은 부모 컨테이너가 처리하므로 곱하지 않는다 (PLAN 5.3). */
-  rect: { x: Pt; y: Pt; w: Pt; h: Pt }
-  selected: boolean
+  rect: () => { x: Pt; y: Pt; w: Pt; h: Pt }
+  selected: () => boolean
   /** 데이터를 바꾼다. 커맨드 한 번으로 커밋되어 undo 한 항목이 된다. */
   onChange: (next: Data) => void
+  /**
+   * 데이터·선택·크기가 바뀔 때 부를 콜백을 등록한다. DOM 을 직접 갱신하는 통로다.
+   *
+   * ⚠️ **자기가 만든 변경으로도 불린다.** 입력 요소를 무조건 덮어쓰면 캐럿이 끝으로 튀고
+   * IME 조합이 끊긴다 — `document.activeElement` 로 걸러야 한다(위 예제).
+   */
+  onUpdate: (fn: () => void) => void
 }
 
 export interface ObjectTypeDef<Data = unknown> {
@@ -115,14 +147,16 @@ export interface ObjectTypeDef<Data = unknown> {
   /**
    * vanilla DOM 렌더. **프레임워크 래퍼는 이걸 주지 않는다** (위 표 참고).
    *
-   * 반환한 노드가 프레임 안쪽 컨테이너의 자식이 된다.
+   * 반환한 노드가 프레임 안쪽 컨테이너의 자식이 된다. **객체당 한 번만 불린다** —
+   * 갱신은 `ctx.onUpdate` 로 받는다.
    */
   render?: (ctx: ObjectRenderContext<Data>) => Node
   /**
    * 우측 인스펙터의 속성 편집 패널. vanilla DOM.
    *
    * `render` 와 같은 규칙이다 — 프레임워크 래퍼는 이걸 주지 않고 컨테이너에 portal 한다.
-   * 이전 판의 `ShortAnswerPanel` · `DropboxPanel` 이 여기로 옮겨졌다 (PLAN D25).
+   * **선택된 객체당 한 번만 불린다.** 이전 판의 `ShortAnswerPanel` · `DropboxPanel` 이
+   * 여기로 옮겨졌다 (PLAN D25).
    */
   renderInspector?: (ctx: ObjectRenderContext<Data>) => Node
 }

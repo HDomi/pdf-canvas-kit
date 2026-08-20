@@ -11,7 +11,7 @@
  * 같은 유형 안에서 객체를 옮겨 선택하면 signal 만 갱신된다 (ARCHITECTURE §13.2).
  */
 import { el, when } from '../../h'
-import { computed, effect, onCleanup, type ReadSignal } from '../../reactive'
+import { computed, onCleanup, type ReadSignal } from '../../reactive'
 import { text } from '../../../core/config/strings'
 import { mergeBoxStyle, type BoxStylePatch } from '../../../core/model/boxStyle'
 import { validateObject } from '../../../core/validation/rules'
@@ -26,6 +26,7 @@ import type {
 import { boxStylePanel } from './boxStylePanel'
 import { field, numberInput } from './fields'
 import { shapePanel, textPanel } from './objectPanels'
+import { mountRenderSlot } from '../objects/renderSlot'
 
 export interface InspectorProps {
   /** 선택된 객체들. 0개면 빈 상태, 2개 이상이면 개수만 보여준다. */
@@ -145,18 +146,20 @@ export function inspector(props: InspectorProps): HTMLElement {
     const container = el('section', { class: 'pck-panel-section' })
 
     if (def?.renderInspector) {
-      effect(() => {
-        const current = single.value
-        if (current?.type !== 'custom') return
-        container.replaceChildren(
-          def.renderInspector!({
-            objectId: current.id,
-            data: current.data,
-            rect: current.rect,
-            selected: true,
-            onChange: (data: unknown) => patch({ data }),
-          }),
-        )
+      /*
+       * **한 번만** 부른다. 매 변경마다 다시 부르면 입력 중 노드가 파괴되어 한 글자마다
+       * 포커스가 날아간다 (PLAN 20.14).
+       */
+      mountRenderSlot({
+        objectId: obj.id,
+        container,
+        render: def.renderInspector,
+        onChange: (data: unknown) => patch({ data }),
+        read: () => {
+          const current = single.value
+          const c = current?.type === 'custom' ? current : obj
+          return { data: c.data, rect: c.rect, selected: true }
+        },
       })
     } else if (props.onMountInspector) {
       const id = obj.id

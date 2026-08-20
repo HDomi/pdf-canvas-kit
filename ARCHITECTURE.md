@@ -5,7 +5,7 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.3 |
+| 문서 버전 | arch-2.4 |
 | 최종 수정일 | 2026.08.20 |
 | 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R8 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
@@ -1029,7 +1029,32 @@ const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
 | 문서·페이지 한도 · 등록되지 않은 `kind` | `validate(data)` · `toPublic(data)` |
 | 도구 목록(레지스트리에서 만든다) | 렌더 |
 
-### 16.1 렌더 경로가 둘이다
+### 16.1 ★ `render` 는 객체당 **한 번만** 불린다
+
+데이터가 바뀔 때마다 다시 부르면 **입력 중 노드가 파괴되어 포커스가 날아간다.** 한글 IME 는
+조합까지 끊겨 한 글자마다 입력이 멈춘다 (PLAN 20.14).
+
+그래서 값은 스냅샷이 아니라 **함수**로 주고, 갱신은 `onUpdate` 로 등록한다.
+
+```ts
+render: ({ data, onChange, onUpdate }) => {
+  const input = document.createElement('input')
+  input.addEventListener('input', () => onChange({ ...data(), answers: [input.value] }))
+  const sync = () => {
+    // ⚠️ 포커스가 있으면 덮지 않는다 — onUpdate 는 자기가 만든 변경으로도 불린다.
+    if (document.activeElement !== input) input.value = data().answers[0] ?? ''
+  }
+  sync()
+  onUpdate(sync)
+  return input
+}
+```
+
+`onUpdate` 를 등록하지 않으면 effect 를 만들지 않는다 — 정적 콘텐츠에 비용이 없다.
+
+배선은 `dom/editor/objects/renderSlot.ts` 한곳이다. 캔버스와 인스펙터가 같은 규칙을 쓴다.
+
+### 16.1.1 렌더 경로가 둘이다
 
 | `render` | 누가 채우나 |
 | --- | --- |
@@ -1061,7 +1086,24 @@ const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
 반대로 배율이 콘텐츠를 함께 줄이는 것은 의도한 동작이다. 컨테이너 쿼리는 **pt 박스 크기**를
 보므로 배율과 무관하게 레이아웃이 일정하다.
 
-### 16.4 리사이즈 리플로우는 공짜다
+### 16.4 콘텐츠는 프레임에 **갇힌다** — `container-type: size`
+
+콘텐츠 컨테이너에 `container-type: size` 가 걸려 있다. `overflow: hidden` 은 넘치는 것을
+**가릴** 뿐이고 레이아웃 계산에서는 내용이 박스 크기에 관여할 수 있다. `size` 컨테인먼트는
+박스 크기를 **내용과 무관**하게 만든다 — 핸들 박스가 언제나 진실이다.
+
+부수 이득으로 컨테이너 쿼리가 열린다.
+
+```css
+@container pck-object (max-width: 120px) {
+  .my-fields { flex-direction: column; }
+}
+```
+
+쿼리가 보는 값은 **pt 박스 크기**다(배율이 아니다). 확대·축소해도 레이아웃이 흔들리지 않고
+핸들로 크기를 바꿀 때만 반응한다.
+
+### 16.5 리사이즈 리플로우는 공짜다
 
 프레임의 `width`/`height` 가 pt 인라인 스타일이고 드래그 중에는 `previewRect` 를 쓴다.
 핸들을 끌면 프레임 폭이 실시간으로 바뀌고 콘텐츠는 평범한 DOM 자식이므로 **flex 줄바꿈이
@@ -1070,7 +1112,7 @@ const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
 ⚠️ 드래그 중 rAF 코얼레싱을 쓰지 않는 판단(§10.1)은 **가벼운 박스를 전제로 했다.** 무거운
 소비자 컴포넌트가 매 `pointermove` 마다 리플로우하면 그 판단이 되돌아올 수 있다 — 실측 필요.
 
-### 16.5 등록되지 않은 `kind`
+### 16.6 등록되지 않은 `kind`
 
 **객체를 버리지 않는다.** 자리와 크기는 그리고 점선 테두리로 표시한 뒤 검증에서 잡는다.
 저장된 문서가 지금 없는 타입을 담고 있을 수 있고(타입을 지웠거나 다른 앱이 만든 문서),

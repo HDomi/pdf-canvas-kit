@@ -77,55 +77,81 @@ const shortAnswer = defineObjectType<AnswerData>({
   rotatable: false,
   validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
   toPublic: ({ answers: _answers, ...rest }) => rest,
-  render: ({ data }) => {
+  /*
+   * `render` 는 객체당 **한 번만** 불린다. 값은 `data()` 로 읽고, 밖에서 바뀌면
+   * `onUpdate` 로 반영한다 (PLAN 20.14).
+   */
+  render: ({ data, onUpdate }) => {
     const box = document.createElement('div')
     box.style.cssText =
       'display:flex;align-items:center;gap:6px;padding:0 8px;height:100%;font-size:11px'
     const badge = document.createElement('b')
-    badge.textContent = String(data.points)
     const hint = document.createElement('span')
     hint.style.color = '#b4342b'
-    hint.textContent = data.answers.some((a) => a.trim()) ? '' : '정답 미입력'
     box.append(badge, hint)
+
+    const sync = () => {
+      const d = data()
+      badge.textContent = String(d.points)
+      hint.textContent = d.answers.some((a: string) => a.trim()) ? '' : '정답 미입력'
+    }
+    sync()
+    onUpdate(sync)
     return box
   },
-  renderInspector: ({ data, onChange }) => {
+  renderInspector: ({ data, onChange, onUpdate }) => {
     const wrap = document.createElement('div')
-    const input = document.createElement('input')
-    input.className = 'pck-input'
-    input.value = data.answers[0] ?? ''
-    input.placeholder = '정답'
-    input.addEventListener('input', () => onChange({ ...data, answers: [input.value] }))
+
+    const answer = document.createElement('input')
+    answer.className = 'pck-input'
+    answer.placeholder = '정답'
+    answer.addEventListener('input', () => onChange({ ...data(), answers: [answer.value] }))
+
     const points = document.createElement('input')
     points.className = 'pck-input pck-input--num'
     points.type = 'number'
     points.min = '1'
-    points.value = String(data.points)
-    points.addEventListener('input', () => onChange({ ...data, points: Number(points.value) || 1 }))
-    wrap.append(input, points)
+    points.addEventListener('input', () =>
+      onChange({ ...data(), points: Number(points.value) || 1 }),
+    )
+
+    wrap.append(answer, points)
+
+    /*
+     * ⚠️ **포커스가 있는 입력은 덮지 않는다.**
+     *
+     * `onUpdate` 는 자기가 만든 변경으로도 불린다. 무조건 대입하면 캐럿이 끝으로 튀고
+     * 한글 IME 조합이 끊긴다 — 이 가드가 그 종류의 버그를 막는 유일한 지점이다.
+     */
+    const sync = () => {
+      const d = data()
+      if (document.activeElement !== answer) answer.value = d.answers[0] ?? ''
+      if (document.activeElement !== points) points.value = String(d.points)
+    }
+    sync()
+    onUpdate(sync)
     return wrap
   },
 })
 
-/**
- * 상호작용형 예제.
- *
- * `interactive: true` 라 편집기에서도 콘텐츠가 포인터를 먹는다 — 이 객체는 테두리와 핸들로만
- * 선택된다. 가운데를 끌어 옮길 수 없다는 것을 눈으로 확인하기 위한 것이다.
- */
 const sticky = defineObjectType<{ text: string }>({
   kind: 'demo.sticky',
   label: '메모(상호작용)',
   defaultSize: { w: 180, h: 90 },
   defaultData: () => ({ text: '' }),
   interactive: true,
-  render: ({ data, onChange }) => {
+  render: ({ data, onChange, onUpdate }) => {
     const ta = document.createElement('textarea')
     ta.style.cssText =
       'width:100%;height:100%;border:0;background:transparent;resize:none;font:inherit;padding:6px'
-    ta.value = data.text
     ta.placeholder = '메모를 입력한다'
     ta.addEventListener('input', () => onChange({ text: ta.value }))
+    const sync = () => {
+      // 위와 같은 이유로 포커스가 있으면 덮지 않는다.
+      if (document.activeElement !== ta) ta.value = data().text
+    }
+    sync()
+    onUpdate(sync)
     return ta
   },
 })

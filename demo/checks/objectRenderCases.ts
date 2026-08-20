@@ -282,8 +282,16 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: '★ 기본은 콘텐츠가 포인터를 먹지 않는다 (클릭이 객체 선택으로 간다)',
-        expected: false,
+        /*
+         * ★ 2026.08.20 결정 (PLAN D26). 이전에는 `interactive: true` 로 캔버스에서 직접
+         * 입력받는 길을 열어 뒀는데 **원리적으로 동작하지 않았다** — 콘텐츠가 이벤트를 받아도
+         * 페이지 프레임까지 버블링되고 거기서 포인터 도구가 `preventDefault()` 를 부른다.
+         * `pointerdown` 의 `preventDefault()` 는 포커스 이동을 취소한다.
+         *
+         * 편집 창구를 인스펙터 하나로 두었다. 캔버스는 배치와 크기 조절만 한다.
+         */
+        name: '★ 콘텐츠는 포인터 이벤트를 받지 않는다 (편집은 인스펙터에서)',
+        expected: [true, false],
         actual: () =>
           renderCustom(
             { kind: 'demo.box' },
@@ -295,29 +303,10 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
                 defaultData: () => ({}),
               }),
             ],
-            (root) =>
-              root.querySelector('.pck-obj-custom-content')?.classList.contains('is-interactive') ??
-              null,
-          ),
-      },
-      {
-        name: '★ interactive: true 면 콘텐츠가 먹는다',
-        expected: true,
-        actual: () =>
-          renderCustom(
-            { kind: 'demo.box' },
-            [
-              defineObjectType({
-                kind: 'demo.box',
-                label: '데모',
-                defaultSize: { w: 100, h: 40 },
-                defaultData: () => ({}),
-                interactive: true,
-              }),
-            ],
-            (root) =>
-              root.querySelector('.pck-obj-custom-content')?.classList.contains('is-interactive') ??
-              null,
+            (root) => {
+              const content = root.querySelector('.pck-obj-custom-content')
+              return [content !== null, content?.classList.contains('is-interactive') ?? false]
+            },
           ),
       },
       {

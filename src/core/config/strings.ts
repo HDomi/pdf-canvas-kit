@@ -87,6 +87,7 @@ export const DEFAULT_STRINGS = {
   'inspector.fill': '채움',
   'inspector.stroke': '테두리',
   'inspector.strokeWidth': '두께',
+  'inspector.noCustomEditor': '이 객체는 편집할 속성이 없습니다.',
   'inspector.rotation': '회전',
   'inspector.noFill': '없음',
 

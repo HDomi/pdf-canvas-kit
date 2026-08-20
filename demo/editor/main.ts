@@ -8,22 +8,19 @@
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
- * **R8 시점 — 커스텀 객체 레지스트리** (PLAN D25). 아래 `shortAnswer` · `sticky` 가 소비자 앱이
- * 타입을 정의하는 방식의 예제다. 툴바 도구도 이 목록에서 만들어진다.
- *
- * 이 데모는 프레임워크가 없으므로 `render` 슬롯으로 vanilla DOM 을 그린다. React·Vue 래퍼는
- * 그 슬롯을 주지 않고 컨테이너에 portal 한다 (R9).
+ * **커스텀 객체 레지스트리** (PLAN D25). 타입 정의는 `objectTypes.ts` 에 있다 — 그쪽이
+ * "소비자가 라이브러리를 쓰는 법" 이고 이 파일은 마운트·dev 바를 다룬다.
  */
 import {
   clearPrototypeSave,
   configurePdfResources,
-  defineObjectType,
   createConsoleStoragePort,
   hasPrototypeSave,
   loadPrototype,
   type PDFCanvasDoc,
   type SaveState,
 } from 'pdf-canvas-kit'
+import { DEMO_OBJECT_TYPES } from './objectTypes'
 import { createEditorController } from '../../src/controller/editor'
 import { editorShell } from '../../src/dom/editor/editorShell'
 import { el, when } from '../../src/dom/h'
@@ -51,110 +48,6 @@ configurePdfResources({
  * 실패 재시도)은 그대로 동작하므로 저장 주기와 배지 상태를 실제와 같은 조건에서 확인할 수 있다.
  */
 const storage = createConsoleStoragePort({ label: '[demo]' })
-
-/**
- * 커스텀 객체 타입 예제 (PLAN D25).
- *
- * 이 데모는 프레임워크가 없으므로 `render` · `renderInspector` 로 vanilla DOM 을 그린다.
- * React·Vue 래퍼는 이 슬롯을 주지 않고 컨테이너에 portal 한다 (R9).
- *
- * **`interactive` 를 켠 타입과 끈 타입을 하나씩 둔다** — 편집기에서 포인터 소유권이 어떻게
- * 갈리는지 브라우저에서 직접 비교할 수 있어야 한다.
- */
-interface AnswerData {
-  answers: string[]
-  points: number
-}
-
-const shortAnswer = defineObjectType<AnswerData>({
-  kind: 'demo.shortAnswer',
-  label: '단답형',
-  defaultSize: { w: 160, h: 40 },
-  minSize: { w: 80, h: 32 },
-  defaultData: () => ({ answers: [], points: 1 }),
-  // 편집기에서는 자리만 보여준다. 클릭이 객체 선택으로 가야 한다.
-  interactive: false,
-  rotatable: false,
-  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
-  toPublic: ({ answers: _answers, ...rest }) => rest,
-  /*
-   * `render` 는 객체당 **한 번만** 불린다. 값은 `data()` 로 읽고, 밖에서 바뀌면
-   * `onUpdate` 로 반영한다 (PLAN 20.14).
-   */
-  render: ({ data, onUpdate }) => {
-    const box = document.createElement('div')
-    box.style.cssText =
-      'display:flex;align-items:center;gap:6px;padding:0 8px;height:100%;font-size:11px'
-    const badge = document.createElement('b')
-    const hint = document.createElement('span')
-    hint.style.color = '#b4342b'
-    box.append(badge, hint)
-
-    const sync = () => {
-      const d = data()
-      badge.textContent = String(d.points)
-      hint.textContent = d.answers.some((a: string) => a.trim()) ? '' : '정답 미입력'
-    }
-    sync()
-    onUpdate(sync)
-    return box
-  },
-  renderInspector: ({ data, onChange, onUpdate }) => {
-    const wrap = document.createElement('div')
-
-    const answer = document.createElement('input')
-    answer.className = 'pck-input'
-    answer.placeholder = '정답'
-    answer.addEventListener('input', () => onChange({ ...data(), answers: [answer.value] }))
-
-    const points = document.createElement('input')
-    points.className = 'pck-input pck-input--num'
-    points.type = 'number'
-    points.min = '1'
-    points.addEventListener('input', () =>
-      onChange({ ...data(), points: Number(points.value) || 1 }),
-    )
-
-    wrap.append(answer, points)
-
-    /*
-     * ⚠️ **포커스가 있는 입력은 덮지 않는다.**
-     *
-     * `onUpdate` 는 자기가 만든 변경으로도 불린다. 무조건 대입하면 캐럿이 끝으로 튀고
-     * 한글 IME 조합이 끊긴다 — 이 가드가 그 종류의 버그를 막는 유일한 지점이다.
-     */
-    const sync = () => {
-      const d = data()
-      if (document.activeElement !== answer) answer.value = d.answers[0] ?? ''
-      if (document.activeElement !== points) points.value = String(d.points)
-    }
-    sync()
-    onUpdate(sync)
-    return wrap
-  },
-})
-
-const sticky = defineObjectType<{ text: string }>({
-  kind: 'demo.sticky',
-  label: '메모(상호작용)',
-  defaultSize: { w: 180, h: 90 },
-  defaultData: () => ({ text: '' }),
-  interactive: true,
-  render: ({ data, onChange, onUpdate }) => {
-    const ta = document.createElement('textarea')
-    ta.style.cssText =
-      'width:100%;height:100%;border:0;background:transparent;resize:none;font:inherit;padding:6px'
-    ta.placeholder = '메모를 입력한다'
-    ta.addEventListener('input', () => onChange({ text: ta.value }))
-    const sync = () => {
-      // 위와 같은 이유로 포커스가 있으면 덮지 않는다.
-      if (document.activeElement !== ta) ta.value = data().text
-    }
-    sync()
-    onUpdate(sync)
-    return ta
-  },
-})
 
 const FIXTURES = [
   ['a4-3page.pdf', 'A4 3p'],
@@ -189,7 +82,7 @@ function mountEditor(doc: PDFCanvasDoc | null) {
     const c = createEditorController({
       ...(doc ? { doc } : {}),
       ports: { storage },
-      objectTypes: [shortAnswer, sticky],
+      objectTypes: DEMO_OBJECT_TYPES,
       onSaveStateChange: (s) => (saveState.value = s),
       onChange: (next) => {
         status.value = `${next.pages.length} 페이지 · "${next.title}"`

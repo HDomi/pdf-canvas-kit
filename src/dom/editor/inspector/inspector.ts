@@ -165,6 +165,14 @@ export function inspector(props: InspectorProps): HTMLElement {
       const id = obj.id
       props.onMountInspector(id, container)
       onCleanup(() => props.onMountInspector?.(id, null))
+    } else {
+      /*
+       * 이 타입은 편집할 것을 주지 않았다.
+       *
+       * 빈 패널을 두면 "왜 편집이 안 되나" 를 알 수 없다. 커스텀 객체의 편집 창구는 인스펙터
+       * 하나이므로(PLAN D26), 슬롯이 없다는 사실을 드러내는 편이 낫다.
+       */
+      container.append(el('p', { class: 'pck-panel-empty' }, [text('inspector.noCustomEditor')]))
     }
 
     return container

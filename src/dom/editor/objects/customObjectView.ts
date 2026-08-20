@@ -11,15 +11,19 @@
  *
  * 두 번째 경로 때문에 컨테이너 엘리먼트를 밖으로 알려야 한다 — `onMount` 가 그 통로다.
  *
- * ## ★ 포인터 이벤트 규칙
+ * ## ★ 콘텐츠는 포인터 이벤트를 받지 않는다 (PLAN D26)
  *
- * 편집기에서 콘텐츠는 기본적으로 `pointer-events: none` 이다. 클릭이 **객체 선택·드래그**로
- * 가야 하기 때문이다. 안쪽 `<input>` 이 포커스를 가로채면 객체를 옮길 수 없다.
+ * 편집기에서 커스텀 객체의 **편집 창구는 인스펙터 하나**다. 캔버스는 배치와 크기 조절만 한다.
  *
- * `objectType.interactive === true` 면 그 타입만 콘텐츠가 이벤트를 먹는다. 그 객체는 테두리와
- * 핸들로만 선택된다.
+ * 이전에는 `interactive: true` 로 캔버스에서 직접 입력받는 길을 열어 뒀는데 **원리적으로
+ * 동작하지 않았다.** 콘텐츠가 이벤트를 받아도 그 이벤트가 페이지 프레임까지 버블링되고,
+ * 거기서 포인터 도구가 `preventDefault()` 를 부른다 — `pointerdown` 의 `preventDefault()` 는
+ * **포커스 이동을 취소**하므로 클릭해도 커서가 들어가지 않는다.
  *
- * 뷰어에서는 이 값과 무관하게 항상 콘텐츠가 먹는다 (뷰어는 응답을 받는 화면이다).
+ * `stopPropagation` 으로 고칠 수는 있지만 그러면 그 객체는 가운데를 끌어 옮길 수 없어진다.
+ * 편집 경로를 하나로 두는 편이 규칙이 하나이고 텍스트·도형과도 같다 (PLAN 20.15).
+ *
+ * 뷰어는 다르다 — 응답을 받는 화면이므로 콘텐츠가 이벤트를 먹는다 (R11).
  *
  * ## ⚠️ `position: fixed` 함정
  *
@@ -72,13 +76,13 @@ export function customObjectView(props: CustomObjectViewProps): HTMLElement {
     )
   }
 
-  const content = el('div', {
-    class: {
-      'pck-obj-custom-content': true,
-      // 기본은 프레임이 포인터를 먹는다. CSS 가 이 클래스로 pointer-events 를 정한다.
-      'is-interactive': def.interactive === true,
-    },
-  })
+  /*
+   * 콘텐츠는 포인터 이벤트를 받지 않는다 (CSS 가 `pointer-events: none`).
+   *
+   * 편집기에서 커스텀 객체의 **편집 창구는 인스펙터 하나**다 (PLAN D26). 캔버스는 배치와
+   * 크기 조절만 한다.
+   */
+  const content = el('div', { class: 'pck-obj-custom-content' })
 
   // vanilla 경로 — 정의가 렌더를 주면 여기서 그린다. **한 번만** 부른다 (renderSlot.ts).
   if (def.render) {

@@ -116,56 +116,64 @@ async function loadFixture(name: string): Promise<void> {
 
 /* ------------------------------------------------------------------ 화면 -- */
 
-const [root] = scope(() =>
-  el('div', { class: 'demo-shell' }, [
-    el('div', { class: 'demo-bar' }, [
-      el('strong', {}, ['editor (R6)']),
-      ...FIXTURES.map(([file, label]) =>
-        el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
-          label,
-        ]),
-      ),
-      el(
-        'button',
-        {
-          attr: { type: 'button' },
-          on: {
-            click: () => {
-              const loaded = loadPrototype()
-              if (!loaded) {
-                status.value = '저장된 데이터가 없다.'
-                return
-              }
-              mountEditor(loaded)
-              status.value = `불러옴 · ${loaded.pages.length} 페이지 · "${loaded.title}"`
-            },
+/*
+ * `index.html` 이 레이아웃 계약을 갖고 있다 — `#app` 은 flex 컬럼이고 **직계 자식**이
+ * `.devbar`(고정) + `.editor-host`(`flex: 1`) 여야 한다. `.pck-editor` 가 `height: 100%` 를
+ * 요구하므로 이 체인 중 한 겹이라도 어긋나면 편집기가 화면을 채우지 못하고 EmptyState 가
+ * 부모 밖으로 삐져나온다.
+ *
+ * 그래서 감싸는 `div` 를 두지 않고 두 노드를 `#app` 에 직접 붙인다. 구 Vue 판이
+ * `style="display:contents"` 를 쓴 것도 같은 이유였다.
+ */
+const [nodes] = scope(() => [
+  el('div', { class: 'devbar' }, [
+    el('strong', {}, ['editor (R6)']),
+    ...FIXTURES.map(([file, label]) =>
+      el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
+        label,
+      ]),
+    ),
+    el(
+      'button',
+      {
+        attr: { type: 'button' },
+        on: {
+          click: () => {
+            const loaded = loadPrototype()
+            if (!loaded) {
+              status.value = '저장된 데이터가 없다.'
+              return
+            }
+            mountEditor(loaded)
+            status.value = `불러옴 · ${loaded.pages.length} 페이지 · "${loaded.title}"`
           },
         },
-        ['불러오기'],
-      ),
-      when(
-        () => hasSave.value,
-        () =>
-          el(
-            'button',
-            {
-              attr: { type: 'button' },
-              on: {
-                click: () => {
-                  clearPrototypeSave()
-                  hasSave.value = hasPrototypeSave()
-                  status.value = '저장 삭제됨.'
-                },
+      },
+      ['불러오기'],
+    ),
+    when(
+      () => hasSave.value,
+      () =>
+        el(
+          'button',
+          {
+            attr: { type: 'button' },
+            on: {
+              click: () => {
+                clearPrototypeSave()
+                hasSave.value = hasPrototypeSave()
+                status.value = '저장 삭제됨.'
               },
             },
-            ['저장 삭제'],
-          ),
-      ),
-      el('span', { class: 'demo-status' }, [() => `${saveState.value} · ${status.value}`]),
-    ]),
-    el('div', { class: 'editor-host', ref: (e) => (stageHost = e) }),
+          },
+          ['저장 삭제'],
+        ),
+    ),
+    el('span', { class: 'spacer' }),
+    el('span', {}, [() => `${saveState.value} · ${status.value}`]),
   ]),
-)
+  el('div', { class: 'editor-host', ref: (e) => (stageHost = e) }),
+])
 
-host.append(root)
+host.append(...nodes)
 mountEditor(null)

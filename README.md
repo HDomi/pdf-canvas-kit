@@ -207,6 +207,23 @@ export default defineNuxtPlugin(() => {
 디렉토리 경로 끝 슬래시는 필수다. `workerSrc` 없이 변환하면
 `PdfWorkerNotConfiguredError` 가 난다. 자세한 내용은 [ARCHITECTURE §4](ARCHITECTURE.md).
 
+### ⚠️ 컨테이너에 높이를 줘야 한다 — 가장 흔한 함정
+
+`.pck-editor` 는 `height: 100%` 다. 컨테이너에 확정된 높이가 없으면 **편집기가 접히고
+EmptyState 아이콘이 편집기 밖으로 삐져나온다.**
+
+```css
+/* 화면 전체 */
+html, body, #app { height: 100%; margin: 0; }
+
+/* 다른 UI 와 나눠 쓰는 경우 */
+.my-layout { display: flex; flex-direction: column; height: 100vh; }
+.my-editor-host { flex: 1; min-height: 0; }   /* min-height: 0 이 반드시 필요하다 */
+```
+
+감싸는 요소를 한 겹 더 두면 **그 요소도 높이를 넘겨야 한다.** 규칙 없는 `<div>` 를 끼우면
+체인이 끊긴다. 자세한 증상표는 [ARCHITECTURE §15.4](ARCHITECTURE.md).
+
 ### 2. 클라이언트 전용으로 마운트한다
 
 pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR을 지원하지 않는다.

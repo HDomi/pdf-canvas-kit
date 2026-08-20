@@ -993,6 +993,35 @@ configureStrings({ 'topbar.export': '과제로 내보내기' })
 컴포넌트에 하드코딩하는 안은 버렸다 — R4 에서 걷어낸 위반(캔버스 문구 3건이 한국어로 박혀 있어
 `locale: 'en'` 에서도 한국어가 남았다)을 되돌리는 것이기 때문이다.
 
+### 15.4 ★ 호스트가 컨테이너에 **높이를 줘야 한다**
+
+`.pck-editor` 는 `height: 100%` 다. 그래서 **마운트하는 컨테이너에 확정된 높이가 없으면
+편집기가 접힌다.** 증상이 특징적이다.
+
+| 증상 | 원인 |
+| --- | --- |
+| 편집기가 화면 위쪽 200px 만 차지하고 아래가 비어 있다 | 컨테이너 높이가 auto |
+| EmptyState 아이콘이 편집기 **밖 위쪽**에 떠 있다 | `.pck-stage-wrap` 이 0 높이라 `place-content: center` 가 위아래로 넘친다 |
+| 스테이지가 안 보이는데 툴바는 보인다 | 같은 원인 |
+
+`.pck-empty` 가 `position: absolute; inset: 0` 이라 부모가 0이면 내용이 양쪽으로 흘러나온다.
+높이 체인 한 겹만 끊겨도 이 모양이 된다.
+
+```css
+/* 화면 전체를 쓰는 경우 */
+html, body, #app { height: 100%; margin: 0; }
+
+/* 다른 UI 와 나눠 쓰는 경우 — flex 항목에 min-height: 0 을 반드시 함께 준다 */
+.my-layout { display: flex; flex-direction: column; height: 100vh; }
+.my-editor-host { flex: 1; min-height: 0; }
+```
+
+`min-height: 0` 이 없으면 flex 항목의 기본 `min-height: auto` 가 내용 크기를 최소로 잡아
+스테이지 스크롤이 컨테이너를 밀어낸다.
+
+**감싸는 요소를 한 겹 더 두면 그 요소도 높이를 넘겨야 한다.** 아무 규칙 없는 `<div>` 를
+끼우면 체인이 끊긴다 — 2026.08.20 에 데모에서 실제로 이 실수를 했다(PLAN 20.11).
+
 ### 15.3 스타일 배포
 
 `dist/styles.css` 는 CSS 전용 엔트리(`src/styles.ts`)에서 나온다.

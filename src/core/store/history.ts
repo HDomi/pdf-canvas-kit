@@ -12,22 +12,22 @@
  * - **뷰 상태는 기록하지 않는다.** 배율이나 현재 페이지를 되돌리는 undo는 도움보다 혼란이 크므로
  *   배율·스크롤·선택은 문서 밖에 둔다 (PLAN 6.6).
  */
-import type { WorksheetDoc } from '../model/types'
+import type { PDFCanvasDoc } from '../model/types'
 
 export interface HistoryEntry {
   /** 디버깅용, 그리고 나중에 "무엇을 되돌릴지" 보여줄 때 쓸 짧은 라벨. */
   label: string
-  before: WorksheetDoc
-  after: WorksheetDoc
+  before: PDFCanvasDoc
+  after: PDFCanvasDoc
 }
 
 export interface History {
   /** 완료된 변경을 기록한다. redo 스택을 비운다. */
   push(entry: HistoryEntry): void
   /** 복원할 문서를 돌려준다. 되돌릴 것이 없으면 null. */
-  undo(): WorksheetDoc | null
+  undo(): PDFCanvasDoc | null
   /** 복원할 문서를 돌려준다. 다시 실행할 것이 없으면 null. */
-  redo(): WorksheetDoc | null
+  redo(): PDFCanvasDoc | null
   canUndo(): boolean
   canRedo(): boolean
   /** 모든 항목을 버린다. 다른 문서를 불러올 때 등. */

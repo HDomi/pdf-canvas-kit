@@ -19,9 +19,9 @@ const style = computed(() => boxStyleToCss(props.object.style))
 </script>
 
 <template>
-  <div class="lws-answer lws-answer--essay" :style="style">
-    <span v-if="props.questionNumber" class="lws-answer-no">{{ props.questionNumber }}</span>
-    <span class="lws-answer-badge">{{ props.object.points }}</span>
-    <span class="lws-answer-hint">서술형 · 수동 채점</span>
+  <div class="pck-answer pck-answer--essay" :style="style">
+    <span v-if="props.questionNumber" class="pck-answer-no">{{ props.questionNumber }}</span>
+    <span class="pck-answer-badge">{{ props.object.points }}</span>
+    <span class="pck-answer-hint">서술형 · 수동 채점</span>
   </div>
 </template>

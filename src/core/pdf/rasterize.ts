@@ -98,7 +98,7 @@ export interface RasterTarget {
 export function createRasterTarget(): RasterTarget {
   const canvas = document.createElement('canvas')
   const ctx = canvas.getContext('2d', { alpha: false })
-  if (!ctx) throw new Error('[worksheet] 2D canvas context unavailable')
+  if (!ctx) throw new Error('[pdf-canvas-kit] 2D canvas context unavailable')
   return { canvas, ctx }
 }
 
@@ -129,7 +129,7 @@ function toBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promi
   return new Promise((resolve, reject) => {
     canvas.toBlob(
       (blob) =>
-        blob ? resolve(blob) : reject(new Error('[worksheet] canvas.toBlob returned null')),
+        blob ? resolve(blob) : reject(new Error('[pdf-canvas-kit] canvas.toBlob returned null')),
       mime,
       quality,
     )

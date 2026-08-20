@@ -17,5 +17,5 @@ const label = computed(() => props.t(`save.${props.state}`))
 </script>
 
 <template>
-  <span class="lws-badge" :class="`is-${props.state}`" role="status">{{ label }}</span>
+  <span class="pck-badge" :class="`is-${props.state}`" role="status">{{ label }}</span>
 </template>

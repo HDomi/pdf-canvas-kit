@@ -22,7 +22,7 @@ const arrowHead = computed(() =>
 
 <template>
   <svg
-    class="lws-obj-shape"
+    class="pck-obj-shape"
     :viewBox="`0 0 ${w} ${h}`"
     :width="w"
     :height="h"

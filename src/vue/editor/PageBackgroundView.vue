@@ -6,9 +6,9 @@
  * 무관해진다 — `targetPx` 를 바꿔 다시 래스터화해도 아무것도 움직이지 않는다 (PLAN 5.7).
  */
 import { computed } from 'vue'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 
-const props = defineProps<{ page: WorksheetPage }>()
+const props = defineProps<{ page: PDFCanvasPage }>()
 
 const image = computed(() =>
   props.page.background.kind === 'image' ? props.page.background : null,
@@ -18,11 +18,11 @@ const image = computed(() =>
 <template>
   <img
     v-if="image"
-    class="lws-page-bg"
+    class="pck-page-bg"
     :src="image.url"
     :alt="''"
     draggable="false"
     decoding="async"
   />
-  <div v-else class="lws-page-bg lws-page-bg--blank" />
+  <div v-else class="pck-page-bg pck-page-bg--blank" />
 </template>

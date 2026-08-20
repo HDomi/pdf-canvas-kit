@@ -5,7 +5,7 @@
  * ## 체크박스로 "지정 여부" 를 다루는 이유
  *
  * 모델의 `BoxStyle` 은 "미지정" 과 "지정" 을 구분한다. 미지정이면 CSS 토큰 기본값이 적용되므로
- * 호스트가 `--lws-*` 로 테마를 바꿀 수 있다(ARCHITECTURE §3). 색 선택기만 두면 항상 값이
+ * 호스트가 `--pck-*` 로 테마를 바꿀 수 있다(ARCHITECTURE §3). 색 선택기만 두면 항상 값이
  * 채워져 그 구분이 사라진다.
  *
  * 그래서 각 항목에 체크박스를 두고, 껐을 때 필드를 **`undefined` 로 되돌린다**.
@@ -66,20 +66,20 @@ function toggleColor(on: boolean) {
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <h3 class="lws-field-label">{{ props.t('inspector.boxStyle') }}</h3>
+  <section class="pck-panel-section">
+    <h3 class="pck-field-label">{{ props.t('inspector.boxStyle') }}</h3>
 
-    <label class="lws-field--inline">
+    <label class="pck-field--inline">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="fillOn"
         @change="toggleFill(($event.target as HTMLInputElement).checked)"
       />
-      <span class="lws-style-label">{{ props.t('inspector.background') }}</span>
+      <span class="pck-style-label">{{ props.t('inspector.background') }}</span>
       <input
         v-if="fillOn"
-        class="lws-input lws-input--color"
+        class="pck-input pck-input--color"
         type="color"
         :value="fillValue === null ? '#ffffff' : fillValue"
         @input="emit('update', { fill: ($event.target as HTMLInputElement).value })"
@@ -88,7 +88,7 @@ function toggleColor(on: boolean) {
       <button
         v-if="fillOn"
         type="button"
-        class="lws-chip"
+        class="pck-chip"
         :class="{ 'is-active': props.style?.fill === null }"
         :title="props.t('inspector.transparentHint')"
         @click="emit('update', { fill: props.style?.fill === null ? '#ffffff' : null })"
@@ -97,24 +97,24 @@ function toggleColor(on: boolean) {
       </button>
     </label>
 
-    <label class="lws-field--inline">
+    <label class="pck-field--inline">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="strokeOn"
         @change="toggleStroke(($event.target as HTMLInputElement).checked)"
       />
-      <span class="lws-style-label">{{ props.t('inspector.stroke') }}</span>
+      <span class="pck-style-label">{{ props.t('inspector.stroke') }}</span>
       <input
         v-if="strokeOn"
-        class="lws-input lws-input--color"
+        class="pck-input pck-input--color"
         type="color"
         :value="strokeValue === null ? '#1c1c1a' : strokeValue"
         @input="emit('update', { stroke: ($event.target as HTMLInputElement).value })"
       />
       <input
         v-if="strokeOn"
-        class="lws-input lws-input--num lws-input--narrow"
+        class="pck-input pck-input--num pck-input--narrow"
         type="number"
         min="0.5"
         max="20"
@@ -130,23 +130,23 @@ function toggleColor(on: boolean) {
       />
     </label>
 
-    <label class="lws-field--inline">
+    <label class="pck-field--inline">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="colorOn"
         @change="toggleColor(($event.target as HTMLInputElement).checked)"
       />
-      <span class="lws-style-label">{{ props.t('inspector.textColor') }}</span>
+      <span class="pck-style-label">{{ props.t('inspector.textColor') }}</span>
       <input
         v-if="colorOn"
-        class="lws-input lws-input--color"
+        class="pck-input pck-input--color"
         type="color"
         :value="colorValue"
         @input="emit('update', { color: ($event.target as HTMLInputElement).value })"
       />
     </label>
 
-    <p class="lws-field-note">{{ props.t('inspector.boxStyleNote') }}</p>
+    <p class="pck-field-note">{{ props.t('inspector.boxStyleNote') }}</p>
   </section>
 </template>

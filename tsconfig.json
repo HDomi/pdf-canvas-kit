@@ -18,9 +18,9 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@lumiteach/worksheet-system": ["./src/index.ts"],
-      "@lumiteach/worksheet-system/vue": ["./src/vue/index.ts"],
-      "@lumiteach/worksheet-system/*": ["./src/*"]
+      "pdf-canvas-kit": ["./src/index.ts"],
+      "pdf-canvas-kit/vue": ["./src/vue/index.ts"],
+      "pdf-canvas-kit/*": ["./src/*"]
     },
 
     "skipLibCheck": true,

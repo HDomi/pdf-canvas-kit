@@ -2,7 +2,7 @@
  * 학생에게 내보내기 전에 정답을 제거한다 (PLAN D14).
  *
  * 학생 번들에는 정답이나 채점 메모가 절대 들어가면 안 된다. 사용 지점에서 필터링하는 대신
- * 아예 다른 타입으로 만들어, 뷰어에 `WorksheetDoc` 을 넘기면 컴파일 에러가 나게 했다.
+ * 아예 다른 타입으로 만들어, 뷰어에 `PDFCanvasDoc` 을 넘기면 컴파일 에러가 나게 했다.
  *
  * 서버가 과제 스냅샷을 만들 때도 같은 규칙을 적용한다. 이 함수가 "public"의 공유 정의다.
  */
@@ -13,16 +13,16 @@ import type {
   ShapeObject,
   ShortAnswerBox,
   TextObject,
-  WorksheetDoc,
-  WorksheetObject,
-  WorksheetPage,
+  PDFCanvasDoc,
+  PDFCanvasObject,
+  PDFCanvasPage,
 } from './types'
 
 export type PublicShortAnswerBox = Omit<ShortAnswerBox, 'answers'>
 export type PublicEssayAnswerBox = Omit<EssayAnswerBox, 'rubric'>
 export type PublicDropboxAnswerBox = Omit<DropboxAnswerBox, 'correctChoiceIds'>
 
-export type PublicWorksheetObject =
+export type PublicPDFCanvasObject =
   | TextObject
   | ShapeObject
   | MaskObject
@@ -30,15 +30,15 @@ export type PublicWorksheetObject =
   | PublicEssayAnswerBox
   | PublicDropboxAnswerBox
 
-export type PublicWorksheetPage = Omit<WorksheetPage, 'objects'> & {
-  objects: PublicWorksheetObject[]
+export type PublicPDFCanvasPage = Omit<PDFCanvasPage, 'objects'> & {
+  objects: PublicPDFCanvasObject[]
 }
 
-export type PublicWorksheetDoc = Omit<WorksheetDoc, 'pages' | 'titleTouched'> & {
-  pages: PublicWorksheetPage[]
+export type PublicPDFCanvasDoc = Omit<PDFCanvasDoc, 'pages' | 'titleTouched'> & {
+  pages: PublicPDFCanvasPage[]
 }
 
-function toPublicObject(o: WorksheetObject): PublicWorksheetObject {
+function toPublicObject(o: PDFCanvasObject): PublicPDFCanvasObject {
   switch (o.type) {
     case 'answer.short': {
       // 비밀 필드를 구조분해로 빼내는 방식이라 누락이 검증된다.
@@ -59,7 +59,7 @@ function toPublicObject(o: WorksheetObject): PublicWorksheetObject {
   }
 }
 
-export function toPublicDoc(doc: WorksheetDoc): PublicWorksheetDoc {
+export function toPublicDoc(doc: PDFCanvasDoc): PublicPDFCanvasDoc {
   const { titleTouched: _titleTouched, pages, ...rest } = doc
   return {
     ...rest,

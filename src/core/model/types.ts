@@ -1,5 +1,5 @@
 /**
- * Worksheet 문서 모델.
+ * 문서 모델.
  * PLAN 4장(데이터 모델)과 5장(좌표계) 참고.
  */
 
@@ -65,7 +65,7 @@ export interface PageSource {
   rotation?: 0 | 90 | 180 | 270
 }
 
-export interface WorksheetPage {
+export interface PDFCanvasPage {
   id: string
   /**
    * pt 크기. **페이지마다 각자 갖는다** — 한 PDF에 A4·A3·가로 페이지가 섞일 수 있고,
@@ -76,7 +76,7 @@ export interface WorksheetPage {
   /** 이 페이지의 출처. 디버깅과 페이지 목록 툴팁용. */
   source?: PageSource
   /** 배경 위에 얹히는 객체들. 배열 순서가 z-order이며 마지막이 위. */
-  objects: WorksheetObject[]
+  objects: PDFCanvasObject[]
 }
 
 /**
@@ -88,7 +88,7 @@ export interface WorksheetPage {
  * 뷰 상태(배율·스크롤·선택·현재 페이지)는 의도적으로 여기에 없다. `EditorViewState` 에 두는데,
  * 문서에 섞으면 배율만 바꿔도 dirty가 되고 자동저장이 돈다 (PLAN 6.6).
  */
-export interface WorksheetDoc {
+export interface PDFCanvasDoc {
   /** 구조가 바뀌면 올린다. `migrate.ts` 가 이전 문서를 올려준다. */
   schemaVersion: 1
   id: string
@@ -102,7 +102,7 @@ export interface WorksheetDoc {
    */
   titleTouched: boolean
   /** 순서가 있는 페이지 목록. 최대 500개 (기획 2.2). */
-  pages: WorksheetPage[]
+  pages: PDFCanvasPage[]
   /** UTC ISO8601. 저장되는 모든 시간은 UTC이고 클라이언트가 로컬로 변환한다 (기획 3.2). */
   updatedAt: string
 }
@@ -112,8 +112,8 @@ export interface WorksheetDoc {
  *
  * ## 왜 모든 필드가 optional 인가
  *
- * 값을 주지 않으면 CSS 토큰(`--lws-answerbox-bg` 등)의 기본값이 그대로 적용된다. 객체마다 색을
- * 하드코딩해 채워 두면 호스트 앱이 `--lws-*` 로 테마를 바꿀 수 없다 (ARCHITECTURE §3).
+ * 값을 주지 않으면 CSS 토큰(`--pck-answerbox-bg` 등)의 기본값이 그대로 적용된다. 객체마다 색을
+ * 하드코딩해 채워 두면 호스트 앱이 `--pck-*` 로 테마를 바꿀 수 없다 (ARCHITECTURE §3).
  *
  * 그래서 "지정하지 않음" 과 "지정함" 을 구분한다. 렌더는 지정된 값만 인라인 스타일로 덮는다.
  */
@@ -253,6 +253,6 @@ export interface DropboxAnswerBox extends AnswerBoxBase {
 
 export type AnswerBox = ShortAnswerBox | EssayAnswerBox | DropboxAnswerBox
 
-export type WorksheetObject = TextObject | ShapeObject | MaskObject | AnswerBox
+export type PDFCanvasObject = TextObject | ShapeObject | MaskObject | AnswerBox
 
-export type WorksheetObjectType = WorksheetObject['type']
+export type PDFCanvasObjectType = PDFCanvasObject['type']

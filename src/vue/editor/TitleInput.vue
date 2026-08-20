@@ -48,12 +48,12 @@ function cancel() {
 </script>
 
 <template>
-  <div class="lws-title">
+  <div class="pck-title">
     <input
       v-if="editing"
       ref="inputEl"
       v-model="draft"
-      class="lws-title-input"
+      class="pck-title-input"
       type="text"
       :maxlength="LIMITS.titleChars"
       :placeholder="props.placeholder"
@@ -61,7 +61,7 @@ function cancel() {
       @keydown.enter.prevent="commit"
       @keydown.esc.prevent="cancel"
     />
-    <button v-else type="button" class="lws-title-label" @click="startEditing">
+    <button v-else type="button" class="pck-title-label" @click="startEditing">
       {{ props.modelValue || props.placeholder }}
     </button>
   </div>

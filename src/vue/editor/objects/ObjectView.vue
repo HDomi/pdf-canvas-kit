@@ -12,7 +12,7 @@
  * 위한 것으로, 커밋은 `pointerup` 에서 한 번 일어난다 (PLAN 11.2).
  */
 import { computed } from 'vue'
-import type { Rect, WorksheetObject } from '../../../core/model/types'
+import type { Rect, PDFCanvasObject } from '../../../core/model/types'
 import DropboxAnswerView from './DropboxAnswerView.vue'
 import EssayAnswerView from './EssayAnswerView.vue'
 import MaskView from './MaskView.vue'
@@ -21,7 +21,7 @@ import ShortAnswerView from './ShortAnswerView.vue'
 import TextObjectView from './TextObjectView.vue'
 
 const props = defineProps<{
-  object: WorksheetObject
+  object: PDFCanvasObject
   selected: boolean
   /** 내보내기를 막는 상태면 true. 테두리를 경고색으로 바꾼다. */
   invalid: boolean
@@ -58,7 +58,7 @@ const style = computed(() => {
 
 <template>
   <div
-    class="lws-obj"
+    class="pck-obj"
     :class="{
       'is-selected': props.selected,
       'is-invalid': props.invalid,

@@ -24,14 +24,14 @@ import {
   type PointerCommit,
   type PointerInput,
 } from '../../core/interaction/pointerMachine'
-import type { Rect, WorksheetObject } from '../../core/model/types'
+import type { Rect, PDFCanvasObject } from '../../core/model/types'
 import type { ToolId } from '../../core/model/viewState'
 
 export interface UsePointerToolOptions {
   viewport: Ref<PageViewport | null>
   /** 드래그 시작 시 프레임 위치를 다시 측정한다. */
   remeasure: () => PageViewport | null
-  objects: ComputedRef<readonly WorksheetObject[]>
+  objects: ComputedRef<readonly PDFCanvasObject[]>
   selectedIds: Ref<string[]>
   activeTool: Ref<ToolId>
   gridSnap: Ref<boolean>

@@ -20,13 +20,13 @@
  * `Y_TOLERANCE_PT` 는 "같은 줄" 의 허용 오차다. 교사가 눈으로 맞춘 빈칸은 몇 pt씩 어긋나 있는데,
  * 그걸 다른 줄로 취급하면 번호가 지그재그로 붙는다.
  */
-import type { AnswerBox, Pt, WorksheetDoc, WorksheetObject } from './types'
+import type { AnswerBox, Pt, PDFCanvasDoc, PDFCanvasObject } from './types'
 
 /** 같은 줄로 볼 y 오차(pt). 12pt 글자 한 줄 높이보다 작게 잡았다. */
 export const Y_TOLERANCE_PT: Pt = 8
 
 /** 번호가 붙는 객체인지. Answer Box만 문항이다. */
-function isQuestion(obj: WorksheetObject): obj is AnswerBox {
+function isQuestion(obj: PDFCanvasObject): obj is AnswerBox {
   return obj.type === 'answer.short' || obj.type === 'answer.essay' || obj.type === 'answer.dropbox'
 }
 
@@ -54,7 +54,7 @@ export interface QuestionNumber {
  * 수동 `label` 이 있는 문항도 자동 번호를 함께 갖는다. 번호는 리포트 집계 순서로도 쓰이므로
  * 표시값과 무관하게 일관된 순서가 필요하다.
  */
-export function numberQuestions(doc: WorksheetDoc): QuestionNumber[] {
+export function numberQuestions(doc: PDFCanvasDoc): QuestionNumber[] {
   const out: QuestionNumber[] = []
   let n = 0
 
@@ -78,12 +78,12 @@ export function numberQuestions(doc: WorksheetDoc): QuestionNumber[] {
 }
 
 /** `objectId → QuestionNumber` 맵. 렌더에서 조회하기 쉽도록. */
-export function questionNumberMap(doc: WorksheetDoc): Map<string, QuestionNumber> {
+export function questionNumberMap(doc: PDFCanvasDoc): Map<string, QuestionNumber> {
   return new Map(numberQuestions(doc).map((q) => [q.objectId, q]))
 }
 
 /** 한 페이지 안에서만 번호를 매긴다. 페이지 단위 미리보기에 쓴다. */
-export function numberQuestionsOnPage(doc: WorksheetDoc, pageIndex: number): QuestionNumber[] {
+export function numberQuestionsOnPage(doc: PDFCanvasDoc, pageIndex: number): QuestionNumber[] {
   const pageId = doc.pages[pageIndex]?.id
   if (!pageId) return []
   return numberQuestions(doc).filter((q) => q.pageId === pageId)

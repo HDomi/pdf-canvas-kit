@@ -14,11 +14,11 @@
  */
 import { computed, ref } from 'vue'
 import { frameSize } from '../../core/geometry/units'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 import PageBackgroundView from './PageBackgroundView.vue'
 
 const props = defineProps<{
-  page: WorksheetPage
+  page: PDFCanvasPage
   scale: number
 }>()
 
@@ -46,8 +46,8 @@ const pageStyle = computed(() => ({
 </script>
 
 <template>
-  <div ref="frameEl" class="lws-page-frame" :data-page-id="page.id" :style="frameStyle">
-    <div class="lws-page" :style="pageStyle">
+  <div ref="frameEl" class="pck-page-frame" :data-page-id="page.id" :style="frameStyle">
+    <div class="pck-page" :style="pageStyle">
       <PageBackgroundView :page="page" />
       <!-- 객체들. rect 값을 px로 그대로 읽는다 (PLAN 5.3). -->
       <slot name="objects" />

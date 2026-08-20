@@ -9,7 +9,7 @@ import { ConvertError } from '../ports/ConverterPort'
 import {
   isPdf,
   loadPdf,
-  MAX_WORKSHEET_PAGES,
+  MAX_DOC_PAGES,
   fileExtension,
   SUPPORTED_EXTENSIONS,
   type LoadPdfOptions,
@@ -19,7 +19,7 @@ import { createRasterTarget, rasterizePage, type RasterizeOptions } from './rast
 export interface PdfjsConverterOptions extends RasterizeOptions, LoadPdfOptions {
   /**
    * 이보다 페이지가 많은 파일은 아무것도 렌더하기 전에 거부한다.
-   * @default MAX_WORKSHEET_PAGES (500, 기획 2.2)
+   * @default MAX_DOC_PAGES (500, 기획 2.2)
    */
   maxPages?: number
 }
@@ -40,7 +40,7 @@ export interface PdfjsConverterOptions extends RasterizeOptions, LoadPdfOptions 
  * ARCHITECTURE §4 참고.
  */
 export function createPdfjsConverter(options: PdfjsConverterOptions = {}): ConverterPort {
-  const maxPages = options.maxPages ?? MAX_WORKSHEET_PAGES
+  const maxPages = options.maxPages ?? MAX_DOC_PAGES
 
   return {
     supports(file: File): boolean {

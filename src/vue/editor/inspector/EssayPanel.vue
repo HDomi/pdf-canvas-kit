@@ -16,15 +16,15 @@ const emit = defineEmits<{ update: [patch: Partial<EssayAnswerBox>] }>()
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <h3 class="lws-field-label">{{ props.t('inspector.rubric') }}</h3>
+  <section class="pck-panel-section">
+    <h3 class="pck-field-label">{{ props.t('inspector.rubric') }}</h3>
     <textarea
-      class="lws-input lws-textarea"
+      class="pck-input pck-textarea"
       rows="5"
       :value="props.object.rubric ?? ''"
       :placeholder="props.t('inspector.rubricPlaceholder')"
       @input="emit('update', { rubric: ($event.target as HTMLTextAreaElement).value })"
     />
-    <p class="lws-field-note">{{ props.t('inspector.essayNote') }}</p>
+    <p class="pck-field-note">{{ props.t('inspector.essayNote') }}</p>
   </section>
 </template>

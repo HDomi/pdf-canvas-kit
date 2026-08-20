@@ -43,12 +43,12 @@ const missingAnswer = computed(() => props.issues.includes('SHORT_NO_ANSWER'))
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <h3 class="lws-field-label">{{ props.t('inspector.answer') }}</h3>
+  <section class="pck-panel-section">
+    <h3 class="pck-field-label">{{ props.t('inspector.answer') }}</h3>
 
-    <div v-for="(answer, i) in answers" :key="i" class="lws-row">
+    <div v-for="(answer, i) in answers" :key="i" class="pck-row">
       <input
-        class="lws-input"
+        class="pck-input"
         type="text"
         :value="answer"
         :maxlength="LIMITS.choiceChars"
@@ -59,7 +59,7 @@ const missingAnswer = computed(() => props.issues.includes('SHORT_NO_ANSWER'))
       <button
         v-if="answers.length > 1"
         type="button"
-        class="lws-row-btn"
+        class="pck-row-btn"
         aria-label="remove"
         @click="removeAnswer(i)"
       >
@@ -69,16 +69,16 @@ const missingAnswer = computed(() => props.issues.includes('SHORT_NO_ANSWER'))
 
     <button
       type="button"
-      class="lws-dashed-btn lws-dashed-btn--sm"
+      class="pck-dashed-btn pck-dashed-btn--sm"
       :disabled="!canAdd"
       @click="addAnswer"
     >
       {{ props.t('inspector.addAnswer') }}
     </button>
 
-    <p v-if="missingAnswer" class="lws-field-error" role="alert">
+    <p v-if="missingAnswer" class="pck-field-error" role="alert">
       {{ props.t('error.answerRequired') }}
     </p>
-    <p class="lws-field-note">{{ props.t('inspector.gradingNote') }}</p>
+    <p class="pck-field-note">{{ props.t('inspector.gradingNote') }}</p>
   </section>
 </template>

@@ -1,31 +1,51 @@
 {
-  "name": "@lumiteach/worksheet-system",
-  "version": "0.0.0",
-  "description": "Worksheet editor/viewer components for Nuxt 3 / Vue 3",
-  "license": "UNLICENSED",
-  "private": true,
+  "name": "pdf-canvas-kit",
+  "version": "0.1.0",
+  "description": "Framework-agnostic PDF worksheet editor — turn a PDF into page backgrounds with an interactive object layer. Vue and React wrappers included.",
+  "license": "MIT",
   "type": "module",
+  "keywords": [
+    "pdf",
+    "pdf-editor",
+    "pdf-annotation",
+    "canvas",
+    "worksheet",
+    "answer-box",
+    "vue",
+    "react",
+    "framework-agnostic",
+    "pdfjs"
+  ],
   "sideEffects": [
     "**/*.css"
   ],
   "files": [
     "dist",
-    "src"
+    "README.md",
+    "LICENSE"
   ],
   "exports": {
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/react/index.js"
+    },
     "./vue": {
       "types": "./dist/vue/index.d.ts",
       "import": "./dist/vue/index.js"
     },
     "./styles.css": "./dist/styles.css",
-    "./src/*": "./src/*"
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "scripts": {
     "dev": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --strictPort",
+    "dev:local": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --host 127.0.0.1 --strictPort",
     "build": "vite build && vue-tsc -p tsconfig.build.json",
     "preview": "vite preview --config vite.demo.config.ts",
     "typecheck": "vue-tsc --noEmit && tsc -p tsconfig.node.json",
@@ -36,13 +56,26 @@
     "license-check": "npx --yes license-checker-rseidelsohn --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;CC0-1.0;Unlicense;0BSD'",
     "copy:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
     "postinstall": "node scripts/copy-pdfjs-assets.mjs",
-    "dev:local": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --host false"
-  },
-  "peerDependencies": {
-    "vue": ">=3.4"
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run checks && npm run build"
   },
   "dependencies": {
     "pdfjs-dist": "^6.2.108"
+  },
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18",
+    "vue": ">=3.4"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",

@@ -6,8 +6,8 @@
 | 항목 | 내용 |
 | --- | --- |
 | 문서 버전 | arch-1.6 |
-| 최종 수정일 | 2026.08.19 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0·R2 완료 — PLAN 20장) |
+| 최종 수정일 | 2026.08.20 |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0·R1 완료, R2 부분 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -66,7 +66,7 @@
 | 문서 저장 | `ports.storage` | 현재는 콘솔 출력(§7.5) |
 | 패널 폭 기본값 | `LAYOUT_DEFAULTS` + `tokens.css` | 사용자가 조정하면 localStorage가 우선(§7.6) |
 | 문항 번호 규칙 | `core/model/numbering.ts` → `Y_TOLERANCE_PT` | 문서에 저장되지 않는 파생값 |
-| 박스 기본 색 | `tokens.css` → `--lws-answerbox-*` | 객체가 색을 지정하지 않았을 때만 적용(§3.3) |
+| 박스 기본 색 | `tokens.css` → `--pck-answerbox-*` | 객체가 색을 지정하지 않았을 때만 적용(§3.3) |
 | UI 문구 | `src/core/i18n/{ko,en}.ts` | 하드코딩 금지(기획 3.2) |
 | 반응성 동작 (signal·effect) | [src/dom/reactive.ts](src/dom/reactive.ts) | **§12.** 깊은 반응성이 없다는 함정을 먼저 읽는다 |
 
@@ -75,18 +75,18 @@
 ## 3. 스타일 토큰
 
 ### 3.1 오버라이드 방법
-모든 시각 값은 `--lws-*` CSS 변수다. 호스트 앱에서 감싸는 요소에 덮어쓰면 된다.
+모든 시각 값은 `--pck-*` CSS 변수다. 호스트 앱에서 감싸는 요소에 덮어쓰면 된다.
 
 ```css
-.my-app .lws-editor {
-  --lws-topbar-bg: #101014;
-  --lws-topbar-ink: #f5f5f5;
-  --lws-accent: #3b82f6;
-  --lws-pagelist-width: 200px;
+.my-app .pck-editor {
+  --pck-topbar-bg: #101014;
+  --pck-topbar-ink: #f5f5f5;
+  --pck-accent: #3b82f6;
+  --pck-pagelist-width: 200px;
 }
 ```
 
-토큰 이름은 `--lws-<영역>-<역할>` 규칙을 따른다.
+토큰 이름은 `--pck-<영역>-<역할>` 규칙을 따른다.
 영역은 `topbar` · `pagelist` · `stage` · `toolbar` · `inspector` · `select` · `answerbox` · `state`.
 
 ### 3.2 CSS 토큰 vs TS 상수 — 구분 기준
@@ -102,15 +102,15 @@
 
 | CSS 토큰 | TS 상수 | 어긋나면 |
 | --- | --- | --- |
-| `--lws-stage-padding` | `EDITOR_DEFAULTS.stagePadding` | "페이지 맞춤"이 페이지를 자르거나 여백을 남긴다 |
-| `--lws-pagelist-width` | `LAYOUT_DEFAULTS.pageListWidthPx` | 맞춤 배율이 실제 스테이지 폭과 어긋난다 |
-| `--lws-inspector-width` | `LAYOUT_DEFAULTS.inspectorWidthPx` | 같음 |
-| `--lws-topbar-height` | `LAYOUT_DEFAULTS.topBarHeightPx` | 스테이지 높이 계산이 어긋난다 |
+| `--pck-stage-padding` | `EDITOR_DEFAULTS.stagePadding` | "페이지 맞춤"이 페이지를 자르거나 여백을 남긴다 |
+| `--pck-pagelist-width` | `LAYOUT_DEFAULTS.pageListWidthPx` | 맞춤 배율이 실제 스테이지 폭과 어긋난다 |
+| `--pck-inspector-width` | `LAYOUT_DEFAULTS.inspectorWidthPx` | 같음 |
+| `--pck-topbar-height` | `LAYOUT_DEFAULTS.topBarHeightPx` | 스테이지 높이 계산이 어긋난다 |
 
 ### 3.3 객체 색과 토큰의 관계
 
 텍스트·Answer Box는 `BoxStyle` 로 배경·테두리·글자색을 가질 수 있다(PLAN 18.8).
-**지정하지 않은 필드는 인라인 스타일로 내보내지 않는다** — 그래야 `--lws-*` 토큰이 살아 있다.
+**지정하지 않은 필드는 인라인 스타일로 내보내지 않는다** — 그래야 `--pck-*` 토큰이 살아 있다.
 
 | 상태 | 뜻 | 렌더 |
 | --- | --- | --- |
@@ -173,8 +173,8 @@ npm run copy:pdfjs   # {cmaps,standard_fonts,wasm,iccs}/ + build/pdf.worker.mjs 
 "postinstall": "node -e \"const{cpSync}=require('fs');for(const d of ['cmaps','standard_fonts','wasm','iccs'])cpSync('node_modules/pdfjs-dist/'+d,'public/pdfjs/'+d,{recursive:true});cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','public/pdfjs/pdf.worker.mjs')\""
 ```
 ```ts
-// plugins/worksheet.client.ts
-import { configurePdfResources } from '@lumiteach/worksheet-system'
+// plugins/pdf-canvas-kit.client.ts
+import { configurePdfResources } from 'pdf-canvas-kit'
 
 export default defineNuxtPlugin(() => {
   configurePdfResources({
@@ -279,20 +279,20 @@ PDF 어노테이션 도메인의 표준이며(PDF `/Rect`, pdf-lib, Acrobat),
 
 ### 6.2 배율은 한 곳에만
 ```html
-<div class="lws-page-frame" style="width:476px; height:674px">   <!-- size × scale -->
-  <div class="lws-page" style="width:595px; height:842px;         /* pt를 px로 그대로 */
+<div class="pck-page-frame" style="width:476px; height:674px">   <!-- size × scale -->
+  <div class="pck-page" style="width:595px; height:842px;         /* pt를 px로 그대로 */
                                transform: scale(0.8);
                                transform-origin: top left">
-    <div class="lws-obj" style="left:120px; top:300px">…</div>    <!-- 곱셈 없음 -->
+    <div class="pck-obj" style="left:120px; top:300px">…</div>    <!-- 곱셈 없음 -->
   </div>
-  <svg class="lws-overlay">…</svg>                                <!-- scale 밖 -->
+  <svg class="pck-overlay">…</svg>                                <!-- scale 밖 -->
 </div>
 ```
 
 - 객체 렌더 컴포넌트는 `scale`을 **모른다**. `left: rect.x + 'px'` 로 끝난다
 - 그래서 곱셈 누락·이중 적용이 구조적으로 불가능하다
 - **선택 핸들은 `scale` 밖 오버레이**에 그린다. 그래야 어느 배율에서도 8px을 유지한다
-- `lws-page-frame`이 `size × scale`을 실제 크기로 잡는다. `transform`은 레이아웃 크기에
+- `pck-page-frame`이 `size × scale`을 실제 크기로 잡는다. `transform`은 레이아웃 크기에
   영향을 주지 않으므로, 이 래퍼가 없으면 스크롤 범위가 틀어진다
 
 ### 6.3 변환 함수는 4개뿐
@@ -372,7 +372,7 @@ blob URL을 저장하면 다음 세션에 죽은 링크가 되므로, 저장 전
 
 ```ts
 // (a) presigned URL 방식 — 가장 흔한 형태
-import { createS3AssetPort } from '@lumiteach/worksheet-system'
+import { createS3AssetPort } from 'pdf-canvas-kit'
 
 const asset = createS3AssetPort({
   async getUploadUrl({ pageId, mime }) {
@@ -388,7 +388,7 @@ const asset = createS3AssetPort({
 
 ```vue
 <!-- (b) 업로드 경로가 완전히 다른 제품 — 함수만 넘긴다 -->
-<WorksheetEditor :upload-file="myUploader" />
+<PDFCanvasEditor :upload-file="myUploader" />
 ```
 
 `uploadUrl` 과 `publicUrl` 을 나눠 받는다. presigned URL에는 만료되는 서명 쿼리가 붙으므로
@@ -430,8 +430,8 @@ const asset = createS3AssetPort({
 
 ```ts
 // localStorage 에 문서 + 이미지(base64) 저장
-await savePrototype(doc) // IMAGES / SAVED_DOC 두 키
-// 되읽기 — local: 참조를 base64로 복원해 렌더 가능한 문서를 준다
+await savePrototype(doc) // pdf-canvas-kit.images / pdf-canvas-kit.doc 두 키
+// 되읽기 — pck-local: 참조를 base64로 복원해 렌더 가능한 문서를 준다
 const doc = loadPrototype()
 ```
 
@@ -441,7 +441,7 @@ const doc = loadPrototype()
 ### 7.6 패널 폭 (Q17)
 
 고정 폭으로 시작하고, 패널 사이 핸들을 드래그하면 조정된다.
-**한 번이라도 조정하면** `localStorage['lws.panelSizes.v1']` 에 남아 같은 브라우저에서 복원된다.
+**한 번이라도 조정하면** `localStorage['pck.panelSizes.v1']` 에 남아 같은 브라우저에서 복원된다.
 핸들 더블클릭으로 기본값 복귀.
 
 조정한 적이 없으면 저장하지 않는다 — 제품 기본값을 나중에 바꿨을 때, 손대지 않은 사용자는
@@ -469,7 +469,7 @@ const doc = loadPrototype()
 QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
 
 ```ts
-import { ExportDialog, type ExportSettings } from '@lumiteach/worksheet-system/vue'
+import { ExportDialog, type ExportSettings } from 'pdf-canvas-kit/vue'
 
 async function onSubmit(settings: ExportSettings) {
   const { url, qrUrl } = await api.createAssignment({ ...settings, doc: payload.publicDoc })
@@ -523,7 +523,7 @@ src/
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
 │  reactive.ts               ★ signal · computed · effect · watch · batch (§12)
 ├─ vue/                      모든 UI  ⚠️ R9 에서 삭제 예정 (PLAN D23)
-│  ├─ WorksheetEditor.vue     3분할 레이아웃 + 뷰 상태
+│  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
 │  ├─ composables/
 │  │   useEngine.ts           engine → Vue reactive 브릿지
 │  │   useStage.ts           ★ scale · fitMode · 앵커 줌
@@ -539,7 +539,7 @@ src/
 │                             inspector/*.vue (유형별 패널)
 │                             PageContextMenu · dialogs/ConfirmDialog
 ├─ prototype/               ⚠️ 임시 — 실서버 연결 시 삭제
-│  localStorageStore.ts       IMAGES / SAVED_DOC 저장·복원
+│  localStorageStore.ts       images / doc 두 키 저장·복원
 └─ styles/
    tokens.css                ★ CSS 변수
    editor.css                 레이아웃·크롬
@@ -556,18 +556,18 @@ scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(r
 
 ```ts
 import type {
-  WorksheetDoc, WorksheetPage, WorksheetObject,
+  PDFCanvasDoc, PDFCanvasPage, PDFCanvasObject,
   ShortAnswerBox, DropboxAnswerBox, EssayAnswerBox,
   PageBackground, Rect, Size, Pt,
   AssetPort, ConverterPort, StoragePort, I18nPort,
   RasterPage, ConvertProgress,
-} from '@lumiteach/worksheet-system'
+} from 'pdf-canvas-kit'
 
 import {
   createPdfjsConverter, createBlobAssetPort, configurePdfResources,
   LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS,
   formatPaperLabel, ConvertError,
-} from '@lumiteach/worksheet-system'
+} from 'pdf-canvas-kit'
 ```
 
 - 객체는 `type` 필드로 판별하는 **discriminated union**이다.

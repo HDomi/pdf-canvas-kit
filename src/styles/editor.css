@@ -2,60 +2,60 @@
  * 편집기 레이아웃과 크롬.
  *
  * 모든 색과 치수는 tokens.css 의 토큰에서 온다. 그래서 호스트 앱은 이 규칙들과 싸우는 대신
- * `--lws-*` 를 덮어써서 스타일을 바꾼다 (ARCHITECTURE §3).
+ * `--pck-*` 를 덮어써서 스타일을 바꾼다 (ARCHITECTURE §3).
  *
- * 클래스 이름에 `lws-` 접두사를 붙여 호스트 스타일과 충돌하지 않게 한다. 유틸리티 프레임워크는
+ * 클래스 이름에 `pck-` 접두사를 붙여 호스트 스타일과 충돌하지 않게 한다. 유틸리티 프레임워크는
  * 쓰지 않는다. 라이브러리가 소비하는 앱에 Tailwind를 요구해서는 안 된다.
  */
 
-.lws-editor {
+.pck-editor {
   display: flex;
   flex-direction: column;
   height: 100%;
   min-height: 0;
-  background: var(--lws-bg);
-  font-size: var(--lws-text-md);
+  background: var(--pck-bg);
+  font-size: var(--pck-text-md);
 }
 
 /* ---------------------------------------------------------------- 상단 바 -- */
 
-.lws-topbar {
+.pck-topbar {
   display: flex;
   align-items: center;
-  gap: var(--lws-space-2);
-  height: var(--lws-topbar-height);
-  flex: 0 0 var(--lws-topbar-height);
-  padding: 0 var(--lws-space-4);
-  background: var(--lws-topbar-bg);
-  color: var(--lws-topbar-ink);
-  border-bottom: 1px solid var(--lws-topbar-border);
+  gap: var(--pck-space-2);
+  height: var(--pck-topbar-height);
+  flex: 0 0 var(--pck-topbar-height);
+  padding: 0 var(--pck-space-4);
+  background: var(--pck-topbar-bg);
+  color: var(--pck-topbar-ink);
+  border-bottom: 1px solid var(--pck-topbar-border);
 }
 
-.lws-topbar-spacer {
+.pck-topbar-spacer {
   flex: 1;
 }
 
-.lws-topbar-divider {
+.pck-topbar-divider {
   width: 1px;
   height: 22px;
-  background: var(--lws-line);
-  margin: 0 var(--lws-space-1);
+  background: var(--pck-line);
+  margin: 0 var(--pck-space-1);
 }
 
-.lws-title {
+.pck-title {
   min-width: 0;
 }
 
-.lws-title-label,
-.lws-title-input {
+.pck-title-label,
+.pck-title-input {
   font: inherit;
   color: inherit;
   max-width: 42ch;
   padding: 6px 10px;
-  border-radius: var(--lws-radius-sm);
+  border-radius: var(--pck-radius-sm);
 }
 
-.lws-title-label {
+.pck-title-label {
   background: none;
   border: 1px solid transparent;
   cursor: text;
@@ -67,86 +67,86 @@
   width: 100%;
 }
 
-.lws-title-label:hover {
-  border-color: var(--lws-line);
+.pck-title-label:hover {
+  border-color: var(--pck-line);
 }
 
-.lws-title-input {
-  border: 1px solid var(--lws-line-strong);
-  background: var(--lws-surface);
+.pck-title-input {
+  border: 1px solid var(--pck-line-strong);
+  background: var(--pck-surface);
   min-width: 24ch;
 }
 
-.lws-badge {
-  font-size: var(--lws-text-sm);
-  color: var(--lws-ink-muted);
-  border: 1px solid var(--lws-line);
+.pck-badge {
+  font-size: var(--pck-text-sm);
+  color: var(--pck-ink-muted);
+  border: 1px solid var(--pck-line);
   border-radius: 999px;
   padding: 3px 10px;
   white-space: nowrap;
 }
 
-.lws-badge.is-saving {
-  color: var(--lws-state-warn);
+.pck-badge.is-saving {
+  color: var(--pck-state-warn);
 }
-.lws-badge.is-error {
-  color: var(--lws-state-danger);
+.pck-badge.is-error {
+  color: var(--pck-state-danger);
   border-color: currentcolor;
 }
-.lws-badge.is-disabled {
+.pck-badge.is-disabled {
   opacity: 0.6;
 }
 
 /* ---------------------------------------------------------------- 버튼 -- */
 
-.lws-icon-btn,
-.lws-primary-btn,
-.lws-ghost-btn,
-.lws-tool,
-.lws-dashed-btn {
+.pck-icon-btn,
+.pck-primary-btn,
+.pck-ghost-btn,
+.pck-tool,
+.pck-dashed-btn {
   font: inherit;
   cursor: pointer;
-  border-radius: var(--lws-radius-sm);
+  border-radius: var(--pck-radius-sm);
   transition:
     border-color 120ms ease,
     background 120ms ease;
 }
 
-.lws-icon-btn {
+.pck-icon-btn {
   width: 32px;
   height: 32px;
   display: grid;
   place-items: center;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
   font-size: 15px;
   line-height: 1;
 }
 
-.lws-icon-btn:hover:not(:disabled) {
-  border-color: var(--lws-line-strong);
+.pck-icon-btn:hover:not(:disabled) {
+  border-color: var(--pck-line-strong);
 }
 
-.lws-primary-btn {
-  background: var(--lws-accent);
-  color: var(--lws-accent-ink);
-  border: 1px solid var(--lws-accent);
+.pck-primary-btn {
+  background: var(--pck-accent);
+  color: var(--pck-accent-ink);
+  border: 1px solid var(--pck-accent);
   padding: 8px 18px;
   font-weight: 600;
 }
 
-.lws-ghost-btn {
+.pck-ghost-btn {
   background: none;
-  border: 1px solid var(--lws-line);
+  border: 1px solid var(--pck-line);
   padding: 6px 14px;
-  color: var(--lws-ink);
+  color: var(--pck-ink);
 }
 
-.lws-icon-btn:disabled,
-.lws-primary-btn:disabled,
-.lws-tool:disabled,
-.lws-zoom-btn:disabled,
-.lws-pagelist-rowbtns button:disabled {
+.pck-icon-btn:disabled,
+.pck-primary-btn:disabled,
+.pck-tool:disabled,
+.pck-zoom-btn:disabled,
+.pck-pagelist-rowbtns button:disabled {
   opacity: 0.4;
   cursor: default;
 }
@@ -154,35 +154,35 @@
 /* ------------------------------------------------------------------ 본문 --- */
 
 /*
- * 패널 사이에 리사이저 열이 하나씩 들어간다. 폭은 CSS 변수로, 실제 값은 WorksheetEditor 가
+ * 패널 사이에 리사이저 열이 하나씩 들어간다. 폭은 CSS 변수로, 실제 값은 PDFCanvasEditor 가
  * 인라인 스타일로 덮어쓴다 (PLAN Q17) — 레이아웃 규칙을 두 곳에서 정의하지 않는다.
  */
-.lws-body {
+.pck-body {
   flex: 1;
   min-height: 0;
   display: grid;
   grid-template-columns:
-    var(--lws-pagelist-width) var(--lws-resizer-width)
+    var(--pck-pagelist-width) var(--pck-resizer-width)
     minmax(0, 1fr)
-    var(--lws-resizer-width) var(--lws-inspector-width);
+    var(--pck-resizer-width) var(--pck-inspector-width);
 }
 
 /* 드래그 중에는 텍스트 선택과 포인터 이벤트가 방해된다. */
-.lws-body.is-resizing {
+.pck-body.is-resizing {
   user-select: none;
   cursor: col-resize;
 }
 
-.lws-body.is-resizing .lws-stage,
-.lws-body.is-resizing .lws-inspector,
-.lws-body.is-resizing .lws-pagelist {
+.pck-body.is-resizing .pck-stage,
+.pck-body.is-resizing .pck-inspector,
+.pck-body.is-resizing .pck-pagelist {
   pointer-events: none;
 }
 
-.lws-resizer {
+.pck-resizer {
   position: relative;
   cursor: col-resize;
-  background: var(--lws-line);
+  background: var(--pck-line);
   /* 보이는 선은 1px이지만 잡기 편하도록 히트 영역을 넓힌다. */
   background-clip: content-box;
   border-left: 3px solid transparent;
@@ -190,60 +190,60 @@
   box-sizing: border-box;
 }
 
-.lws-resizer:hover,
-.lws-body.is-resizing .lws-resizer {
-  background-color: var(--lws-line-strong);
+.pck-resizer:hover,
+.pck-body.is-resizing .pck-resizer {
+  background-color: var(--pck-line-strong);
 }
 
-.lws-panel-head {
+.pck-panel-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   height: 34px;
-  padding: 0 var(--lws-space-3);
+  padding: 0 var(--pck-space-3);
   font-size: 10px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--lws-ink-muted);
-  border-bottom: 1px dashed var(--lws-line);
+  color: var(--pck-ink-muted);
+  border-bottom: 1px dashed var(--pck-line);
 }
 
-.lws-panel-count {
+.pck-panel-count {
   font-variant-numeric: tabular-nums;
 }
 
-.lws-panel-empty {
-  margin: var(--lws-space-4);
-  color: var(--lws-ink-muted);
-  font-size: var(--lws-text-sm);
+.pck-panel-empty {
+  margin: var(--pck-space-4);
+  color: var(--pck-ink-muted);
+  font-size: var(--pck-text-sm);
   text-align: center;
 }
 
 /* -------------------------------------------------------------- 페이지 목록 -- */
 
-.lws-pagelist {
+.pck-pagelist {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--lws-pagelist-bg);
+  background: var(--pck-pagelist-bg);
 }
 
-.lws-pagelist-scroll {
+.pck-pagelist-scroll {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--lws-space-3);
+  padding: var(--pck-space-3);
 }
 
-.lws-thumb-list {
+.pck-thumb-list {
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  gap: var(--lws-space-3);
+  gap: var(--pck-space-3);
 }
 
-.lws-thumb {
+.pck-thumb {
   width: 100%;
   display: grid;
   gap: 4px;
@@ -253,149 +253,149 @@
   padding: 0;
   cursor: pointer;
   font: inherit;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-thumb-paper {
+.pck-thumb-paper {
   display: block;
   width: 100%;
-  background: var(--lws-page-bg);
-  border: 1px solid var(--lws-pagelist-thumb-border);
+  background: var(--pck-page-bg);
+  border: 1px solid var(--pck-pagelist-thumb-border);
   overflow: hidden;
 }
 
-.lws-thumb-paper img {
+.pck-thumb-paper img {
   display: block;
   width: 100%;
   height: 100%;
   object-fit: contain;
 }
 
-.lws-thumb.is-active .lws-thumb-paper {
-  border-color: var(--lws-pagelist-thumb-active);
-  box-shadow: 0 0 0 1px var(--lws-pagelist-thumb-active);
+.pck-thumb.is-active .pck-thumb-paper {
+  border-color: var(--pck-pagelist-thumb-active);
+  box-shadow: 0 0 0 1px var(--pck-pagelist-thumb-active);
 }
 
-.lws-thumb.is-active .lws-thumb-no {
-  color: var(--lws-ink);
+.pck-thumb.is-active .pck-thumb-no {
+  color: var(--pck-ink);
   font-weight: 600;
 }
 
-.lws-thumb-no {
-  font-size: var(--lws-text-sm);
+.pck-thumb-no {
+  font-size: var(--pck-text-sm);
   font-variant-numeric: tabular-nums;
 }
 
-.lws-pagelist-actions {
+.pck-pagelist-actions {
   display: grid;
-  gap: var(--lws-space-2);
-  margin-top: var(--lws-space-3);
+  gap: var(--pck-space-2);
+  margin-top: var(--pck-space-3);
 }
 
-.lws-dashed-btn {
+.pck-dashed-btn {
   background: none;
-  border: 1px dashed var(--lws-line-strong);
+  border: 1px dashed var(--pck-line-strong);
   padding: 9px;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-dashed-btn:hover {
-  color: var(--lws-ink);
-  border-color: var(--lws-ink-muted);
+.pck-dashed-btn:hover {
+  color: var(--pck-ink);
+  border-color: var(--pck-ink-muted);
 }
 
-.lws-pagelist-rowbtns {
+.pck-pagelist-rowbtns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
 }
 
-.lws-pagelist-rowbtns button {
+.pck-pagelist-rowbtns button {
   font: inherit;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
   padding: 6px 4px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius-sm);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius-sm);
   cursor: pointer;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
 /* ------------------------------------------------------------------ 중앙 --- */
 
-.lws-main {
+.pck-main {
   display: flex;
   flex-direction: column;
   min-width: 0;
   min-height: 0;
 }
 
-.lws-toolbar {
+.pck-toolbar {
   display: flex;
   align-items: center;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
   flex-wrap: wrap;
-  padding: var(--lws-space-3) var(--lws-space-4) 0;
+  padding: var(--pck-space-3) var(--pck-space-4) 0;
 }
 
-.lws-toolbar-divider {
+.pck-toolbar-divider {
   width: 1px;
   align-self: stretch;
-  background: var(--lws-line);
-  margin: 2px var(--lws-space-1);
+  background: var(--pck-line);
+  margin: 2px var(--pck-space-1);
 }
 
-.lws-tool {
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
+.pck-tool {
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
   padding: 7px 13px;
 }
 
-.lws-tool:hover:not(:disabled) {
-  border-color: var(--lws-line-strong);
+.pck-tool:hover:not(:disabled) {
+  border-color: var(--pck-line-strong);
 }
 
-.lws-tool.is-active {
-  background: var(--lws-accent);
-  border-color: var(--lws-accent);
-  color: var(--lws-accent-ink);
+.pck-tool.is-active {
+  background: var(--pck-accent);
+  border-color: var(--pck-accent);
+  color: var(--pck-accent-ink);
 }
 
-.lws-pagemeta {
-  margin: var(--lws-space-3) 0 0 var(--lws-space-4);
-  color: var(--lws-ink-muted);
-  font-size: var(--lws-text-sm);
+.pck-pagemeta {
+  margin: var(--pck-space-3) 0 0 var(--pck-space-4);
+  color: var(--pck-ink-muted);
+  font-size: var(--pck-text-sm);
 }
 
-.lws-pagemeta .mono {
-  font-family: var(--lws-font-mono);
+.pck-pagemeta .mono {
+  font-family: var(--pck-font-mono);
 }
 
 /* ----------------------------------------------------------------- 스테이지 --- */
 
 /* 이 래퍼가 줌 컨트롤이 스크롤에 딸려가지 않게 잡아 준다 (PLAN 6.1). */
-.lws-stage-wrap {
+.pck-stage-wrap {
   position: relative;
   flex: 1;
   min-height: 0;
-  margin: var(--lws-space-3) var(--lws-space-4) var(--lws-space-4);
+  margin: var(--pck-space-3) var(--pck-space-4) var(--pck-space-4);
 }
 
-.lws-stage {
+.pck-stage {
   position: absolute;
   inset: 0;
   overflow: auto;
-  background: var(--lws-stage-bg);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius);
+  background: var(--pck-stage-bg);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius);
   outline: none;
 }
 
-.lws-stage.is-pan-armed {
+.pck-stage.is-pan-armed {
   cursor: grab;
 }
 
-.lws-stage.is-panning {
+.pck-stage.is-panning {
   cursor: grabbing;
 }
 
@@ -407,31 +407,31 @@
  * `width: max-content` 는 확대 시 컨테이너를 넘어 커질 수 있게 하는데, 단순한 `width: 100%` 는
  * 이걸 막는다.
  */
-.lws-stage-pad {
+.pck-stage-pad {
   min-height: 100%;
   min-width: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--lws-stage-padding);
+  padding: var(--pck-stage-padding);
   box-sizing: border-box;
   width: max-content;
 }
 
-.lws-page-frame {
+.pck-page-frame {
   position: relative;
   flex: none;
-  background: var(--lws-page-bg);
-  box-shadow: var(--lws-page-shadow);
+  background: var(--pck-page-bg);
+  box-shadow: var(--pck-page-shadow);
 }
 
 /* 유일한 스케일 지점. 자식들은 pt 값을 px에 그대로 쓴다 (PLAN 5.3). */
-.lws-page {
+.pck-page {
   position: relative;
   overflow: hidden;
 }
 
-.lws-page-bg {
+.pck-page-bg {
   position: absolute;
   inset: 0;
   width: 100%;
@@ -440,56 +440,56 @@
   pointer-events: none;
 }
 
-.lws-page-bg--blank {
-  background: var(--lws-page-bg);
+.pck-page-bg--blank {
+  background: var(--pck-page-bg);
 }
 
 /* --------------------------------------------------------- 줌 컨트롤 --- */
 
-.lws-stage-controls {
+.pck-stage-controls {
   position: absolute;
-  right: var(--lws-space-4);
-  bottom: var(--lws-space-4);
+  right: var(--pck-space-4);
+  bottom: var(--pck-space-4);
   display: flex;
   align-items: center;
   gap: 2px;
   padding: 3px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius);
-  box-shadow: var(--lws-shadow);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius);
+  box-shadow: var(--pck-shadow);
 }
 
-.lws-zoom-btn,
-.lws-zoom-value {
+.pck-zoom-btn,
+.pck-zoom-value {
   font: inherit;
   background: none;
   border: none;
   cursor: pointer;
-  border-radius: var(--lws-radius-sm);
-  color: var(--lws-ink);
+  border-radius: var(--pck-radius-sm);
+  color: var(--pck-ink);
 }
 
-.lws-zoom-btn {
+.pck-zoom-btn {
   width: 28px;
   height: 26px;
   font-size: 15px;
   line-height: 1;
 }
 
-.lws-zoom-value {
+.pck-zoom-value {
   min-width: 52px;
   height: 26px;
   font-variant-numeric: tabular-nums;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
 }
 
-.lws-zoom-btn:hover:not(:disabled),
-.lws-zoom-value:hover {
-  background: var(--lws-surface-sunken);
+.pck-zoom-btn:hover:not(:disabled),
+.pck-zoom-value:hover {
+  background: var(--pck-surface-sunken);
 }
 
-.lws-menu-scrim {
+.pck-menu-scrim {
   position: fixed;
   inset: 0;
   background: none;
@@ -498,222 +498,222 @@
   z-index: 1;
 }
 
-.lws-zoom-menu {
+.pck-zoom-menu {
   position: absolute;
   right: 0;
   bottom: calc(100% + 6px);
   z-index: 2;
   min-width: 132px;
   padding: 4px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius);
-  box-shadow: var(--lws-shadow);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius);
+  box-shadow: var(--pck-shadow);
   max-height: 320px;
   overflow-y: auto;
 }
 
-.lws-zoom-menu button {
+.pck-zoom-menu button {
   display: block;
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
   background: none;
   border: none;
   padding: 6px 10px;
-  border-radius: var(--lws-radius-sm);
+  border-radius: var(--pck-radius-sm);
   cursor: pointer;
-  color: var(--lws-ink);
+  color: var(--pck-ink);
 }
 
-.lws-zoom-menu button:hover {
-  background: var(--lws-surface-sunken);
+.pck-zoom-menu button:hover {
+  background: var(--pck-surface-sunken);
 }
 
-.lws-zoom-menu button.is-current {
+.pck-zoom-menu button.is-current {
   font-weight: 600;
 }
 
-.lws-zoom-menu hr {
+.pck-zoom-menu hr {
   border: none;
-  border-top: 1px solid var(--lws-line);
+  border-top: 1px solid var(--pck-line);
   margin: 4px 0;
 }
 
 /* ------------------------------------------------------------- 인스펙터 -- */
 
-.lws-inspector {
+.pck-inspector {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  background: var(--lws-inspector-bg);
+  background: var(--pck-inspector-bg);
 }
 
 /* ----------------------------------------------------------- 빈 상태 -- */
 
-.lws-empty {
+.pck-empty {
   position: absolute;
   inset: 0;
   display: grid;
   place-content: center;
   justify-items: center;
-  gap: var(--lws-space-3);
+  gap: var(--pck-space-3);
   text-align: center;
-  background: var(--lws-stage-bg);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius);
+  background: var(--pck-stage-bg);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius);
   /* 대각선 해칭으로 와이어프레임의 "문서 없음" 상태를 따른다. */
   background-image: repeating-linear-gradient(45deg, transparent 0 9px, rgb(0 0 0 / 2.5%) 9px 10px);
 }
 
-.lws-empty h2 {
+.pck-empty h2 {
   margin: 0;
-  font-size: var(--lws-text-lg);
+  font-size: var(--pck-text-lg);
 }
 
-.lws-empty p {
+.pck-empty p {
   margin: 0;
   max-width: 46ch;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-empty-doc {
+.pck-empty-doc {
   width: 78px;
   height: 100px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
   display: grid;
   align-content: start;
   gap: 6px;
   padding: 14px 12px;
 }
 
-.lws-empty-doc span {
+.pck-empty-doc span {
   height: 5px;
-  background: var(--lws-line);
+  background: var(--pck-line);
 }
 
-.lws-empty-doc span:nth-child(2) {
+.pck-empty-doc span:nth-child(2) {
   width: 80%;
 }
-.lws-empty-doc span:nth-child(3) {
+.pck-empty-doc span:nth-child(3) {
   width: 55%;
 }
 
 /* ----------------------------------------------------------------- 모달 --- */
 
-.lws-modal-scrim {
+.pck-modal-scrim {
   position: fixed;
   inset: 0;
   z-index: 40;
   display: grid;
   place-items: center;
   background: rgb(0 0 0 / 32%);
-  padding: var(--lws-space-4);
+  padding: var(--pck-space-4);
 }
 
-.lws-modal {
+.pck-modal {
   width: min(520px, 100%);
-  background: var(--lws-surface);
-  border-radius: var(--lws-radius);
+  background: var(--pck-surface);
+  border-radius: var(--pck-radius);
   box-shadow: 0 8px 30px rgb(0 0 0 / 18%);
   overflow: hidden;
 }
 
-.lws-modal-head {
+.pck-modal-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: var(--lws-space-3) var(--lws-space-4);
-  border-bottom: 1px solid var(--lws-line);
+  padding: var(--pck-space-3) var(--pck-space-4);
+  border-bottom: 1px solid var(--pck-line);
 }
 
-.lws-modal-head h2 {
+.pck-modal-head h2 {
   margin: 0;
-  font-size: var(--lws-text-md);
+  font-size: var(--pck-text-md);
 }
 
-.lws-tabs {
+.pck-tabs {
   display: flex;
-  gap: var(--lws-space-4);
-  padding: 0 var(--lws-space-4);
-  border-bottom: 1px solid var(--lws-line);
+  gap: var(--pck-space-4);
+  padding: 0 var(--pck-space-4);
+  border-bottom: 1px solid var(--pck-line);
 }
 
-.lws-tabs button {
+.pck-tabs button {
   font: inherit;
   background: none;
   border: none;
   border-bottom: 2px solid transparent;
   padding: 10px 2px;
   cursor: pointer;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-tabs button.is-active {
-  color: var(--lws-ink);
-  border-bottom-color: var(--lws-accent);
+.pck-tabs button.is-active {
+  color: var(--pck-ink);
+  border-bottom-color: var(--pck-accent);
 }
 
-.lws-modal-body {
+.pck-modal-body {
   display: grid;
   justify-items: center;
-  gap: var(--lws-space-2);
-  padding: var(--lws-space-4) var(--lws-space-4) 28px;
+  gap: var(--pck-space-2);
+  padding: var(--pck-space-4) var(--pck-space-4) 28px;
   text-align: center;
 }
 
-.lws-upload-hint {
+.pck-upload-hint {
   margin: 0;
   font-weight: 600;
 }
 
-.lws-upload-sub,
-.lws-upload-limit,
-.lws-upload-formats {
+.pck-upload-sub,
+.pck-upload-limit,
+.pck-upload-formats {
   margin: 0;
-  color: var(--lws-ink-muted);
-  font-size: var(--lws-text-sm);
+  color: var(--pck-ink-muted);
+  font-size: var(--pck-text-sm);
 }
 
-.lws-upload-error {
-  margin: var(--lws-space-2) 0 0;
-  color: var(--lws-state-danger);
-  font-size: var(--lws-text-sm);
+.pck-upload-error {
+  margin: var(--pck-space-2) 0 0;
+  color: var(--pck-state-danger);
+  font-size: var(--pck-text-sm);
 }
 
-.lws-progress {
+.pck-progress {
   width: 100%;
   height: 6px;
-  background: var(--lws-surface-sunken);
+  background: var(--pck-surface-sunken);
   border-radius: 3px;
   overflow: hidden;
 }
 
-.lws-progress > i {
+.pck-progress > i {
   display: block;
   height: 100%;
-  background: var(--lws-accent);
+  background: var(--pck-accent);
   transition: width 90ms linear;
 }
 
 /* ------------------------------------------------------------------ 객체 --- */
 
 /*
- * 객체는 pt 값을 px로 그대로 받는다. 배율은 부모 .lws-page 의 transform이 처리한다 (PLAN 5.3).
+ * 객체는 pt 값을 px로 그대로 받는다. 배율은 부모 .pck-page 의 transform이 처리한다 (PLAN 5.3).
  */
-.lws-obj {
+.pck-obj {
   position: absolute;
   box-sizing: border-box;
 }
 
 /* 도구가 활성일 때는 객체가 포인터를 먹지 않아야 새 영역을 그릴 수 있다. */
-.lws-stage.is-tool-active .lws-obj {
+.pck-stage.is-tool-active .pck-obj {
   pointer-events: none;
 }
 
-.lws-obj-text {
+.pck-obj-text {
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -721,12 +721,12 @@
   word-break: break-word;
 }
 
-.lws-obj-shape {
+.pck-obj-shape {
   display: block;
   overflow: visible;
 }
 
-.lws-obj-mask {
+.pck-obj-mask {
   width: 100%;
   height: 100%;
 }
@@ -737,7 +737,7 @@
  * 편집기에서는 실제 input/select를 쓰지 않는다. 클릭이 객체 선택으로 가야 하기 때문이다.
  * 학생용 뷰어에서 진짜 폼 요소가 된다 (M10).
  */
-.lws-answer {
+.pck-answer {
   position: relative;
   width: 100%;
   height: 100%;
@@ -746,48 +746,48 @@
   align-items: center;
   gap: 4px;
   padding: 2px 6px;
-  background: var(--lws-answerbox-bg);
-  border: 1px solid var(--lws-answerbox-border);
+  background: var(--pck-answerbox-bg);
+  border: 1px solid var(--pck-answerbox-border);
   border-radius: 2px;
-  color: var(--lws-answerbox-ink);
+  color: var(--pck-answerbox-ink);
   font-size: 10px;
   overflow: hidden;
 }
 
-.lws-answer--essay {
+.pck-answer--essay {
   align-items: flex-start;
 }
 
-.lws-answer-badge {
+.pck-answer-badge {
   flex: none;
   min-width: 14px;
   height: 14px;
   padding: 0 3px;
   display: inline-grid;
   place-items: center;
-  background: var(--lws-accent);
-  color: var(--lws-accent-ink);
+  background: var(--pck-accent);
+  color: var(--pck-accent-ink);
   border-radius: 7px;
   font-size: 9px;
   font-variant-numeric: tabular-nums;
 }
 
-.lws-answer-caret {
+.pck-answer-caret {
   margin-left: auto;
   opacity: 0.5;
 }
 
-.lws-answer-hint {
-  color: var(--lws-state-danger);
+.pck-answer-hint {
+  color: var(--pck-state-danger);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 /* 내보내기를 막는 객체는 테두리로도 알려 준다 (기획 6.3). */
-.lws-obj.is-invalid .lws-answer {
-  border-color: var(--lws-invalid-stroke);
-  box-shadow: 0 0 0 1px var(--lws-invalid-stroke);
+.pck-obj.is-invalid .pck-answer {
+  border-color: var(--pck-invalid-stroke);
+  box-shadow: 0 0 0 1px var(--pck-invalid-stroke);
 }
 
 /* -------------------------------------------------------------- 오버레이 --- */
@@ -795,36 +795,36 @@
 /*
  * 배율 transform 밖에 그려서 선 두께와 핸들 크기를 배율과 무관하게 유지한다 (PLAN D5).
  */
-.lws-overlay {
+.pck-overlay {
   position: absolute;
   inset: 0;
   pointer-events: none;
 }
 
-.lws-select-box {
+.pck-select-box {
   position: absolute;
-  border: 1px solid var(--lws-select-stroke);
+  border: 1px solid var(--pck-select-stroke);
   box-sizing: border-box;
 }
 
-.lws-marquee {
+.pck-marquee {
   position: absolute;
   box-sizing: border-box;
-  border: 1px dashed var(--lws-select-stroke);
-  background: var(--lws-select-fill);
+  border: 1px dashed var(--pck-select-stroke);
+  background: var(--pck-select-fill);
 }
 
-.lws-marquee.is-create {
+.pck-marquee.is-create {
   border-style: solid;
 }
 
 /* 핸들만 포인터를 받는다. 오버레이 자체는 클릭을 통과시켜야 한다. */
-.lws-handle {
+.pck-handle {
   position: absolute;
   pointer-events: auto;
   padding: 0;
-  border: 1px solid var(--lws-handle-stroke);
-  background: var(--lws-handle-bg);
+  border: 1px solid var(--pck-handle-stroke);
+  background: var(--pck-handle-bg);
   border-radius: 1px;
   box-sizing: content-box;
   /* 앵커 지점을 핸들 중앙에 맞춘다. */
@@ -832,48 +832,48 @@
   background-clip: content-box;
 }
 
-.lws-tool-error {
+.pck-tool-error {
   position: absolute;
-  left: var(--lws-space-4);
-  bottom: var(--lws-space-4);
+  left: var(--pck-space-4);
+  bottom: var(--pck-space-4);
   margin: 0;
   z-index: 3;
   padding: 6px 12px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-state-danger);
-  border-radius: var(--lws-radius-sm);
-  color: var(--lws-state-danger);
-  font-size: var(--lws-text-sm);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-state-danger);
+  border-radius: var(--pck-radius-sm);
+  color: var(--pck-state-danger);
+  font-size: var(--pck-text-sm);
   max-width: 60%;
 }
 
-.lws-stage.is-tool-active {
+.pck-stage.is-tool-active {
   cursor: crosshair;
 }
 
 /* ------------------------------------------------------------- 인스펙터 폼 --- */
 
-.lws-inspector-body {
+.pck-inspector-body {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
-  padding: var(--lws-space-3);
+  padding: var(--pck-space-3);
   display: grid;
-  gap: var(--lws-space-3);
+  gap: var(--pck-space-3);
   align-content: start;
 }
 
-.lws-panel-section {
+.pck-panel-section {
   display: grid;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
 }
 
-.lws-panel-section + .lws-panel-section {
-  padding-top: var(--lws-space-3);
-  border-top: 1px solid var(--lws-line);
+.pck-panel-section + .pck-panel-section {
+  padding-top: var(--pck-space-3);
+  border-top: 1px solid var(--pck-line);
 }
 
-.lws-field {
+.pck-field {
   display: grid;
   gap: 4px;
 }
@@ -882,63 +882,63 @@
  * 한 줄에 늘어놓는 필드. 체크박스 + 라벨 + 보조 입력 조합에 쓴다.
  * `grid-auto-flow: column` 은 열 폭을 콘텐트에 맞추므로 색 선택기가 눌리지 않는다.
  */
-.lws-field--inline {
+.pck-field--inline {
   display: flex;
   flex-flow: row nowrap;
   justify-content: flex-start;
   align-items: center;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
 }
 
-.lws-field-grid {
+.pck-field-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
 }
 
-.lws-field-label {
+.pck-field-label {
   font-size: 10px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
   margin: 0;
   font-weight: 500;
 }
 
-.lws-input {
+.pck-input {
   font: inherit;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
   width: 100%;
   min-width: 0;
   padding: 6px 8px;
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius-sm);
-  background: var(--lws-surface);
-  color: var(--lws-ink);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius-sm);
+  background: var(--pck-surface);
+  color: var(--pck-ink);
   box-sizing: border-box;
 }
 
-.lws-input:focus-visible {
-  outline: 2px solid var(--lws-select-stroke);
+.pck-input:focus-visible {
+  outline: 2px solid var(--pck-select-stroke);
   outline-offset: -1px;
 }
 
 /* 검증에 걸린 입력은 테두리로 알려 준다. 문구는 필드 아래에 따로 붙는다. */
-.lws-input[aria-invalid='true'] {
-  border-color: var(--lws-state-danger);
+.pck-input[aria-invalid='true'] {
+  border-color: var(--pck-state-danger);
 }
 
-.lws-input--num {
+.pck-input--num {
   width: 100%;
 }
 
 /*
  * 색 선택기.
  *
- * `.lws-input` 의 `width: 100%` 를 그대로 쓰면 flex 행(`.lws-field--inline`) 안에서 폭이 무너져
+ * `.pck-input` 의 `width: 100%` 를 그대로 쓰면 flex 행(`.pck-field--inline`) 안에서 폭이 무너져
  * 세로 막대처럼 보인다 — 실제로 그 증상을 겪었다. 고정 폭과 `flex: none` 으로 못 박는다.
  */
-.lws-input--color {
+.pck-input--color {
   width: 48px;
   min-width: 48px;
   flex: none;
@@ -948,18 +948,18 @@
 }
 
 /* 그리드 셀(테두리 색 등)에서는 셀 폭을 채우는 편이 자연스럽다. */
-.lws-field-grid .lws-input--color {
+.pck-field-grid .pck-input--color {
   width: 100%;
   min-width: 0;
 }
 
-.lws-textarea {
+.pck-textarea {
   resize: vertical;
   line-height: 1.5;
   font-family: inherit;
 }
 
-.lws-row {
+.pck-row {
   display: grid;
   grid-template-columns: auto 1fr auto;
   align-items: center;
@@ -967,215 +967,215 @@
 }
 
 /* 체크박스가 없는 행(단답형)에서도 열이 어긋나지 않게 한다. */
-.lws-row > .lws-input:first-child {
+.pck-row > .pck-input:first-child {
   grid-column: 1 / 3;
 }
 
 /* ---- 확인 모달 · 컨텍스트 메뉴 ---------------------------------------- */
 
-.lws-modal--confirm {
+.pck-modal--confirm {
   width: min(400px, 100%);
-  padding: var(--lws-space-4);
+  padding: var(--pck-space-4);
 }
 
-.lws-confirm-message {
-  margin: 0 0 var(--lws-space-4);
+.pck-confirm-message {
+  margin: 0 0 var(--pck-space-4);
   line-height: 1.6;
 }
 
-.lws-confirm-actions {
+.pck-confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: var(--lws-space-2);
+  gap: var(--pck-space-2);
 }
 
-.lws-primary-btn.is-danger {
-  background: var(--lws-state-danger);
-  border-color: var(--lws-state-danger);
+.pck-primary-btn.is-danger {
+  background: var(--pck-state-danger);
+  border-color: var(--pck-state-danger);
 }
 
-.lws-context-menu {
+.pck-context-menu {
   position: fixed;
   z-index: 50;
   padding: 4px;
-  background: var(--lws-surface);
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius);
-  box-shadow: var(--lws-shadow);
+  background: var(--pck-surface);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius);
+  box-shadow: var(--pck-shadow);
 }
 
-.lws-context-menu button {
+.pck-context-menu button {
   display: block;
   width: 100%;
   text-align: left;
   font: inherit;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
   background: none;
   border: none;
   padding: 7px 10px;
-  border-radius: var(--lws-radius-sm);
+  border-radius: var(--pck-radius-sm);
   cursor: pointer;
-  color: var(--lws-ink);
+  color: var(--pck-ink);
 }
 
-.lws-context-menu button:hover:not(:disabled) {
-  background: var(--lws-surface-sunken);
+.pck-context-menu button:hover:not(:disabled) {
+  background: var(--pck-surface-sunken);
 }
 
-.lws-context-menu button:disabled {
+.pck-context-menu button:disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.lws-context-menu button.is-danger:not(:disabled) {
-  color: var(--lws-state-danger);
+.pck-context-menu button.is-danger:not(:disabled) {
+  color: var(--pck-state-danger);
 }
 
-.lws-context-menu hr {
+.pck-context-menu hr {
   border: none;
-  border-top: 1px solid var(--lws-line);
+  border-top: 1px solid var(--pck-line);
   margin: 4px 0;
 }
 
-.lws-row-btn {
+.pck-row-btn {
   font: inherit;
   width: 22px;
   height: 22px;
   display: grid;
   place-items: center;
   background: none;
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius-sm);
-  color: var(--lws-ink-muted);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius-sm);
+  color: var(--pck-ink-muted);
   cursor: pointer;
 }
 
-.lws-row-btn:hover:not(:disabled) {
-  color: var(--lws-state-danger);
+.pck-row-btn:hover:not(:disabled) {
+  color: var(--pck-state-danger);
   border-color: currentcolor;
 }
 
-.lws-row-btn:disabled {
+.pck-row-btn:disabled {
   opacity: 0.35;
   cursor: default;
 }
 
-.lws-check {
+.pck-check {
   width: 15px;
   height: 15px;
   flex: none;
-  accent-color: var(--lws-accent);
+  accent-color: var(--pck-accent);
   cursor: pointer;
   margin: 0;
 }
 
-.lws-dashed-btn--sm {
+.pck-dashed-btn--sm {
   padding: 6px;
-  font-size: var(--lws-text-sm);
+  font-size: var(--pck-text-sm);
 }
 
-.lws-field-error {
+.pck-field-error {
   margin: 0;
-  color: var(--lws-state-danger);
-  font-size: var(--lws-text-sm);
+  color: var(--pck-state-danger);
+  font-size: var(--pck-text-sm);
   line-height: 1.4;
 }
 
-.lws-field-note {
+.pck-field-note {
   margin: 0;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
   font-size: 11px;
   line-height: 1.4;
 }
 
-.lws-field-note--inline {
+.pck-field-note--inline {
   align-self: center;
 }
 
-.lws-segmented {
+.pck-segmented {
   display: inline-flex;
-  border: 1px solid var(--lws-line);
-  border-radius: var(--lws-radius-sm);
+  border: 1px solid var(--pck-line);
+  border-radius: var(--pck-radius-sm);
   overflow: hidden;
 }
 
-.lws-segmented button {
+.pck-segmented button {
   font: inherit;
   min-width: 32px;
   padding: 5px 0;
-  background: var(--lws-surface);
+  background: var(--pck-surface);
   border: none;
-  border-right: 1px solid var(--lws-line);
+  border-right: 1px solid var(--pck-line);
   cursor: pointer;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-segmented button:last-child {
+.pck-segmented button:last-child {
   border-right: none;
 }
 
-.lws-segmented button.is-active {
-  background: var(--lws-accent);
-  color: var(--lws-accent-ink);
+.pck-segmented button.is-active {
+  background: var(--pck-accent);
+  color: var(--pck-accent-ink);
 }
 
-.lws-inspector-delete {
+.pck-inspector-delete {
   justify-self: start;
-  margin-top: var(--lws-space-2);
-  color: var(--lws-state-danger);
-  border-color: var(--lws-state-danger);
+  margin-top: var(--pck-space-2);
+  color: var(--pck-state-danger);
+  border-color: var(--pck-state-danger);
 }
 
 /* ---- 텍스트 인라인 편집 (M6) ------------------------------------------ */
 
-.lws-obj-text {
+.pck-obj-text {
   outline: none;
 }
 
-.lws-obj-text.is-editing {
+.pck-obj-text.is-editing {
   /* 편집 중임을 알리는 최소한의 표시. 배율 밖 오버레이가 아니라 여기 있어도 되는 이유는
      테두리 두께가 배율과 함께 커져도 읽는 데 방해가 되지 않기 때문이다. */
-  box-shadow: 0 0 0 1px var(--lws-select-stroke);
+  box-shadow: 0 0 0 1px var(--pck-select-stroke);
   cursor: text;
 }
 
 /* 빈 텍스트 객체는 아무것도 그려지지 않아 클릭할 수 없다. 옅은 자리 표시를 둔다. */
-.lws-obj.is-text .lws-obj-text:empty::before {
+.pck-obj.is-text .pck-obj-text:empty::before {
   content: '';
   display: block;
   width: 100%;
   height: 100%;
   background: rgb(0 0 0 / 3%);
-  outline: 1px dashed var(--lws-line-strong);
+  outline: 1px dashed var(--pck-line-strong);
   outline-offset: -1px;
 }
 
-.lws-obj.is-editing {
+.pck-obj.is-editing {
   /* 편집 중에는 도구 활성 상태여도 포인터를 받아야 한다. */
   pointer-events: auto !important;
 }
 
 /* ---- 회전 핸들 -------------------------------------------------------- */
 
-.lws-handle--rotate {
+.pck-handle--rotate {
   border-radius: 50%;
   cursor: grab;
-  border-color: var(--lws-select-stroke);
+  border-color: var(--pck-select-stroke);
 }
 
-.lws-handle--rotate:active {
+.pck-handle--rotate:active {
   cursor: grabbing;
 }
 
 /* ---- 내보내기 팝업 (옵션 컴포넌트) ------------------------------------ */
 
-.lws-modal-body--form {
+.pck-modal-body--form {
   justify-items: stretch;
   text-align: left;
-  gap: var(--lws-space-3);
+  gap: var(--pck-space-3);
 }
 
-.lws-fieldset {
+.pck-fieldset {
   border: none;
   margin: 0;
   padding: 0;
@@ -1183,20 +1183,20 @@
   gap: 6px;
 }
 
-.lws-fieldset legend {
+.pck-fieldset legend {
   padding: 0;
 }
 
-.lws-export-submit {
+.pck-export-submit {
   justify-self: stretch;
-  margin-top: var(--lws-space-2);
+  margin-top: var(--pck-space-2);
 }
 
-.lws-export-qr {
+.pck-export-qr {
   justify-self: center;
   width: 148px;
   height: 148px;
-  border: 1px solid var(--lws-line);
+  border: 1px solid var(--pck-line);
   background: #fff;
 }
 
@@ -1205,21 +1205,21 @@
 /*
  * 문서에 저장되지 않는 파생값이다. 위치에서 계산되므로 객체를 옮기면 번호도 따라 바뀐다.
  */
-.lws-answer-no {
+.pck-answer-no {
   flex: none;
   font-weight: 700;
   font-size: 10px;
-  color: var(--lws-ink);
+  color: var(--pck-ink);
   font-variant-numeric: tabular-nums;
 }
 
 /* ---- 페이지 드래그 순서 변경 ------------------------------------------ */
 
-.lws-thumb-item {
+.pck-thumb-item {
   position: relative;
 }
 
-.lws-thumb-item.is-dragging {
+.pck-thumb-item.is-dragging {
   opacity: 0.4;
 }
 
@@ -1227,32 +1227,32 @@
  * 삽입 표시선. 항목 사이 간격(gap) 안에 그리므로 레이아웃을 밀지 않는다.
  * 레이아웃이 밀리면 드래그 중 삽입 위치 판정이 흔들린다.
  */
-.lws-thumb-item.is-drop-before::before,
-.lws-thumb-item.is-drop-after::after {
+.pck-thumb-item.is-drop-before::before,
+.pck-thumb-item.is-drop-after::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--lws-select-stroke);
+  background: var(--pck-select-stroke);
   border-radius: 1px;
 }
 
-.lws-thumb-item.is-drop-before::before {
-  top: calc(var(--lws-space-3) / -2 - 1px);
+.pck-thumb-item.is-drop-before::before {
+  top: calc(var(--pck-space-3) / -2 - 1px);
 }
 
-.lws-thumb-item.is-drop-after::after {
-  bottom: calc(var(--lws-space-3) / -2 - 1px);
+.pck-thumb-item.is-drop-after::after {
+  bottom: calc(var(--pck-space-3) / -2 - 1px);
 }
 
-.lws-thumb {
+.pck-thumb {
   /* 드래그 중 브라우저 기본 이미지 드래그가 끼어들지 않게 한다. */
   touch-action: none;
 }
 
 /* 회전 래퍼. 핸들 위치만 회전시키고 핸들 자신은 역회전한다 (ResizeHandles.vue). */
-.lws-handle-group {
+.pck-handle-group {
   position: absolute;
   inset: 0;
   pointer-events: none;
@@ -1264,49 +1264,49 @@
  * 교사가 테두리 색을 지정하면 `boxStyleToCss` 가 `border-style: solid` 를 함께 내보낸다.
  * 여기서는 두께 기본값만 잡아 둔다 — 색만 고르고 두께를 건드리지 않는 경우가 흔하다.
  */
-.lws-obj-text {
+.pck-obj-text {
   border: 0 solid transparent;
   box-sizing: border-box;
 }
 
-.lws-obj-text:not([style*='border-width']) {
+.pck-obj-text:not([style*='border-width']) {
   border-width: 1px;
 }
 
 /* ---- 박스 색 편집 패널 (PLAN 18.8) ----------------------------------- */
 
 /* 체크박스 + 라벨 + 색 선택기가 한 줄에 들어간다. 라벨 폭을 고정해 열이 맞는다. */
-.lws-style-label {
+.pck-style-label {
   flex: none;
   min-width: 52px;
-  font-size: var(--lws-text-sm);
-  color: var(--lws-ink-muted);
+  font-size: var(--pck-text-sm);
+  color: var(--pck-ink-muted);
 }
 
-.lws-input--narrow {
+.pck-input--narrow {
   width: 52px;
   min-width: 52px;
   flex: none;
 }
 
-.lws-chip {
+.pck-chip {
   font: inherit;
   font-size: 11px;
   flex: none;
   padding: 4px 9px;
   background: none;
-  border: 1px solid var(--lws-line);
+  border: 1px solid var(--pck-line);
   border-radius: 999px;
   cursor: pointer;
-  color: var(--lws-ink-muted);
+  color: var(--pck-ink-muted);
 }
 
-.lws-chip:hover {
-  border-color: var(--lws-line-strong);
+.pck-chip:hover {
+  border-color: var(--pck-line-strong);
 }
 
-.lws-chip.is-active {
-  background: var(--lws-accent);
-  border-color: var(--lws-accent);
-  color: var(--lws-accent-ink);
+.pck-chip.is-active {
+  background: var(--pck-accent);
+  border-color: var(--pck-accent);
+  color: var(--pck-accent-ink);
 }

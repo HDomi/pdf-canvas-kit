@@ -34,11 +34,11 @@ import { isMeaningfulDrag } from '../core/geometry/constrain'
 import { pickObject } from '../core/geometry/hitTest'
 import { clientToPage } from '../core/geometry/units'
 import type { PointerCommit } from '../core/interaction/pointerMachine'
-import type { Rect, WorksheetObject } from '../core/model/types'
+import type { Rect, PDFCanvasObject } from '../core/model/types'
 import { questionNumberMap } from '../core/model/numbering'
 import type { Locale } from '../core/i18n/createI18n'
 import { createViewState, type SaveState, type ToolId } from '../core/model/viewState'
-import type { WorksheetDoc } from '../core/model/types'
+import type { PDFCanvasDoc } from '../core/model/types'
 import { ConvertError } from '../core/ports/ConverterPort'
 import { PageLimitError } from '../core/commands/pages'
 import type { EnginePorts, ImportProgress } from '../core/engine'
@@ -69,7 +69,7 @@ import UploadDialog from './editor/dialogs/UploadDialog.vue'
 const props = withDefaults(
   defineProps<{
     /** 초기 문서. `null` 이면 빈 상태로 시작해 문서 불러오기 안내를 띄운다. */
-    doc?: WorksheetDoc | null
+    doc?: PDFCanvasDoc | null
     ports?: EnginePorts
     locale?: Locale
     readOnly?: boolean
@@ -106,7 +106,7 @@ const props = withDefaults(
 )
 
 const emit = defineEmits<{
-  change: [doc: WorksheetDoc]
+  change: [doc: PDFCanvasDoc]
   saveStateChange: [state: SaveState]
   requestExport: [payload: ExportPayload]
   back: []
@@ -170,8 +170,8 @@ watch(saveState, (state) => emit('saveStateChange', state), { immediate: true })
 const panels = usePanelSizes()
 
 const bodyStyle = computed(() => ({
-  '--lws-pagelist-width': `${panels.pageListWidth.value}px`,
-  '--lws-inspector-width': `${panels.inspectorWidth.value}px`,
+  '--pck-pagelist-width': `${panels.pageListWidth.value}px`,
+  '--pck-inspector-width': `${panels.inspectorWidth.value}px`,
 }))
 
 const stageEl = ref<HTMLElement | null>(null)
@@ -765,7 +765,7 @@ function onDeleteSelection(ids: readonly string[] = selectedObjectIds.value) {
 }
 
 /** 인스펙터 편집. 객체 속성을 부분 갱신한다. */
-function onInspectorUpdate(objectId: string, patch: Partial<WorksheetObject>) {
+function onInspectorUpdate(objectId: string, patch: Partial<PDFCanvasObject>) {
   if (props.readOnly) return
   run('edit object', updateObject(view.value.currentPageIndex, objectId, patch))
 }
@@ -885,7 +885,7 @@ async function onManualSave() {
     // 저장 결과는 콘솔로만 알린다. 프로토타입 동작이라 UI를 늘리지 않는다.
     // eslint-disable-next-line no-console
     console.debug(
-      `[worksheet:prototype] saved · ${pageCount.value} pages · ${result.images} images · ` +
+      `[pdf-canvas-kit:prototype] saved · ${pageCount.value} pages · ${result.images} images · ` +
         `~${(result.approxBytes / 1024 / 1024).toFixed(2)}MB`,
     )
     engine.markSaved()
@@ -902,7 +902,7 @@ async function onManualSave() {
 </script>
 
 <template>
-  <div class="lws-editor" :class="{ 'is-readonly': props.readOnly }">
+  <div class="pck-editor" :class="{ 'is-readonly': props.readOnly }">
     <TopBar
       :title="doc.title"
       :save-state="saveState"
@@ -919,7 +919,7 @@ async function onManualSave() {
     />
 
     <div
-      class="lws-body"
+      class="pck-body"
       :class="{ 'is-resizing': panels.resizing.value !== null }"
       :style="bodyStyle"
     >
@@ -939,7 +939,7 @@ async function onManualSave() {
 
       <!-- 패널 사이의 드래그 핸들. 얇은 요소지만 히트 영역은 CSS에서 넓힌다. -->
       <div
-        class="lws-resizer"
+        class="pck-resizer"
         role="separator"
         aria-orientation="vertical"
         :aria-label="t('panel.resizePageList')"
@@ -947,7 +947,7 @@ async function onManualSave() {
         @dblclick="panels.reset()"
       />
 
-      <main class="lws-main">
+      <main class="pck-main">
         <template v-if="pageCount > 0">
           <Toolbar
             :active-tool="view.activeTool"
@@ -967,7 +967,7 @@ async function onManualSave() {
 
         <!-- position: relative wrapper: the zoom control must not scroll away
              with the page, so it sits outside the scroll container (PLAN 6.1). -->
-        <div class="lws-stage-wrap">
+        <div class="pck-stage-wrap">
           <CanvasStage
             v-if="pageCount > 0"
             ref="stageComp"
@@ -1015,7 +1015,7 @@ async function onManualSave() {
           </CanvasStage>
           <EmptyState v-else :t="t" @import="openUpload" />
 
-          <p v-if="toolError || exportError" class="lws-tool-error" role="alert">
+          <p v-if="toolError || exportError" class="pck-tool-error" role="alert">
             {{ toolError ?? exportError }}
           </p>
 
@@ -1035,7 +1035,7 @@ async function onManualSave() {
       </main>
 
       <div
-        class="lws-resizer"
+        class="pck-resizer"
         role="separator"
         aria-orientation="vertical"
         :aria-label="t('panel.resizeInspector')"

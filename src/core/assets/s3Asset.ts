@@ -90,7 +90,7 @@ export function createS3AssetPort(options: S3AssetPortOptions): AssetPort {
           })
           if (!res.ok) {
             const err = new AssetUploadError(
-              `[worksheet] asset upload failed with ${res.status}`,
+              `[pdf-canvas-kit] asset upload failed with ${res.status}`,
               res.status,
             )
             if (res.status < 500) throw err
@@ -107,7 +107,7 @@ export function createS3AssetPort(options: S3AssetPortOptions): AssetPort {
       }
 
       throw new AssetUploadError(
-        `[worksheet] asset upload failed after ${retries + 1} attempts`,
+        `[pdf-canvas-kit] asset upload failed after ${retries + 1} attempts`,
         null,
         { cause: lastError },
       )

@@ -8,7 +8,7 @@
  * 두 번째 저장부터는 업로드가 일어나지 않는다.
  */
 import type { AssetPort } from '../ports/AssetPort'
-import type { PageBackground, WorksheetDoc } from '../model/types'
+import type { PageBackground, PDFCanvasDoc } from '../model/types'
 
 export interface PromoteProgress {
   /** 승격 완료한 페이지 수. */
@@ -25,7 +25,7 @@ export interface PromoteOptions {
 
 export class PromoteAbortError extends Error {
   constructor() {
-    super('[worksheet] background promotion aborted')
+    super('[pdf-canvas-kit] background promotion aborted')
     this.name = 'PromoteAbortError'
   }
 }
@@ -34,7 +34,9 @@ export class PromoteAbortError extends Error {
 async function readBlob(url: string): Promise<Blob> {
   const res = await fetch(url)
   if (!res.ok) {
-    throw new Error(`[worksheet] could not read blob url (${res.status}) — session may have ended`)
+    throw new Error(
+      `[pdf-canvas-kit] could not read blob url (${res.status}) — session may have ended`,
+    )
   }
   return res.blob()
 }
@@ -49,10 +51,10 @@ async function readBlob(url: string): Promise<Blob> {
  * 걸려 오히려 느려진다.
  */
 export async function promoteBackgrounds(
-  doc: WorksheetDoc,
+  doc: PDFCanvasDoc,
   asset: AssetPort,
   options: PromoteOptions = {},
-): Promise<WorksheetDoc> {
+): Promise<PDFCanvasDoc> {
   const targets = doc.pages.filter(
     (p) => p.background.kind === 'image' && p.background.origin === 'blob',
   )

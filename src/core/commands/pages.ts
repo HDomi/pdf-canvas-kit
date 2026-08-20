@@ -7,15 +7,15 @@
 import { createId } from '../util/id'
 import { LIMITS } from '../config/defaults'
 import { createBlankPageLike } from '../model/defaults'
-import type { WorksheetPage } from '../model/types'
+import type { PDFCanvasPage } from '../model/types'
 import { touch, type Command } from './index'
 
 /** 커맨드가 기획 한도를 넘길 때 던진다. UI가 메시지를 보여줄 수 있도록. */
 export class PageLimitError extends Error {
   constructor(attempted: number) {
     super(
-      `[worksheet] ${attempted} pages exceeds the limit of ${LIMITS.pagesPerWorksheet}. ` +
-        '1개의 워크시트에 최대 500페이지까지 지원합니다.',
+      `[pdf-canvas-kit] ${attempted} pages exceeds the limit of ${LIMITS.pagesPerDoc}. ` +
+        '문서 하나에 최대 500페이지까지 지원합니다.',
     )
     this.name = 'PageLimitError'
   }
@@ -27,11 +27,11 @@ export class PageLimitError extends Error {
  * @throws {PageLimitError} 결과가 페이지 상한을 넘기면. 조용히 잘라내지 않고 던지는 이유는,
  * 교사가 올린 문서에서 말없이 페이지를 버리는 것이 거부하는 것보다 나쁘기 때문이다.
  */
-export function appendPages(newPages: WorksheetPage[]): Command {
+export function appendPages(newPages: PDFCanvasPage[]): Command {
   return (doc) => {
     if (newPages.length === 0) return null
     const total = doc.pages.length + newPages.length
-    if (total > LIMITS.pagesPerWorksheet) throw new PageLimitError(total)
+    if (total > LIMITS.pagesPerDoc) throw new PageLimitError(total)
     return touch({ ...doc, pages: [...doc.pages, ...newPages] })
   }
 }
@@ -39,7 +39,7 @@ export function appendPages(newPages: WorksheetPage[]): Command {
 /** `index` 뒤에 빈 페이지를 삽입한다. 범위를 벗어나면 맨 끝에 넣는다. */
 export function insertBlankPage(index: number): Command {
   return (doc) => {
-    if (doc.pages.length + 1 > LIMITS.pagesPerWorksheet) {
+    if (doc.pages.length + 1 > LIMITS.pagesPerDoc) {
       throw new PageLimitError(doc.pages.length + 1)
     }
     const at = index >= 0 && index < doc.pages.length ? index + 1 : doc.pages.length
@@ -71,10 +71,10 @@ export function duplicatePage(index: number): Command {
   return (doc) => {
     const page = doc.pages[index]
     if (!page) return null
-    if (doc.pages.length + 1 > LIMITS.pagesPerWorksheet) {
+    if (doc.pages.length + 1 > LIMITS.pagesPerDoc) {
       throw new PageLimitError(doc.pages.length + 1)
     }
-    const copy: WorksheetPage = {
+    const copy: PDFCanvasPage = {
       ...page,
       id: createId(),
       // 객체 id를 새로 발급한다. 복제된 Answer Box는 별개 문항이며,

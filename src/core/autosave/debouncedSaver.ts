@@ -9,12 +9,12 @@
  * 교사는 저장됐다고 믿는다.
  */
 import { EDITOR_DEFAULTS } from '../config/defaults'
-import type { WorksheetDoc } from '../model/types'
+import type { PDFCanvasDoc } from '../model/types'
 import type { SaveState } from '../model/viewState'
 
 export interface SaverOptions {
   /** 실제 저장 동작. 실패하면 reject 해야 한다. */
-  save: (doc: WorksheetDoc) => Promise<void>
+  save: (doc: PDFCanvasDoc) => Promise<void>
   /** 상태가 바뀔 때마다 호출된다. 배지가 이걸 구독한다. */
   onStateChange?: (state: SaveState) => void
   debounceMs?: number
@@ -24,7 +24,7 @@ export interface SaverOptions {
 
 export interface DebouncedSaver {
   /** 변경을 알린다. 타이머를 다시 설정한다. */
-  schedule(doc: WorksheetDoc): void
+  schedule(doc: PDFCanvasDoc): void
   /**
    * 대기 중인 저장을 즉시 실행한다.
    *
@@ -47,7 +47,7 @@ export function createDebouncedSaver(options: SaverOptions): DebouncedSaver {
   const maxDelayMs = options.maxDelayMs ?? EDITOR_DEFAULTS.autosave.maxDelayMs
   const retries = options.retries ?? EDITOR_DEFAULTS.autosave.retries
 
-  let pending: WorksheetDoc | null = null
+  let pending: PDFCanvasDoc | null = null
   let timer: ReturnType<typeof setTimeout> | null = null
   /** 첫 변경 시각. 최대 지연을 재는 기준이다. */
   let firstChangeAt = 0
@@ -67,7 +67,7 @@ export function createDebouncedSaver(options: SaverOptions): DebouncedSaver {
     }
   }
 
-  async function run(doc: WorksheetDoc): Promise<void> {
+  async function run(doc: PDFCanvasDoc): Promise<void> {
     setState('saving')
     for (let attempt = 0; attempt <= retries; attempt++) {
       if (attempt > 0) await delay(500 * 2 ** (attempt - 1))

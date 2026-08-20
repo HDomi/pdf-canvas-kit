@@ -4,7 +4,7 @@
  * 8개 방향 핸들 + 본체 이동으로 9방향이다. 핸들은 배율 밖 오버레이에 그리므로(PLAN D5) 이
  * 모듈은 pt 공간만 다루고 화면 좌표를 모른다.
  */
-import type { Pt, Rect, Size, WorksheetObjectType } from '../model/types'
+import type { Pt, Rect, Size, PDFCanvasObjectType } from '../model/types'
 import { constrainRect, minSizeFor } from './constrain'
 
 /** 핸들 위치. `n` = 북(위), `se` = 남동 등. */
@@ -122,7 +122,7 @@ export function resizeRect(
   handle: HandleId,
   delta: { dx: Pt; dy: Pt },
   page: Size,
-  type: WorksheetObjectType,
+  type: PDFCanvasObjectType,
   opts: ResizeOptions = {},
 ): Rect {
   const { sx, sy } = direction(handle)
@@ -219,7 +219,7 @@ export function moveRect(
   start: Rect,
   delta: { dx: Pt; dy: Pt },
   page: Size,
-  type: WorksheetObjectType,
+  type: PDFCanvasObjectType,
   opts: { grid?: number; rotation?: number } = {},
 ): Rect {
   const grid = opts.grid ?? 0

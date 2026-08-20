@@ -13,3 +13,6 @@ temp.pdf
 *.local.pdf
 
 .DS_Store
+
+# 데모 빌드 산출물
+dist-demo/

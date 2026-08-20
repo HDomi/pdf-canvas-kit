@@ -13,7 +13,7 @@ import {
   constrainRect,
   createId,
   createPage,
-  createWorksheetDoc,
+  createPDFCanvasDoc,
   findAnswerFieldPaths,
   formatPaperLabel,
   hitTestObject,
@@ -38,8 +38,8 @@ import {
   type ShortAnswerBox,
   type DropboxAnswerBox,
   type EssayAnswerBox,
-  type WorksheetObject,
-} from '@lumiteach/worksheet-system'
+  type PDFCanvasObject,
+} from 'pdf-canvas-kit'
 
 /** 한 건의 검증 케이스. `actual` 은 렌더 시점에 실행된다. */
 export interface Case {
@@ -421,7 +421,7 @@ export const GROUPS: CaseGroup[] = [
         actual: () =>
           pickObjectsInRect({ x: 90, y: 90, w: 20, h: 20 }, [
             { id: 'a', type: 'mask', fill: '#fff', rect: { x: 0, y: 0, w: 100, h: 100 } },
-          ] as WorksheetObject[]).length,
+          ] as PDFCanvasObject[]).length,
       },
       {
         name: '마퀴: 잠긴 객체는 제외',
@@ -435,7 +435,7 @@ export const GROUPS: CaseGroup[] = [
               locked: true,
               rect: { x: 0, y: 0, w: 10, h: 10 },
             },
-          ] as WorksheetObject[]).length,
+          ] as PDFCanvasObject[]).length,
       },
     ],
   },
@@ -662,7 +662,7 @@ export const GROUPS: CaseGroup[] = [
         name: '집계: 미채점 서술형은 분모에서 제외',
         expected: { score: 1, gradedPoints: 1, totalPoints: 6, pendingEssays: 1 },
         actual: () => {
-          const objs: WorksheetObject[] = [shortBox(['가'], 1), essayBox(5)]
+          const objs: PDFCanvasObject[] = [shortBox(['가'], 1), essayBox(5)]
           const r = scoreAttempt(objs, { 'short-1': { type: 'answer.short', value: '가' } })
           return {
             score: r.score,
@@ -785,7 +785,7 @@ export const GROUPS: CaseGroup[] = [
         expected: '#abcdef',
         actual: () => {
           const box: ShortAnswerBox = { ...shortBox(['a']), style: { fill: '#abcdef' } }
-          const doc = createWorksheetDoc({ pages: [createPage({ objects: [box] })] })
+          const doc = createPDFCanvasDoc({ pages: [createPage({ objects: [box] })] })
           const pub = toPublicDoc(doc)
           const obj = pub.pages[0]!.objects[0] as { style?: { fill?: string | null } }
           return obj.style?.fill
@@ -809,7 +809,7 @@ export const GROUPS: CaseGroup[] = [
             points: 1,
             answers: ['a'],
           })
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [createPage({ objects: [mk('c', 300), mk('a', 100), mk('b', 200)] })],
           })
           return numberQuestions(doc).map((q) => q.display)
@@ -826,7 +826,7 @@ export const GROUPS: CaseGroup[] = [
             points: 1,
             answers: ['a'],
           })
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             // y가 5pt 어긋났지만 같은 줄로 봐야 한다.
             pages: [createPage({ objects: [mk('right', 300, 105), mk('left', 100, 100)] })],
           })
@@ -844,7 +844,7 @@ export const GROUPS: CaseGroup[] = [
             points: 1,
             answers: ['a'],
           })
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             // 20pt 차이면 다른 줄이므로 x가 커도 upper가 먼저다.
             pages: [createPage({ objects: [mk('lower', 100, 130), mk('upper', 300, 100)] })],
           })
@@ -862,7 +862,7 @@ export const GROUPS: CaseGroup[] = [
             points: 1,
             answers: ['a'],
           })
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({ objects: [mk('p1a')] }),
               createPage({ objects: [mk('p2a'), mk('p2b')] }),
@@ -878,7 +878,7 @@ export const GROUPS: CaseGroup[] = [
           { display: '2', manual: false, number: 2 },
         ],
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 objects: [
@@ -899,7 +899,7 @@ export const GROUPS: CaseGroup[] = [
         name: '공백만 있는 label 은 수동으로 보지 않는다',
         expected: { display: '1', manual: false },
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [createPage({ objects: [{ ...shortBox(['a']), id: 'x', label: '   ' }] })],
           })
           const q = numberQuestions(doc)[0]!
@@ -910,7 +910,7 @@ export const GROUPS: CaseGroup[] = [
         name: 'Answer Box 가 아닌 객체는 번호에서 제외',
         expected: 1,
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 objects: [
@@ -934,7 +934,7 @@ export const GROUPS: CaseGroup[] = [
         name: 'toPublicDoc 후 정답 필드 부재',
         expected: [],
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 objects: [shortBox(['정답']), dropboxBox(['가', '나'], [0]), essayBox()],
@@ -948,7 +948,7 @@ export const GROUPS: CaseGroup[] = [
         name: '원본에는 정답 필드가 있다 (대조군)',
         expected: 3,
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 objects: [shortBox(['정답']), dropboxBox(['가', '나'], [0]), essayBox()],
@@ -962,7 +962,7 @@ export const GROUPS: CaseGroup[] = [
         name: 'blob 배경 직렬화 → 에러',
         expected: 'BlobBackgroundError',
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 background: {
@@ -988,7 +988,7 @@ export const GROUPS: CaseGroup[] = [
         name: 'remote 배경은 직렬화 가능',
         expected: true,
         actual: () => {
-          const doc = createWorksheetDoc({
+          const doc = createPDFCanvasDoc({
             pages: [
               createPage({
                 background: {

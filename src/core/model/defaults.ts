@@ -5,15 +5,15 @@
  * nanoid보다 의존성이 하나 적다 (PLAN 3.4).
  */
 import { createId } from '../util/id'
-import type { PageBackground, Size, WorksheetDoc, WorksheetPage } from './types'
+import type { PageBackground, Size, PDFCanvasDoc, PDFCanvasPage } from './types'
 
 /** 기본 타이틀. 기획서 기본값과 같다 (기획 4.2). */
-export const UNTITLED_TITLE = '제목 없는 Worksheet'
+export const UNTITLED_TITLE = '제목 없는 문서'
 
 /** A4 크기(pt). 크기를 정할 문서가 없는 빈 페이지에 쓴다. */
 export const A4_PT: Size = { width: 595.28, height: 841.89 }
 
-export function createWorksheetDoc(overrides: Partial<WorksheetDoc> = {}): WorksheetDoc {
+export function createPDFCanvasDoc(overrides: Partial<PDFCanvasDoc> = {}): PDFCanvasDoc {
   return {
     schemaVersion: 1,
     id: createId(),
@@ -27,10 +27,10 @@ export function createWorksheetDoc(overrides: Partial<WorksheetDoc> = {}): Works
 
 export function createPage(
   init: { size?: Size; background?: PageBackground } & Partial<
-    Pick<WorksheetPage, 'source' | 'objects'>
+    Pick<PDFCanvasPage, 'source' | 'objects'>
   > = {},
-): WorksheetPage {
-  const page: WorksheetPage = {
+): PDFCanvasPage {
+  const page: PDFCanvasPage = {
     id: createId(),
     size: init.size ?? A4_PT,
     background: init.background ?? { kind: 'blank' },
@@ -42,6 +42,6 @@ export function createPage(
 }
 
 /** 이웃 페이지와 같은 크기의 빈 페이지. 삽입이 용지 규격을 바꾸지 않게 한다. */
-export function createBlankPageLike(reference?: WorksheetPage): WorksheetPage {
+export function createBlankPageLike(reference?: PDFCanvasPage): PDFCanvasPage {
   return createPage({ size: reference?.size ?? A4_PT })
 }

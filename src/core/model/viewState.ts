@@ -1,7 +1,7 @@
 /**
  * 편집기 뷰 상태 — 사용자에게는 보이지만 문서에는 저장하지 않는 값들.
  *
- * {@link ../model/types.WorksheetDoc} 와 분리한 것은 의도다 (PLAN 6.6). 배율이나 선택을
+ * {@link ../model/types.PDFCanvasDoc} 와 분리한 것은 의도다 (PLAN 6.6). 배율이나 선택을
  * 문서에 접어 넣으면 줌 클릭마다 dirty가 되어 자동저장이 돌고, undo가 뷰포트를 되돌린다.
  */
 import { EDITOR_DEFAULTS } from '../config/defaults'

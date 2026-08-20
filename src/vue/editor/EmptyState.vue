@@ -7,11 +7,11 @@ const emit = defineEmits<{ import: [] }>()
 </script>
 
 <template>
-  <div class="lws-empty">
-    <div class="lws-empty-doc" aria-hidden="true"><span /><span /><span /></div>
+  <div class="pck-empty">
+    <div class="pck-empty-doc" aria-hidden="true"><span /><span /><span /></div>
     <h2>{{ props.t('empty.title') }}</h2>
     <p>{{ props.t('empty.description') }}</p>
-    <button type="button" class="lws-primary-btn" @click="emit('import')">
+    <button type="button" class="pck-primary-btn" @click="emit('import')">
       {{ props.t('empty.action') }}
     </button>
   </div>

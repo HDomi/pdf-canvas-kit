@@ -7,11 +7,11 @@
  */
 import { ref } from 'vue'
 import { usePageReorder } from '../composables/usePageReorder'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 import PageThumb from './PageThumb.vue'
 
 const props = defineProps<{
-  pages: WorksheetPage[]
+  pages: PDFCanvasPage[]
   currentIndex: number
   readOnly: boolean
   t: (key: string) => string
@@ -37,18 +37,18 @@ const reorder = usePageReorder({
 </script>
 
 <template>
-  <aside class="lws-pagelist">
-    <header class="lws-panel-head">
+  <aside class="pck-pagelist">
+    <header class="pck-panel-head">
       <span>{{ props.t('pages.title') }}</span>
-      <span class="lws-panel-count">{{ props.pages.length }}</span>
+      <span class="pck-panel-count">{{ props.pages.length }}</span>
     </header>
 
-    <div ref="listEl" class="lws-pagelist-scroll">
-      <p v-if="props.pages.length === 0" class="lws-panel-empty">
+    <div ref="listEl" class="pck-pagelist-scroll">
+      <p v-if="props.pages.length === 0" class="pck-panel-empty">
         {{ props.t('pages.empty') }}
       </p>
 
-      <ol v-else class="lws-thumb-list">
+      <ol v-else class="pck-thumb-list">
         <PageThumb
           v-for="(page, i) in props.pages"
           :key="page.id"
@@ -66,14 +66,14 @@ const reorder = usePageReorder({
         />
       </ol>
 
-      <div v-if="props.pages.length > 0" class="lws-pagelist-actions">
-        <button type="button" class="lws-dashed-btn" @click="emit('addFile')">
+      <div v-if="props.pages.length > 0" class="pck-pagelist-actions">
+        <button type="button" class="pck-dashed-btn" @click="emit('addFile')">
           {{ props.t('pages.addFile') }}
         </button>
-        <button type="button" class="lws-dashed-btn" @click="emit('addBlank')">
+        <button type="button" class="pck-dashed-btn" @click="emit('addBlank')">
           {{ props.t('pages.addBlank') }}
         </button>
-        <div class="lws-pagelist-rowbtns">
+        <div class="pck-pagelist-rowbtns">
           <button
             type="button"
             :disabled="props.currentIndex < 0"

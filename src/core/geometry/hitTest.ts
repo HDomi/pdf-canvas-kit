@@ -4,7 +4,7 @@
  * 회전한 객체를 다루기 위해, 포인터를 객체 중심 기준으로 역회전시킨 뒤 축 정렬 사각형과 비교한다.
  * 회전한 사각형과 점을 직접 비교하는 것보다 계산이 단순하고, 리사이즈 로직도 같은 변환을 쓴다.
  */
-import type { Pt, Rect, WorksheetObject } from '../model/types'
+import type { Pt, Rect, PDFCanvasObject } from '../model/types'
 
 /** rect의 중심점. */
 export function rectCenter(r: Rect): { x: Pt; y: Pt } {
@@ -30,7 +30,7 @@ export function rotatePoint(
 }
 
 /** 회전을 고려해 점이 객체 안에 있는지. */
-export function hitTestObject(point: { x: Pt; y: Pt }, obj: WorksheetObject): boolean {
+export function hitTestObject(point: { x: Pt; y: Pt }, obj: PDFCanvasObject): boolean {
   const r = obj.rect
   const local = obj.rotation ? rotatePoint(point, rectCenter(r), -obj.rotation) : point
   return local.x >= r.x && local.x <= r.x + r.w && local.y >= r.y && local.y <= r.y + r.h
@@ -43,8 +43,8 @@ export function hitTestObject(point: { x: Pt; y: Pt }, obj: WorksheetObject): bo
  */
 export function pickObject(
   point: { x: Pt; y: Pt },
-  objects: readonly WorksheetObject[],
-): WorksheetObject | null {
+  objects: readonly PDFCanvasObject[],
+): PDFCanvasObject | null {
   for (let i = objects.length - 1; i >= 0; i--) {
     const obj = objects[i]
     if (!obj || obj.locked) continue
@@ -66,7 +66,7 @@ export function rectsIntersect(a: Rect, b: Rect): boolean {
  */
 export function pickObjectsInRect(
   marquee: Rect,
-  objects: readonly WorksheetObject[],
-): WorksheetObject[] {
+  objects: readonly PDFCanvasObject[],
+): PDFCanvasObject[] {
   return objects.filter((o) => !o.locked && rectsIntersect(marquee, o.rect))
 }

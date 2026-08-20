@@ -61,17 +61,17 @@ function boxStyle(r: Rect, rotation = 0) {
 </script>
 
 <template>
-  <div class="lws-overlay" aria-hidden="true">
+  <div class="pck-overlay" aria-hidden="true">
     <div
       v-for="(b, i) in boxes"
       :key="i"
-      class="lws-select-box"
+      class="pck-select-box"
       :style="boxStyle(b.frame, b.rotation)"
     />
 
     <div
       v-if="previewBox && props.preview"
-      class="lws-marquee"
+      class="pck-marquee"
       :class="`is-${props.preview.kind}`"
       :style="boxStyle(previewBox)"
     />

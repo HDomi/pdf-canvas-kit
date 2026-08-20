@@ -19,7 +19,7 @@ import { onScopeDispose, ref, watch, type Ref } from 'vue'
 import { LAYOUT_DEFAULTS } from '../../core/config/defaults'
 
 /** 저장 키. 호스트 앱의 키와 충돌하지 않도록 접두사를 붙인다. */
-const STORAGE_KEY = 'lws.panelSizes.v1'
+const STORAGE_KEY = 'pck.panelSizes.v1'
 
 /** 패널이 쓸모 있으려면 최소 폭이 필요하고, 스테이지도 남아 있어야 한다. */
 const BOUNDS = {

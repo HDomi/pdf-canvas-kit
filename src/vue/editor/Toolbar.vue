@@ -37,12 +37,12 @@ function pick(id: ToolId) {
 </script>
 
 <template>
-  <div class="lws-toolbar" role="toolbar">
+  <div class="pck-toolbar" role="toolbar">
     <button
       v-for="tool in TOOLS"
       :key="tool.id"
       type="button"
-      class="lws-tool"
+      class="pck-tool"
       :class="{ 'is-active': props.activeTool === tool.id }"
       :disabled="!props.enabled"
       :aria-pressed="props.activeTool === tool.id"
@@ -51,17 +51,17 @@ function pick(id: ToolId) {
       {{ props.t(tool.key) }}
     </button>
 
-    <span class="lws-toolbar-divider" />
+    <span class="pck-toolbar-divider" />
 
     <button
       type="button"
-      class="lws-tool"
+      class="pck-tool"
       :disabled="!props.hasSelection"
       @click="emit('duplicate')"
     >
       {{ props.t('toolbar.duplicate') }}
     </button>
-    <button type="button" class="lws-tool" :disabled="!props.hasSelection" @click="emit('remove')">
+    <button type="button" class="pck-tool" :disabled="!props.hasSelection" @click="emit('remove')">
       {{ props.t('toolbar.delete') }}
     </button>
   </div>

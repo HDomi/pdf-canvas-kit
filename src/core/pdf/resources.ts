@@ -129,7 +129,7 @@ export function pdfResourceParams(): {
   if (!resources.cMapUrl && !warnedMissingCMap) {
     warnedMissingCMap = true
     console.warn(
-      '[worksheet] no cMapUrl configured: text in CJK (Korean/Japanese/Chinese) PDFs will not render. ' +
+      '[pdf-canvas-kit] no cMapUrl configured: text in CJK (Korean/Japanese/Chinese) PDFs will not render. ' +
         'Call configurePdfResources({ cMapUrl, standardFontDataUrl, wasmUrl }) — see ARCHITECTURE.md.',
     )
   }
@@ -161,7 +161,7 @@ export function ensurePdfWorker(): void {
 
   if (workerConfig.disableWorker) {
     console.warn(
-      '[worksheet] pdf.js worker disabled; rendering on the main thread will block the UI',
+      '[pdf-canvas-kit] pdf.js worker disabled; rendering on the main thread will block the UI',
     )
     // pdf.js는 빈 workerSrc를 "같은 프로세스에서 실행"으로 해석한다.
     GlobalWorkerOptions.workerSrc = ''
@@ -182,7 +182,7 @@ export function ensurePdfWorker(): void {
 export class PdfWorkerNotConfiguredError extends Error {
   constructor() {
     super(
-      '[worksheet] pdf.js worker URL is not configured. Call configurePdfResources({ workerSrc }) ' +
+      '[pdf-canvas-kit] pdf.js worker URL is not configured. Call configurePdfResources({ workerSrc }) ' +
         "before converting — e.g. import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url', " +
         "or serve the file and pass '/pdfjs/pdf.worker.mjs'. See ARCHITECTURE.md section 4.",
     )

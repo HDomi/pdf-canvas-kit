@@ -8,7 +8,7 @@
  */
 import { createId } from '../util/id'
 import { EDITOR_DEFAULTS } from '../config/defaults'
-import type { Rect, WorksheetObject, WorksheetObjectType } from '../model/types'
+import type { Rect, PDFCanvasObject, PDFCanvasObjectType } from '../model/types'
 import type { ToolId } from '../model/viewState'
 
 /** 객체를 만드는 도구들. `select` 와 `eraser` 는 제외된다. */
@@ -20,7 +20,7 @@ export function isCreationTool(tool: ToolId): tool is CreationToolId {
 }
 
 /** 도구가 만드는 객체 유형. */
-export function objectTypeForTool(tool: CreationToolId): WorksheetObjectType {
+export function objectTypeForTool(tool: CreationToolId): PDFCanvasObjectType {
   return tool
 }
 
@@ -30,7 +30,7 @@ export function objectTypeForTool(tool: CreationToolId): WorksheetObjectType {
  * 기본값은 기획이 요구하는 최소한만 채운다. 단답형은 정답이 비어 있어 검증에 걸리는데,
  * 이건 의도다. 교사가 인스펙터에서 정답을 넣기 전까지 내보내기가 막혀야 한다 (기획 6.3).
  */
-export function createObjectForTool(tool: CreationToolId, rect: Rect): WorksheetObject {
+export function createObjectForTool(tool: CreationToolId, rect: Rect): PDFCanvasObject {
   const base = { id: createId(), rect }
 
   switch (tool) {

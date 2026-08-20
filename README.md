@@ -1,11 +1,29 @@
-# @lumiteach/worksheet-system
+# pdf-canvas-kit
 
-Teacher의 오프라인 학습 자료(PDF/DOC/PPT)를 온라인 문제지로 만드는 **Vue 3 / Nuxt 3 컴포넌트 라이브러리**.
-업로드한 문서를 페이지별 **배경 이미지**로 깔고, 그 위에 **Answer Box·텍스트·도형을 레이어**로 올린다.
+PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **Answer Box·텍스트·도형을 레이어**로 올리는
+문제지 편집기. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고 Vue·React 래퍼가
+같은 컴포넌트를 제공한다.
+
+```tsx
+// React
+import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
+;<PDFCanvasEditor doc={doc} ports={ports} onChange={setDoc} />
+```
+
+```vue
+<!-- Vue / Nuxt -->
+<script setup>
+import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
+</script>
+<template><PDFCanvasEditor :doc="doc" :ports="ports" @change="onChange" /></template>
+```
 
 ```ts
-import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vue'
+// 프레임워크 없이 — 코어 + imperative facade
+import { createPDFCanvasEditor } from 'pdf-canvas-kit'
 ```
+
+런타임 의존성은 `pdfjs-dist` 하나다. `vue` · `react` 는 **optional peer** 라 쓰는 쪽만 설치한다.
 
 | 문서 | 내용 |
 | --- | --- |
@@ -17,8 +35,22 @@ import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vu
 
 ## 현재 상태
 
-프로토타입. **M0~M7 완료 + M8 부분 완료.** 편집 기능은 전부 동작하고, 저장 파이프라인도 돌지만
-저장 대상이 아직 콘솔이다(실서버 미연결).
+프로토타입, **미배포.** 기능은 M0~M7 완료 + M8 부분이고, 편집 기능은 전부 동작한다.
+
+> ⚠️ **프레임워크 무관 재구조화(R 트랙)가 진행 중이다** — PLAN 20장.
+> **지금 실제로 동작하는 것은 Vue 경로(`pdf-canvas-kit/vue`)뿐이다.**
+> 위의 React 예제와 `createPDFCanvasEditor` 는 R8 에서 만들어진다.
+> 진행 상황은 [PLAN 20.4 의 R 트랙 표](PLAN.md)에 있다.
+
+| 항목 | 상태 |
+| --- | --- |
+| Vue 래퍼 (`/vue`) | 동작 — 단 아직 SFC 구현이며 R9 에서 새 렌더러 위로 얇아진다 |
+| React 래퍼 (`/react`) | **미구현** (R8) |
+| vanilla facade (`createPDFCanvasEditor`) | **미구현** (R8) |
+| 반응성 프리미티브 (`src/dom/reactive.ts`) | 완료 (R2) — 검증 케이스 50건 |
+| npm 배포 | **미배포.** `npm pack` 검증은 R9 |
+
+아래 기능 표는 **Vue 경로 기준**이다.
 
 | | 상태 |
 | --- | --- |
@@ -50,7 +82,7 @@ import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vu
 | 자동저장 파이프라인 | 동작 — 저장 대상은 콘솔(`console.debug`). 실서버 미연결 |
 | 상단바 [저장] | ⚠️ **프로토타입** — localStorage에 문서+이미지 저장 (PLAN 18.5) |
 | 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트와 `ExportDialog` 는 그대로 |
-| `WorksheetViewer` | **미구현** (M10) |
+| `PDFCanvasViewer` | **미구현** (M10) |
 
 `/editor/` · `/spike/` · `/checks/` 를 확인할 수 있다.
 
@@ -77,9 +109,9 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 
 | 경로 | 내용 |
 | --- | --- |
-| [`/editor/`](http://localhost:3100/editor/) | `WorksheetEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
+| [`/editor/`](http://localhost:3100/editor/) | `PDFCanvasEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
 | [`/spike/`](http://localhost:3100/spike/) | PDF를 페이지 이미지로 변환. 페이지별 pt 크기·해상도·소요시간·폰트 진단 |
-| `/viewer/` | `WorksheetViewer` (미구현) |
+| `/viewer/` | `PDFCanvasViewer` (미구현) |
 | [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 검증 — **129 케이스 / 19 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
 
 `/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
@@ -152,8 +184,8 @@ pdf.js는 CMap·표준 폰트·wasm 디코더를 **런타임에 URL로** 가져�
 ```
 
 ```ts
-// plugins/worksheet.client.ts
-import { configurePdfResources } from '@lumiteach/worksheet-system'
+// plugins/pdf-canvas-kit.client.ts
+import { configurePdfResources } from 'pdf-canvas-kit'
 
 export default defineNuxtPlugin(() => {
   configurePdfResources({
@@ -177,7 +209,7 @@ pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR
 
 ```vue
 <ClientOnly>
-  <WorksheetEditor :doc="doc" :ports="ports" locale="ko" @change="onChange" />
+  <PDFCanvasEditor :doc="doc" :ports="ports" locale="ko" @change="onChange" />
 </ClientOnly>
 ```
 
@@ -186,9 +218,9 @@ pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR
 기본은 `fit-page` — 문서를 올리면 페이지 전체가 보인다. 폭 기준이 낫다면:
 
 ```vue
-<WorksheetEditor :doc="doc" initial-scale="fit-width" />
+<PDFCanvasEditor :doc="doc" initial-scale="fit-width" />
 <!-- 또는 고정 배율 -->
-<WorksheetEditor :doc="doc" :initial-scale="1" />
+<PDFCanvasEditor :doc="doc" :initial-scale="1" />
 ```
 
 ### 4. Vite 설정
@@ -196,7 +228,7 @@ pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
-  css: ['@lumiteach/worksheet-system/styles.css'],
+  css: ['pdf-canvas-kit/styles.css'],
   vite: { optimizeDeps: { include: ['pdfjs-dist'] } },
 })
 ```
@@ -214,9 +246,9 @@ import {
   createBlobAssetPort,
   formatPaperLabel,
   ConvertError,
-  type WorksheetPage,
+  type PDFCanvasPage,
   type PageBackground,
-} from '@lumiteach/worksheet-system'
+} from 'pdf-canvas-kit'
 
 configurePdfResources({
   workerSrc: '/pdfjs/pdf.worker.mjs',
@@ -232,7 +264,7 @@ try {
     onProgress: (p) => console.log(`${p.page}/${p.total}`),
   })
 
-  const pages: WorksheetPage[] = []
+  const pages: PDFCanvasPage[] = []
   for (const r of raster) {
     const id = crypto.randomUUID()
     const asset = await assets.persist(r.blob, { pageId: id, mime: r.blob.type })
@@ -275,7 +307,7 @@ try {
 ### 페이지 이미지 업로드
 
 ```ts
-import { createS3AssetPort } from '@lumiteach/worksheet-system'
+import { createS3AssetPort } from 'pdf-canvas-kit'
 
 const asset = createS3AssetPort({
   async getUploadUrl({ pageId, mime }) {
@@ -291,13 +323,13 @@ const asset = createS3AssetPort({
 업로드 경로가 완전히 다르면 함수만 넘겨도 된다.
 
 ```vue
-<WorksheetEditor :upload-file="myUploader" />
+<PDFCanvasEditor :upload-file="myUploader" />
 ```
 
 ### 문서 저장
 
 ```vue
-<WorksheetEditor :ports="{ asset, storage }" @save-state-change="badge = $event" />
+<PDFCanvasEditor :ports="{ asset, storage }" @save-state-change="badge = $event" />
 ```
 
 `ports.storage` 를 주면 자동저장이 켜진다 — 5초 디바운스, 최대 지연 30초, 실패 시 지수 백오프
@@ -311,7 +343,7 @@ const storage = {
   async save(doc) {
     // blob 배경을 업로드해 영속 URL로 바꾼다
     const ready = await promoteBackgrounds(doc, asset)
-    await fetch('/api/worksheets', { method: 'PUT', body: serializeDoc(ready) })
+    await fetch('/api/documents', { method: 'PUT', body: serializeDoc(ready) })
   },
 }
 ```
@@ -319,7 +351,7 @@ const storage = {
 **실서버가 없는 동안**은 콘솔 출력으로 대체할 수 있다. 파이프라인은 그대로 돌아간다.
 
 ```ts
-import { createConsoleStoragePort } from '@lumiteach/worksheet-system'
+import { createConsoleStoragePort } from 'pdf-canvas-kit'
 const storage = createConsoleStoragePort({ label: '[myapp]' })
 ```
 
@@ -332,14 +364,14 @@ const storage = createConsoleStoragePort({ label: '[myapp]' })
 
 | 키 | 내용 |
 | --- | --- |
-| `IMAGES` | `{ [assetId]: base64 data URL }` |
-| `SAVED_DOC` | 문서 JSON. 배경 `url` 은 `local:<assetId>` 참조 |
+| `pdf-canvas-kit.images` | `{ [assetId]: base64 data URL }` |
+| `pdf-canvas-kit.doc` | 문서 JSON. 배경 `url` 은 `pck-local:<assetId>` 참조 |
 
 ```ts
-import { savePrototype, loadPrototype } from '@lumiteach/worksheet-system'
+import { savePrototype, loadPrototype } from 'pdf-canvas-kit'
 
 await savePrototype(doc)
-const restored = loadPrototype() // local: 참조를 base64로 복원한 문서
+const restored = loadPrototype() // pck-pck-local: 참조를 base64로 복원한 문서
 ```
 
 **localStorage는 오리진당 5~10MB다. 약 9~18페이지에서 한계에 닿고**, 초과하면
@@ -360,13 +392,13 @@ const restored = loadPrototype() // local: 참조를 base64로 복원한 문서
 ```vue
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { ExportPayload } from '@lumiteach/worksheet-system'
+import type { ExportPayload } from 'pdf-canvas-kit'
 import {
-  WorksheetEditor,
+  PDFCanvasEditor,
   ExportDialog,
   type ExportSettings,
   type ExportResult,
-} from '@lumiteach/worksheet-system/vue'
+} from 'pdf-canvas-kit/vue'
 
 const payload = ref<ExportPayload | null>(null)
 const result = ref<ExportResult | null>(null)
@@ -383,7 +415,7 @@ async function onSubmit(settings: ExportSettings) {
 
 <template>
   <ClientOnly>
-    <WorksheetEditor :doc="doc" @request-export="payload = $event" />
+    <PDFCanvasEditor :doc="doc" @request-export="payload = $event" />
     <ExportDialog
       v-if="payload"
       :default-title="payload.doc.title"
@@ -407,16 +439,16 @@ async function onSubmit(settings: ExportSettings) {
 
 | 대상 | 위치 |
 | --- | --- |
-| 색·폰트·패널 기본 폭 | [src/styles/tokens.css](src/styles/tokens.css) — `--lws-*` CSS 변수 오버라이드 |
+| 색·폰트·패널 기본 폭 | [src/styles/tokens.css](src/styles/tokens.css) — `--pck-*` CSS 변수 오버라이드 |
 | 새 객체 기본 크기, 줌 단계, 스냅 | [src/core/config/defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
 | 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |
 | 페이지·Answer Box 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
 
 ```css
-.my-app .lws-editor {
-  --lws-topbar-bg: #101014;
-  --lws-accent: #3b82f6;
-  --lws-pagelist-width: 200px;
+.my-app .pck-editor {
+  --pck-topbar-bg: #101014;
+  --pck-accent: #3b82f6;
+  --pck-pagelist-width: 200px;
 }
 ```
 
@@ -424,28 +456,15 @@ async function onSubmit(settings: ExportSettings) {
 
 ---
 
-## submodule로 쓰기
+## 라이선스
 
-```bash
-git submodule add <repo> packages/worksheet-system
-```
+이 패키지는 **MIT** 다. `LICENSE` 참고.
 
-```ts
-// nuxt.config.ts
-alias: {
-  '@lumiteach/worksheet-system': '~/packages/worksheet-system/src/index.ts',
-}
-```
+### 의존성 라이선스 정책
 
-빌드된 `dist` 없이 호스트 Vite가 소스를 직접 컴파일한다.
-`vue` 는 반드시 호스트 인스턴스를 공유해야 한다(중복 번들 시 reactivity가 깨진다).
-
----
-
-## 라이선스 정책
-
-MIT · Apache-2.0 · BSD · ISC · CC0 만 허용한다.
-**GPL/LGPL/AGPL/SSPL/상업 라이선스는 금지** — 제품에 임베드 배포되므로 의무가 전염된다.
+MIT · Apache-2.0 · BSD · ISC · CC0 · 0BSD 만 허용한다.
+**GPL/LGPL/AGPL/SSPL/상업 라이선스는 금지** — 이 패키지가 남의 제품에 임베드 배포되므로
+copyleft 의무나 좌석 과금이 소비자에게 전염된다.
 
 PDF 계열에 특히 함정이 많다: `mupdf`·`iText` 는 AGPL, PSPDFKit·PDFTron 은 상업 라이선스다.
-`pdfjs-dist`(Apache-2.0)만 쓴다. `npm run license-check` 로 검사한다.
+런타임 의존성은 `pdfjs-dist`(Apache-2.0) **하나**뿐이다. `npm run license-check` 로 검사한다.

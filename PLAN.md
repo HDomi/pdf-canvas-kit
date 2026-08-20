@@ -1,8 +1,8 @@
-# LumiTeach Worksheet System — 구현 계획 (PLAN)
+# PDF Canvas Kit — 구현 계획 (PLAN)
 
 | 항목 | 내용 |
 | --- | --- |
-| 대상 기획 | Worksheet v0.19 (초안) |
+| 대상 기획 | PDFCanvas v0.19 (초안) |
 | 문서 버전 | plan-2.0 |
 | 최초 작성일 | 2026.08.19 |
 | 최종 수정일 | 2026.08.20 |
@@ -21,7 +21,7 @@ Teacher의 오프라인 학습 자료(PDF/DOC/PPT)를 **페이지별 배경 이�
 
 ```ts
 // Nuxt 3 / Vue 3
-import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vue'
+import { PDFCanvasEditor, PDFCanvasViewer } from 'pdf-canvas-kit/vue'
 ```
 
 라이브러리이므로 **서버 통신·인증·파일 변환·이미지 영속화를 직접 하지 않는다.** 모두 호스트 앱이 주입한다(9장 Ports).
@@ -47,14 +47,14 @@ import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vu
 | **D11** | **화면 좌표 → pt 변환은 `getBoundingClientRect()` 기준. 스크롤 오프셋을 좌표 수학에 넣지 않는다** | 스크롤·팬·부모 레이아웃 변화가 자동 반영된다. 스크롤 상태를 수식에 넣으면 반드시 어긋난다 | `scrollLeft`·`offsetTop` 누적 계산: 중첩 스크롤·sticky 헤더가 끼면 틀린다. 상세 5.4 |
 | D12 | **PDF는 업로드 시점에 전체 페이지를 이미지로 변환해 배열에 바인딩** (확정) | 편집 중 페이지 이동이 즉시 반응. pdfjs 인스턴스를 세션 내내 붙들지 않아 메모리 모델이 단순 | lazy 렌더: 첫 화면은 빠르나 페이지 전환마다 지연. 페이지 수가 많을 때만 부분 lazy(10.2) |
 | D13 | **이미지 영속화 형태는 `AssetPort`가 결정. 코어는 항상 표시용 URL만 다룬다** | base64 vs S3가 미정(→ Q11). 코어를 `url` 기준으로 짜두면 결정이 늦어도 막힘이 없다 | 코어가 base64를 직접 들면 S3 전환 시 모델·저장 경로를 다 고쳐야 함 |
-| D14 | **정답 데이터는 편집 문서에만 존재. Viewer는 `PublicWorksheetDoc`을 받는다** | 정답이 학생 번들에 실려 가면 안 됨. 타입 분리로 실수를 컴파일 타임에 막는다 | 한 타입 공유 + 런타임 필터: 유출 사고 여지 |
+| D14 | **정답 데이터는 편집 문서에만 존재. Viewer는 `PublicPDFCanvasDoc`을 받는다** | 정답이 학생 번들에 실려 가면 안 됨. 타입 분리로 실수를 컴파일 타임에 막는다 | 한 타입 공유 + 런타임 필터: 유출 사고 여지 |
 | D15 | **Editor는 데스크탑 전용, Viewer만 반응형** | 기획 3.1(Teacher Web PC / Student PC·태블릿·모바일) | — |
 | D16 | **Nuxt에서는 클라이언트 전용 컴포넌트** | pdfjs·pointer 이벤트·`URL.createObjectURL`이 브라우저 전용 | SSR 지원: 얻는 게 없다. `<ClientOnly>` 안내로 끝 |
 | D17 | **테스트 러너 미도입. TS strict + ESLint + 데모 검증 화면으로 대체** (확정) | 팀이 운용하지 않는 도구는 방치된다. 타입·린트로 정적 안전망을 두껍게 깔고, 데모에 눈으로 확인하는 검증 화면을 만든다 | **리스크 인정**: geometry·validation 회귀를 자동으로 못 잡는다. 완화책 17장 |
 | D18 | i18n은 키 기반 + 주입 가능한 `I18nPort`, 기본 ko/en 내장 | 기획 3.2 하드코딩 금지 | — |
 | **D19** | **UI 렌더 층을 vanilla DOM 으로 다시 쓴다. Vue·React 는 얇은 래퍼만** (2026.08.20 결정, D1 대체) | 소비처가 Nuxt 하나라는 D1 의 전제가 깨졌다 — 이제 Vue·React 양쪽에서 쓰여야 한다. UI 를 프레임워크 없이 한 벌만 두면 구현이 하나고 프레임워크 런타임이 0KB 다. 래퍼는 각 ~100줄이라 세 번째 프레임워크가 와도 같은 비용이다 | (a) **Vue 를 내부 엔진으로 쓰고 양쪽 래퍼**: 기존 4,771줄을 그대로 살리지만 React 사용자 번들에 Vue 런타임 ~40KB gzip 이 강제로 들어간다 (b) **React 층 별도 구현**: UI 가 영구히 두 벌이 되고 반드시 갈라진다. 상세 20장 |
 | **D20** | **미세 반응성(signal)으로 DOM 을 직접 바인딩한다. VDOM diff 를 만들지 않는다** | ① VDOM 을 직접 구현하는 것은 D1 이 "낭비"라고 판단한 그 작업이다 ② 바뀐 노드만 건드리므로 `contenteditable` 의 IME 조합·캐럿을 깨뜨릴 표면이 애초에 없다(6.5) ③ API 를 Vue 의 `ref`/`computed`/`watch` 와 같은 모양으로 두면 기존 컨트롤러 2,000줄이 기계적 이식이 된다 | (a) 상태 변경마다 현재 페이지 전체 재렌더: 객체 상한이 30개라 성능은 되지만 편집 중인 텍스트 노드를 매번 덮어써 한글 입력이 깨진다 (b) 외부 signal 라이브러리: 의존성 하나를 UI 근간에 놓게 되고 ~150줄로 끝나는 범위다 |
-| **D21** | **패키지명 `pdf-canvas-kit` · CSS 프리픽스 `pck-` · 공개 npm + MIT.** `lumiteach` 는 코드·문서·토큰에서 전부 제거한다 | 공개 배포하는 범용 라이브러리가 특정 사내 제품 이름을 달고 있으면 안 된다. 스코프를 떼면 `import 'pdf-canvas-kit'` 로 이름 자체가 설명이 된다 | 스코프 유지(`@lumiteach/…`): 이름 선점 걱정이 없지만 공개 패키지에 사내 조직명이 남는다 |
+| **D21** | **패키지명 `pdf-canvas-kit` · CSS 프리픽스 `pck-` · 공개 npm + MIT.** 사내 제품명(`lumiteach` · `worksheet-system` · `lws-`)은 코드·문서·토큰에서 전부 제거한다 | 공개 배포하는 범용 라이브러리가 특정 사내 제품 이름을 달고 있으면 안 된다. 스코프를 떼면 `import 'pdf-canvas-kit'` 로 이름 자체가 설명이 된다 | 스코프 유지(`@lumiteach/…`): 이름 선점 걱정이 없지만 공개 패키지에 사내 조직명이 남는다 |
 | **D22** | **submodule 겸용을 버리고 npm 배포 단일 경로로 간다** | 두 경로를 동시에 지원하려면 `exports` 맵과 `src/*` 직접 참조를 함께 유지해야 하고, 소비자가 어느 쪽을 쓰는지에 따라 빌드 문제가 갈린다. 배포본 하나만 검증하는 편이 확실하다 | submodule 유지: 호스트 Vite 가 소스를 직접 컴파일해 빌드 단계가 없다는 이점이 있었지만, 이제 소비처가 여러 프레임워크라 "호스트가 알아서 컴파일" 이 성립하지 않는다 |
 | **D23** | **리라이트 중 Vue SFC 층을 지우지 않고 병행 유지한다. 마지막 단계에서 삭제** | 자동 테스트가 없다(D17). 새 렌더러를 만드는 동안 **동작하는 기준 구현**이 같은 저장소에 살아 있어야 회귀를 눈으로 대조할 수 있다. `/editor/`(Vue)와 `/editor-dom/`(신규)을 나란히 띄워 비교한다 | 먼저 지우고 새로 짜기: 비교 대상이 사라져 "원래 이랬나?" 를 판단할 근거가 없어진다. D17 의 리스크가 그대로 터지는 경로다 |
 
@@ -114,7 +114,7 @@ import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vu
 | 이벤트 버스(mitt) → 자체 emitter | 20줄 |
 | ID 생성(nanoid/uuid) → `crypto.randomUUID()` + `getRandomValues` 폴백 | 브라우저 내장. insecure origin 대응은 `core/util/id.ts` 20줄로 끝난다(18.9) |
 | 유틸(lodash) → 표준 JS | 번들 절약 |
-| Tailwind → CSS 변수 + `lws-` 프리픽스 | 호스트 설정 충돌 방지 |
+| Tailwind → CSS 변수 + `pck-` 프리픽스 | 호스트 설정 충돌 방지 |
 
 `package.json` 에 `license-check` 스크립트를 두어 의존성 라이선스를 확인한다.
 
@@ -128,21 +128,21 @@ import { WorksheetEditor, WorksheetViewer } from '@lumiteach/worksheet-system/vu
 /** 1pt = 1/72 inch. 페이지 로컬 좌표의 단위 (D3) */
 export type Pt = number
 
-export interface WorksheetDoc {
+export interface PDFCanvasDoc {
   schemaVersion: 1
   id: string
   title: string
   titleTouched: boolean                       // 기획 4.2 자동 세팅 규칙용
-  pages: WorksheetPage[]
+  pages: PDFCanvasPage[]
   updatedAt: string                           // UTC ISO8601
 }
 
-export interface WorksheetPage {
+export interface PDFCanvasPage {
   id: string
   size: { width: Pt; height: Pt }             // D7: 페이지마다 다름
   background: PageBackground
   source?: { fileId: string; fileName: string; pageIndex: number }
-  objects: WorksheetObject[]                  // z-order = 배열 순서
+  objects: PDFCanvasObject[]                  // z-order = 배열 순서
 }
 ```
 
@@ -190,7 +190,7 @@ interface ObjectBase {
   locked?: boolean
 }
 
-export type WorksheetObject =
+export type PDFCanvasObject =
   | TextObject | ShapeObject | MaskObject
   | ShortAnswerBox | EssayAnswerBox | DropboxAnswerBox
 
@@ -238,7 +238,7 @@ export interface DropboxAnswerBox extends AnswerBoxBase {
 ### 4.3 학생용 문서(정답 제거)
 
 ```ts
-export type PublicWorksheetObject =
+export type PublicPDFCanvasObject =
   | TextObject | ShapeObject | MaskObject
   | Omit<ShortAnswerBox, 'answers'>
   | Omit<EssayAnswerBox, 'rubric'>
@@ -310,30 +310,30 @@ type DropboxRes = { type:'answer.dropbox'; choiceIds: string[] }
 
 ```html
 <!-- position: relative 래퍼 — 줌 컨트롤을 스크롤 밖에 고정하기 위해 필요 -->
-<div class="lws-stage-wrap">
+<div class="pck-stage-wrap">
 
   <!-- 스크롤 컨테이너 = 팬의 주체 (D9). 확대 상태에서만 스크롤이 생긴다 -->
-  <div class="lws-stage" tabindex="0">          <!-- overflow: auto -->
-    <div class="lws-stage-pad">                 <!-- 여백 + 가운데 정렬 -->
+  <div class="pck-stage" tabindex="0">          <!-- overflow: auto -->
+    <div class="pck-stage-pad">                 <!-- 여백 + 가운데 정렬 -->
 
       <!-- 페이지 프레임: 레이아웃이 차지하는 실제 크기. 문서에 단 하나 -->
-      <div class="lws-page-frame" data-page-id="p1" style="width:476px; height:674px">
+      <div class="pck-page-frame" data-page-id="p1" style="width:476px; height:674px">
         <!--                                            ↑ size × scale -->
 
         <!-- ★ 스케일 지점: 여기 단 한 곳 -->
-        <div class="lws-page" style="
+        <div class="pck-page" style="
             width:595px; height:842px;            /* page.size 를 px로 그대로 */
             transform: scale(0.8);
             transform-origin: top left">
 
-          <img class="lws-page-bg" src="blob:…">  <!-- width/height 100% -->
+          <img class="pck-page-bg" src="blob:…">  <!-- width/height 100% -->
 
           <!-- 객체: pt 값을 px에 그대로. 곱셈 없음 -->
-          <div class="lws-obj" style="left:120px; top:300px; width:160px; height:40px">…</div>
+          <div class="pck-obj" style="left:120px; top:300px; width:160px; height:40px">…</div>
         </div>
 
         <!-- ★ 오버레이: scale 밖, 프레임 기준 absolute (D5) -->
-        <svg class="lws-overlay" style="width:476px; height:674px">
+        <svg class="pck-overlay" style="width:476px; height:674px">
           <rect x="96" y="240" width="128" height="32"/>   <!-- 120*0.8, 300*0.8 … -->
           <!-- 핸들 9개: 어떤 배율에서도 8×8 CSS px -->
         </svg>
@@ -343,7 +343,7 @@ type DropboxRes = { type:'answer.dropbox'; choiceIds: string[] }
   </div>
 
   <!-- 우측 하단 고정. 스크롤 컨테이너 밖이라 스크롤에 딸려가지 않는다 -->
-  <div class="lws-stage-controls">  −  80%  +  </div>
+  <div class="pck-stage-controls">  −  80%  +  </div>
 </div>
 ```
 
@@ -353,11 +353,11 @@ type DropboxRes = { type:'answer.dropbox'; choiceIds: string[] }
 - 핸들만 스케일 밖이라 어떤 배율에서도 잡기 좋은 크기를 유지한다.
 - 페이지가 하나뿐이라 500페이지 문서에서도 DOM 크기가 일정하다(D8).
 
-`lws-page-frame` 을 따로 두는 이유: `transform` 은 레이아웃 크기에 영향을 주지 않으므로,
+`pck-page-frame` 을 따로 두는 이유: `transform` 은 레이아웃 크기에 영향을 주지 않으므로,
 스크롤 영역이 올바른 크기를 갖도록 부모가 `size × scale` 을 실제 크기로 잡아준다.
 **이걸 빼면 스크롤 범위가 항상 원래 크기(scale=1)로 계산돼 축소 시 여백이, 확대 시 잘림이 생긴다.**
 
-`lws-stage-pad` 는 페이지를 가운데 두고 여백을 준다. 축소 상태(페이지 < 스테이지)에서는
+`pck-stage-pad` 는 페이지를 가운데 두고 여백을 준다. 축소 상태(페이지 < 스테이지)에서는
 `display:flex; align-items:center; justify-content:center; min-height:100%` 로 중앙 정렬,
 확대 상태에서는 패딩만 남고 스크롤이 생긴다.
 
@@ -413,7 +413,7 @@ ESLint로 `objects/*.vue` 의 import를 막는다(14.3).
 ### 5.5 회전 처리 (도형·텍스트만)
 
 ```html
-<div class="lws-obj" style="left:120px; top:300px; width:160px; height:40px;
+<div class="pck-obj" style="left:120px; top:300px; width:160px; height:40px;
      transform: rotate(15deg); transform-origin: center">
 ```
 
@@ -440,14 +440,14 @@ ESLint로 `objects/*.vue` 의 import를 막는다(14.3).
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────┐
-│ TopBar   [←] [제목 없는 Worksheet] (저장됨)      [↶][↷] │ [ 내보내기 ]    │  56px 고정
+│ TopBar   [←] [제목 없는 PDFCanvas] (저장됨)      [↶][↷] │ [ 내보내기 ]    │  56px 고정
 ├──────────┬────────────────────────────────────────────────┬──────────────┤
 │ PAGES  3 │  ┌ Toolbar ────────────────────────────────┐   │ INSPECTOR    │
 │          │  │ T 텍스트 │ 단답형 │ 서술형 │ 드롭박스 │  │   │              │
 │ ┌──────┐ │  │ 도형 │ 지우개 ‖ 복제 │ 삭제           │   │  선택된 요소  │
 │ │  1   │◀│  └─────────────────────────────────────────┘   │  없음        │
 │ └──────┘ │  1 / 3 · A4 세로                               │  (empty)     │
-│ ┌──────┐ │  ┌───────── lws-stage (overflow:auto) ──────┐  │              │
+│ ┌──────┐ │  ┌───────── pck-stage (overflow:auto) ──────┐  │              │
 │ │  2   │ │  │        ┌─────────────────┐               │  │              │
 │ └──────┘ │  │        │  현재 페이지    │  ← 1개만      │  │              │
 │ ┌──────┐ │  │        │   (page frame)  │               │  │              │
@@ -469,7 +469,7 @@ ESLint로 `objects/*.vue` 의 import를 막는다(14.3).
 | 줌 컨트롤 | `StageControls.vue` | 스테이지 래퍼의 우측 하단 `absolute; right:16px; bottom:16px` |
 | 우측 | `Inspector.vue` | 폭 280px |
 
-**줌 컨트롤은 `lws-stage` 의 자식이 아니라 `lws-stage-wrap` 의 자식이다**(5.3).
+**줌 컨트롤은 `pck-stage` 의 자식이 아니라 `pck-stage-wrap` 의 자식이다**(5.3).
 스크롤 컨테이너 안에 두면 스크롤에 딸려가 사라진다.
 
 ### 6.2 페이지 전환 (single page mode — D8)
@@ -502,7 +502,7 @@ DOM에 페이지가 1개라 500페이지 문서에서도 렌더 비용이 페이
 
 ### 6.3 팬 (위치 이동) — 네이티브 스크롤 (D9)
 
-`lws-stage` 가 `overflow: auto` 스크롤 컨테이너다. 팬은 `scrollLeft` / `scrollTop` 조작.
+`pck-stage` 가 `overflow: auto` 스크롤 컨테이너다. 팬은 `scrollLeft` / `scrollTop` 조작.
 
 **단일 페이지 모드에서 스크롤은 "페이지가 스테이지보다 클 때"만 생긴다** = 확대 상태.
 `fit-width` 기본값에서는 스크롤이 없고, 사용자가 확대한 뒤부터 팬이 의미를 갖는다.
@@ -563,12 +563,12 @@ async function zoomTo(next: number, anchorClient: { x: number; y: number }) {
 }
 ```
 
-**순서가 중요하다.** `scale` 을 바꾸면 `lws-page-frame` 크기가 변해 스크롤 범위가 바뀐다.
+**순서가 중요하다.** `scale` 을 바꾸면 `pck-page-frame` 크기가 변해 스크롤 범위가 바뀐다.
 스크롤 보정은 **레이아웃이 반영된 뒤**에 해야 한다(`await nextTick()` 또는 `requestAnimationFrame`).
 보정을 먼저 하면 옛 스크롤 최대값에 걸려 잘린다.
 
 **축소 상태 예외**: 페이지가 스테이지보다 작으면 스크롤 범위가 0이라 앵커 보정이 무의미하다.
-이때는 `lws-stage-pad` 의 중앙 정렬이 위치를 결정하므로 보정을 건너뛴다.
+이때는 `pck-stage-pad` 의 중앙 정렬이 위치를 결정하므로 보정을 건너뛴다.
 
 ### 6.5 맞춤 모드 (fitMode)
 
@@ -586,7 +586,7 @@ type FitMode = 'width' | 'page' | 'none'
 폭 맞춤은 A4 세로에서 아래가 잘려 첫 화면에 페이지 하단이 안 보인다.
 
 `padding` 은 양쪽에 각각 적용되므로 계산에서 `padding × 2` 를 뺀다.
-이 값은 `EDITOR_DEFAULTS.stagePadding` 과 `--lws-stage-padding` **두 곳에 있으며 같아야 한다** —
+이 값은 `EDITOR_DEFAULTS.stagePadding` 과 `--pck-stage-padding` **두 곳에 있으며 같아야 한다** —
 어긋나면 "페이지 맞춤"이 페이지를 자르거나 여백을 남긴다.
 
 - `width`·`page` 모드에서는 `ResizeObserver` 로 스테이지 크기 변화에 맞춰 scale을 재계산한다.
@@ -609,7 +609,7 @@ export interface EditorViewState {
 }
 ```
 
-`WorksheetDoc` 과 별도 store. **자동저장 대상이 아니다.** 배율을 바꿀 때마다 서버 저장이 도는 걸 막는다.
+`PDFCanvasDoc` 과 별도 store. **자동저장 대상이 아니다.** 배율을 바꿀 때마다 서버 저장이 도는 걸 막는다.
 **히스토리 대상도 아니다** — undo가 배율·페이지를 되돌리면 혼란스럽다(12장).
 
 `currentPageIndex` 를 id가 아니라 인덱스로 두는 이유: 페이지 삭제·순서 변경 시
@@ -643,7 +643,7 @@ Editor와 다르다.
 ## 7. 디렉토리 구조
 
 ```
-lumiteach-worksheet-system/
+pdf-canvas-kit/
 ├─ PLAN.md
 ├─ package.json                    # exports: '.', './vue', './styles.css'
 ├─ tsconfig.json  tsconfig.build.json
@@ -671,8 +671,8 @@ lumiteach-worksheet-system/
 │  │  └─ i18n/          ko.ts  en.ts  createI18n.ts
 │  ├─ vue/                         # ★ 모든 UI
 │  │  ├─ index.ts
-│  │  ├─ WorksheetEditor.vue       # 6.1 레이아웃
-│  │  ├─ WorksheetViewer.vue       # 골격
+│  │  ├─ PDFCanvasEditor.vue       # 6.1 레이아웃
+│  │  ├─ PDFCanvasViewer.vue       # 골격
 │  │  ├─ composables/
 │  │  │   useEngine.ts             # core store → Vue reactive 브릿지
 │  │  │   useStage.ts              # scale·fitMode·스크롤·ResizeObserver (6.3~6.4)
@@ -695,7 +695,7 @@ lumiteach-worksheet-system/
 │  │  │              TextPanel,ShapePanel,PointsField,EmptyPanel}.vue
 │  │  │   dialogs/{UploadDialog,ExportDialog,ConfirmDialog}.vue
 │  │  └─ viewer/  ViewerPage.vue  ViewerAnswerBox.vue
-│  └─ styles/     tokens.css  editor.css  viewer.css     ★ 모든 --lws-* CSS 변수
+│  └─ styles/     tokens.css  editor.css  viewer.css     ★ 모든 --pck-* CSS 변수
 ├─ demo/
 │  ├─ index.html                   # :3100 랜딩
 │  ├─ spike/   index.html  main.ts   # M1: PDF → 이미지 배열 확인
@@ -716,7 +716,7 @@ lumiteach-worksheet-system/
 ```vue
 <template>
   <ClientOnly>
-    <WorksheetEditor
+    <PDFCanvasEditor
       :doc="doc"
       :ports="{ asset, converter, storage, i18n }"
       locale="ko"
@@ -728,14 +728,14 @@ lumiteach-worksheet-system/
       @back="goBack"
     >
       <template #top-bar="{ ctx }">…</template>
-    </WorksheetEditor>
+    </PDFCanvasEditor>
   </ClientOnly>
 </template>
 ```
 
 | Prop | 타입 | 비고 |
 | --- | --- | --- |
-| `doc` | `WorksheetDoc \| null` | null이면 빈 상태(문서 불러오기) |
+| `doc` | `PDFCanvasDoc \| null` | null이면 빈 상태(문서 불러오기) |
 | `ports` | `Partial<Ports>` | 미주입 시 내장 기본값(blob asset · pdfjs converter · noop storage) |
 | `locale` | `'ko' \| 'en'` | — |
 | `readOnly` | `boolean` | — |
@@ -753,20 +753,20 @@ lumiteach-worksheet-system/
 ### 8.1 코어 직접 사용 (프레임워크 무관)
 
 ```ts
-const engine = createWorksheetEngine({ doc, ports })
+const engine = createPDFCanvasEngine({ doc, ports })
 await engine.commands.addPagesFromFile(file)
 engine.validateForExport()   // → { ok, issues }
 engine.subscribe(state => …)
 ```
 
-`WorksheetEditor.vue` 는 이 engine을 만들고 `useEngine` 으로 Vue reactive에 브릿지한다.
+`PDFCanvasEditor.vue` 는 이 engine을 만들고 `useEngine` 으로 Vue reactive에 브릿지한다.
 **스테이지 상태(scale·스크롤)는 engine이 아니라 Vue 층이 가진다** — DOM에 밀착된 값이므로.
 
 ### 8.2 Nuxt 사용 주의 (D16)
-- `<ClientOnly>` 로 감싸거나 `components/WorksheetEditor.client.vue` 로 래핑
+- `<ClientOnly>` 로 감싸거나 `components/PDFCanvasEditor.client.vue` 로 래핑
 - `nuxt.config.ts`: `vite: { optimizeDeps: { include: ['pdfjs-dist'] } }`
 - pdfjs worker는 `configurePdfWorker({ workerSrc })` 로 명시 주입 가능(10.4)
-- CSS: `css: ['@lumiteach/worksheet-system/styles.css']`
+- CSS: `css: ['pdf-canvas-kit/styles.css']`
 - Nuxt 모듈(`/nuxt` 서브엔트리) 제공은 **Q12로 보류**
 
 ---
@@ -787,7 +787,7 @@ interface ConverterPort {                    // doc/docx/ppt/pptx → 페이지 
   ): Promise<RasterPage[]>                   // { blob, size(pt), naturalWidth, naturalHeight, renderScale }
 }
 
-interface StoragePort { save(doc): Promise<void>; load?(id): Promise<WorksheetDoc> }
+interface StoragePort { save(doc): Promise<void>; load?(id): Promise<PDFCanvasDoc> }
 interface I18nPort    { t(key: string, vars?: Record<string, unknown>): string }
 ```
 
@@ -821,10 +821,10 @@ File
      ├ canvas.convertToBlob({ type:'image/webp', quality:.85 })   ← 폴백 image/png
      ├ page.cleanup()
      └ assetPort.persist(blob) 또는 URL.createObjectURL(blob)
-        → WorksheetPage { id, size, background:{ kind:'image', url, origin,
+        → PDFCanvasPage { id, size, background:{ kind:'image', url, origin,
                           naturalWidth, naturalHeight, renderScale } }
  → pdf.destroy()
- → WorksheetPage[]  (문서에 append)
+ → PDFCanvasPage[]  (문서에 append)
 ```
 
 - **한 번에 한 페이지만** 렌더하고 캔버스를 재사용한다(동시 렌더는 메모리 스파이크).
@@ -1057,8 +1057,8 @@ idle → marquee-select  → idle
 | 경로 | 내용 |
 | --- | --- |
 | `/spike/` | **M1**: PDF 드롭 → 페이지 이미지 배열 렌더 + 페이지별 pt 크기·소요시간 표시 |
-| `/editor/` | `WorksheetEditor` 전체 |
-| `/viewer/` | `WorksheetViewer` + 반응형(모바일 폭 시뮬) |
+| `/editor/` | `PDFCanvasEditor` 전체 |
+| `/viewer/` | `PDFCanvasViewer` + 반응형(모바일 폭 시뮬) |
 | `/checks/` | 순수 함수 검증 화면 — 72 케이스, 불일치 행 강조 (17장) |
 
 데모는 `demo/mocks` 의 blob AssetPort · pdfjs 컨버터 · noop Storage를 주입한다.
@@ -1119,7 +1119,7 @@ CI는 `typecheck` + `lint` + `build` 만 돈다(테스트 러너 없음).
 ### 14.5 패키징
 ```json
 {
-  "name": "@lumiteach/worksheet-system",
+  "name": "pdf-canvas-kit",
   "type": "module",
   "sideEffects": ["**/*.css"],
   "exports": {
@@ -1134,7 +1134,7 @@ CI는 `typecheck` + `lint` + `build` 만 돈다(테스트 러너 없음).
 }
 ```
 - **submodule 사용**: `./src/*` export + `tsconfig paths` / `vite resolve.alias` 안내를 README에.
-- **CSS**: 클래스 프리픽스 `lws-`, 색·간격은 CSS 변수(`--lws-*`).
+- **CSS**: 클래스 프리픽스 `pck-`, 색·간격은 CSS 변수(`--pck-*`).
 - **`vue` 는 external** — 호스트 Vue 인스턴스를 공유해야 한다(중복 번들 시 provide/inject·reactivity 깨짐).
 
 ---
@@ -1336,7 +1336,7 @@ Vite 8 + Vue 3.5 + TS strict(14.2), ESLint 9 flat config(14.3)/Prettier, 라이�
 (D21·D22) 검증 대상이 "Nuxt 앱 하나" 가 아니라 "React 앱 + Vue 앱" 이 된다. 20.4 의 R9 를 따른다.
 
 ### M10 — Viewer 골격
-`PublicWorksheetDoc` 읽기 전용 렌더, 페이지별 fit-to-width(6.8),
+`PublicPDFCanvasDoc` 읽기 전용 렌더, 페이지별 fit-to-width(6.8),
 Answer Box를 실제 입력 요소로(단답 input / 서술 textarea / 드롭박스 select, placeholder "선택"),
 `AttemptDraft` 로컬 상태 + `response-change`/`submit` 이벤트.
 - **DoD**: 375px 폭에서 가로 스크롤 없이 읽히고 모든 입력 조작 가능. 정답 데이터가 뷰어 DOM에 부재
@@ -1463,7 +1463,7 @@ ports: {
 }
 
 // (b) 업로드 경로가 완전히 다른 제품 — 함수만 넘긴다
-<WorksheetEditor :upload-file="myUploader" />
+<PDFCanvasEditor :upload-file="myUploader" />
 ```
 
 **현재는 콘솔 출력으로 대체한다.** `createConsoleStoragePort()` 를 `ports.storage` 로 주면
@@ -1478,7 +1478,7 @@ blob 배경이 남아 있으면 경고를 함께 찍는다. 실제 저장 전에
 ### 18.3 패널 폭 리사이즈 (Q17)
 
 `src/vue/composables/usePanelSizes.ts`. 고정 폭(240 / 280)으로 시작하고, 패널 사이의 핸들을
-드래그하면 조정된다. **한 번이라도 조정하면** `localStorage['lws.panelSizes.v1']` 에 남아
+드래그하면 조정된다. **한 번이라도 조정하면** `localStorage['pck.panelSizes.v1']` 에 남아
 같은 브라우저에서 복원된다. 핸들 더블클릭으로 기본값 복귀.
 
 | 결정 | 이유 |
@@ -1532,7 +1532,7 @@ export function createId(): string {
 #### 또 하나 — localStorage 오리진이 분리된다
 
 `http://localhost:3100` 과 `http://10.1.0.112:3100` 은 **다른 오리진**이다.
-프로토타입 저장(`SAVED_DOC`·`IMAGES`)과 패널 폭(`lws.panelSizes.v1`)이 주소마다 따로 쌓인다.
+프로토타입 저장(`pdf-canvas-kit.doc`·`pdf-canvas-kit.images`)과 패널 폭(`pck.panelSizes.v1`)이 주소마다 따로 쌓인다.
 
 localhost에서 저장한 문서가 LAN 주소에서 안 보이는 것은 버그가 아니다. 실서버가 붙으면
 사라지는 문제이므로(문서가 서버에 있게 된다) 별도 대응은 하지 않는다.
@@ -1551,10 +1551,10 @@ localhost에서 저장한 문서가 LAN 주소에서 안 보이는 것은 버그
 
 #### "미지정" 을 유지하는 이유
 
-`BoxStyle` 의 모든 필드가 optional이다. 값을 주지 않으면 CSS 토큰(`--lws-answerbox-bg` 등)의
+`BoxStyle` 의 모든 필드가 optional이다. 값을 주지 않으면 CSS 토큰(`--pck-answerbox-bg` 등)의
 기본값이 그대로 적용된다.
 
-객체마다 색을 하드코딩해 채워 두면 **호스트 앱이 `--lws-*` 로 테마를 바꿀 수 없다**
+객체마다 색을 하드코딩해 채워 두면 **호스트 앱이 `--pck-*` 로 테마를 바꿀 수 없다**
 (ARCHITECTURE §3). 그래서 세 가지 상태를 구분한다.
 
 | 상태 | 뜻 | 렌더 |
@@ -1663,10 +1663,10 @@ lesson 의 도형 추가·편집은 **우리와 같은 접근**이다.
 
 #### 도형 채움 색 선택기 폭이 무너졌다
 
-`.lws-input` 의 `width: 100%` 를 색 선택기가 그대로 물려받아, flex 행(`.lws-field--inline`)
+`.pck-input` 의 `width: 100%` 를 색 선택기가 그대로 물려받아, flex 행(`.pck-field--inline`)
 안에서 폭이 0에 가깝게 줄어 세로 막대처럼 보였다.
 
-→ `.lws-input--color` 에 `width: 48px; flex: none` 을 못 박고, `.lws-field--inline` 을
+→ `.pck-input--color` 에 `width: 48px; flex: none` 을 못 박고, `.pck-field--inline` 을
 `grid-auto-flow: column` 에서 `display: flex` 로 바꿨다. 그리드 셀 안(테두리 색)에서는
 셀 폭을 채우도록 예외를 뒀다.
 
@@ -1696,7 +1696,7 @@ lesson 의 도형 추가·편집은 **우리와 같은 접근**이다.
 같은 저장소의 `frontend-service` 가 `fabric@6` 을 쓴다. 확인한 결과 **화이트보드(자유 필기)**
 용도이고(`src/components/modules/whiteboard/`), 폼 요소가 필요 없는 성격이다.
 
-Worksheet에 도입하려면 D2(DOM 렌더)를 뒤집어야 한다. Answer Box를 canvas에 그리면
+PDFCanvas에 도입하려면 D2(DOM 렌더)를 뒤집어야 한다. Answer Box를 canvas에 그리면
 **한글 IME·접근성·실제 `input`/`select` 를 모두 잃고**, 학생 뷰어의 폼 요소를 별도로 구현해야
 하며 편집기와 뷰어의 렌더 경로가 갈라진다.
 
@@ -1716,24 +1716,24 @@ Worksheet에 도입하려면 D2(DOM 렌더)를 뒤집어야 한다. Answer Box�
 **남아 있는 것** — `guardExport` 검증 게이트, `ExportDialog` 컴포넌트, `request-export` 이벤트,
 `requestExport()` expose. 호스트가 자기 UI에서 내보내기를 트리거하면 그대로 동작한다.
 
-**되돌리는 방법** — `TopBar.vue` 의 버튼을 `emit('export')` 로, `WorksheetEditor.vue` 의
+**되돌리는 방법** — `TopBar.vue` 의 버튼을 `emit('export')` 로, `PDFCanvasEditor.vue` 의
 `@manual-save` 를 `@export="onRequestExport"` 로 바꾼다.
 
 #### 팝업이 투명하게 보였던 원인
 
-`--lws-*` 토큰이 `.lws-editor` 스코프에만 정의돼 있었다. 팝업을 편집기 밖(앱 루트, teleport 대상)에
-렌더하면 토큰을 상속받지 못해 `background: var(--lws-surface)` 가 빈 값이 되고 배경이 투명해진다.
-→ `tokens.css` 의 셀렉터에 `.lws-modal-scrim` 을 추가해 해결했다.
+`--pck-*` 토큰이 `.pck-editor` 스코프에만 정의돼 있었다. 팝업을 편집기 밖(앱 루트, teleport 대상)에
+렌더하면 토큰을 상속받지 못해 `background: var(--pck-surface)` 가 빈 값이 되고 배경이 투명해진다.
+→ `tokens.css` 의 셀렉터에 `.pck-modal-scrim` 을 추가해 해결했다.
 
 #### `src/prototype/` — localStorage 저장
 
 | 키 | 내용 |
 | --- | --- |
-| `IMAGES` | `{ [assetId]: base64 data URL }` |
-| `SAVED_DOC` | 문서 JSON. 배경 `url` 은 `local:<assetId>` 참조 |
+| `pdf-canvas-kit.images` | `{ [assetId]: base64 data URL }` |
+| `pdf-canvas-kit.doc` | 문서 JSON. 배경 `url` 은 `pck-local:<assetId>` 참조 |
 
 이미지와 문서를 나눈 이유: 한 덩어리면 문서 구조를 확인할 때마다 수백 KB의 base64를 헤집어야 한다.
-나눠 두면 `SAVED_DOC` 만 읽어 구조를 볼 수 있고, 실제 서버가 이미지를 별도 스토리지에 두는 형태와도
+나눠 두면 문서 키만 읽어 구조를 볼 수 있고, 실제 서버가 이미지를 별도 스토리지에 두는 형태와도
 같은 모양이 된다. 뷰어(M10)가 두 키를 읽어 `local:` 참조를 base64로 되돌려 조합한다.
 
 **⚠️ localStorage 용량이 실질적 제약이다.** 오리진당 5~10MB인데 1654px JPEG 한 페이지가 약 400KB이고
@@ -1744,7 +1744,7 @@ base64는 +33% 팽창하므로 **약 9~18페이지에서 한계에 닿는다.** 
 **삭제 절차** (`src/prototype/README.md` 에도 있다):
 1. `src/prototype/` 디렉토리 삭제
 2. `src/index.ts` 의 "프로토타입 (임시)" 블록 삭제
-3. `WorksheetEditor.vue` 의 `onManualSave` 블록과 import 삭제, 상단바 버튼 복원
+3. `PDFCanvasEditor.vue` 의 `onManualSave` 블록과 import 삭제, 상단바 버튼 복원
 
 #### 자동저장 로그
 
@@ -1819,7 +1819,7 @@ import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
 | --- | --- | --- |
 | `src/core/**` | 4,957 | **그대로.** Vue 를 import 하지 않으므로 이미 프레임워크 무관이다(2.1) |
 | `src/vue/composables/**` | 1,015 | **기계적 이식.** `ref`/`computed`/`watch` 만 쓰는 컨트롤러 로직이다 → `src/controller/` |
-| `WorksheetEditor.vue` 의 `<script>` | ~900 | **기계적 이식.** 같은 이유. 템플릿과 분리해 컨트롤러로 |
+| `PDFCanvasEditor.vue` 의 `<script>` | ~900 | **기계적 이식.** 같은 이유. 템플릿과 분리해 컨트롤러로 |
 | SFC 34개의 `<template>` | ~2,700 | **재작성.** 여기가 실제 리라이트 대상이다 |
 | `src/styles/**` | — | 그대로. 프리픽스만 `lws-` → `pck-` (D21) |
 
@@ -1888,8 +1888,8 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 
 | # | 단계 | DoD |
 | --- | --- | --- |
-| **R0** ✅ | 안전장치 · 베이스라인 | `.gitignore` · `.prettierrc` 추가 → `npm run lint` 통과 ✅ (216개 파일 불일치 → 0). 리라이트 전 전체 코드 커밋 🟡 대기 |
-| **R1** | 리네임 · 패키징 골격 | `pdf-canvas-kit` · `pck-` · MIT · `exports` 맵 3엔트리. `grep -ri lumiteach` 가 **0건** |
+| **R0** ✅ | 안전장치 · 베이스라인 | `.gitignore` · `.prettierrc` 추가 → `npm run lint` 통과 ✅ (216개 파일 불일치 → 0). 리라이트 전 전체 코드 커밋 ✅ (`c18f552`) |
+| **R1** ✅ | 리네임 · 패키징 골격 | `pdf-canvas-kit` · `pck-` · MIT · `exports` 맵 3엔트리 ✅. **코드·설정에 옛 이름 0건** ✅. 네 게이트 + 데모 빌드 통과 ✅. 상세 20.6 |
 | **R2** 🟡 | 반응성 · DOM substrate | `reactive.ts` ✅ (`/checks/` 반응성 50 케이스 추가 → **129 / 129 통과**, `npm run checks` 로 헤드리스 실행). `h.ts` 남음 |
 | **R3** | 컨트롤러 이식 | composables + 루트 스크립트 → `src/controller/`. ESLint 경계 규칙에 `controller` 추가 |
 | **R4** | 객체 · 페이지 렌더 | 객체 7종 + `PageFrame` + 배경 + 오버레이 + 핸들. `/editor-dom/` 에서 렌더·선택 확인 |
@@ -1910,3 +1910,43 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | 한글 IME 회귀 | `contenteditable` 조합 처리는 6.5 의 두 규칙에 걸려 있고, 새 렌더러에서 다시 지켜야 한다 | D20 의 미세 반응성으로 편집 중 노드를 아예 건드리지 않게 만든다. 축소·확대 배율 양쪽에서 손으로 확인 |
 | React StrictMode | 개발 모드에서 effect 가 두 번 돈다. `destroy()` 가 멱등이 아니면 리스너가 두 벌 남는다 | facade 의 `destroy()` 를 멱등으로 만들고 데모를 StrictMode 로 띄워 확인 |
 | prop 동기화 비용 | React 는 렌더마다 `update()` 를 부른다 | `update()` 가 값이 실제로 바뀐 signal 만 쓰도록 얕은 비교를 넣는다 |
+
+### 20.6 R1 리네임 대응표 (2026.08.20 완료)
+
+공개 배포이므로 사내 제품명(`lumiteach` · `worksheet-system` · `lws-`)을 전부 걷어냈다.
+
+```bash
+# 코드·설정에서 0건. 아래 대응표와 D21 은 결정 이력이므로 옛 이름이 남아 있다 (CLAUDE.md §2.2)
+grep -rniE "lumiteach|worksheet-system|\blws-" src demo scripts *.json *.ts *.js
+```
+
+| 종류 | 이전 | 이후 |
+| --- | --- | --- |
+| 패키지 | `@lumiteach/worksheet-system` | `pdf-canvas-kit` |
+| 라이선스 | `UNLICENSED` · `private: true` | **MIT** · `publishConfig.access: public` |
+| 컴포넌트 | `WorksheetEditor` · `WorksheetViewer` | `PDFCanvasEditor` · `PDFCanvasViewer` |
+| 타입 (13종) | `Worksheet*` · `PublicWorksheet*` | `PDFCanvas*` · `PublicPDFCanvas*` |
+| 팩토리 | `createWorksheetDoc` · `createWorksheetEngine` | `createPDFCanvasDoc` · `createPDFCanvasEngine` |
+| 상수 | `LIMITS.pagesPerWorksheet` · `MAX_WORKSHEET_PAGES` | `LIMITS.pagesPerDoc` · `MAX_DOC_PAGES` |
+| CSS 클래스 | `lws-*` (156종) | `pck-*` |
+| CSS 토큰 | `--lws-*` (50종) | `--pck-*` |
+| 로그 라벨 | `[worksheet]` | `[pdf-canvas-kit]` |
+| localStorage | `lws.panelSizes.v1` | `pck.panelSizes.v1` |
+
+**`PDFCanvas` 로 통일한 이유**: 컴포넌트 이름이 `PDFCanvasEditor` 이므로 타입도 같은 표기여야
+한다. `PDF` 를 대문자로 두는 것은 `pdfjs-dist` 자신의 관례(`PDFDocumentProxy`·`PDFPageProxy`)와도
+맞는다. `Canvas*` 로 줄이는 안은 버렸다 — 이 라이브러리는 의도적으로 `<canvas>` 를 쓰지 않으므로(D2)
+이름이 거짓말이 된다.
+
+**도메인 타입은 바꾸지 않았다.** `AnswerBox` · `ShortAnswerBox` · `BoxStyle` · `scoreAttempt` ·
+`toPublicDoc` 은 문제지 도메인의 개념이고 패키지 이름과 무관하다.
+
+#### 함께 고친 것 — 공개 배포에서 드러난 문제 2건
+
+| 문제 | 왜 공개 배포에서 문제인가 | 조치 |
+| --- | --- | --- |
+| 프로토타입이 localStorage 키 `IMAGES` · `SAVED_DOC` 를 씀 | localStorage 는 오리진을 호스트 앱과 **공유한다.** 이런 흔한 이름은 호스트의 키를 덮어쓴다 | `pdf-canvas-kit.images` · `pdf-canvas-kit.doc` 로 네임스페이스. 배경 참조 접두사도 `local:` → `pck-local:` |
+| `npm run dev:local` 이 실행되지 않았음 | `vite --host false` 가 `false` 를 **호스트명으로** 해석해 `ENOTFOUND false` 로 죽는다. README 가 공용 Wi-Fi 에서 쓰라고 안내하는 명령이다(18.9) | `--host 127.0.0.1 --strictPort` 로 교체. 실행 확인 |
+
+**리네임과 무관하게 확인한 것**: `pck-answer--short` · `pck-answer--dropbox` 는 CSS 규칙이 없는
+훅 클래스다. `git show HEAD:` 로 리네임 전에도 같았음을 확인했다 — 회귀가 아니다.

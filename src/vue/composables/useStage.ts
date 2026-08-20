@@ -173,7 +173,7 @@ export function useStage(options: UseStageOptions): UseStage {
       await nextTick()
 
       // 페이지 콘텐트 좌표. pad가 페이지를 밀어낸 만큼을 더해야 한다.
-      const frame = el.querySelector<HTMLElement>('.lws-page-frame')
+      const frame = el.querySelector<HTMLElement>('.pck-page-frame')
       if (!frame) return
       const stageRect = el.getBoundingClientRect()
       const frameRect = frame.getBoundingClientRect()

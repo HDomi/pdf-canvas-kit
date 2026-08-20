@@ -26,10 +26,10 @@ const incomplete = computed(
 </script>
 
 <template>
-  <div class="lws-answer lws-answer--dropbox" :style="style">
-    <span v-if="props.questionNumber" class="lws-answer-no">{{ props.questionNumber }}</span>
-    <span class="lws-answer-badge">{{ props.object.points }}</span>
-    <span class="lws-answer-caret" aria-hidden="true">▾</span>
-    <span v-if="incomplete" class="lws-answer-hint">보기·정답 미완성</span>
+  <div class="pck-answer pck-answer--dropbox" :style="style">
+    <span v-if="props.questionNumber" class="pck-answer-no">{{ props.questionNumber }}</span>
+    <span class="pck-answer-badge">{{ props.object.points }}</span>
+    <span class="pck-answer-caret" aria-hidden="true">▾</span>
+    <span v-if="incomplete" class="pck-answer-hint">보기·정답 미완성</span>
   </div>
 </template>

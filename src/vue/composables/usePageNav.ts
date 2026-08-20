@@ -10,17 +10,17 @@
  */
 import { computed, type ComputedRef, type Ref } from 'vue'
 import { clampPageIndex } from '../../core/model/viewState'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 
 export interface UsePageNavOptions {
-  pages: ComputedRef<WorksheetPage[]>
+  pages: ComputedRef<PDFCanvasPage[]>
   currentPageIndex: Ref<number>
   selectedObjectIds: Ref<string[]>
   stageEl: Ref<HTMLElement | null>
 }
 
 export interface UsePageNav {
-  currentPage: ComputedRef<WorksheetPage | null>
+  currentPage: ComputedRef<PDFCanvasPage | null>
   /** 표시용 1-based 번호. 문서가 비어 있으면 0. */
   currentPageNumber: ComputedRef<number>
   canGoPrev: ComputedRef<boolean>

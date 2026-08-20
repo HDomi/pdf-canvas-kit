@@ -4,14 +4,14 @@
  * 검증에 실패하면 팝업을 열지 않고 문제가 있는 첫 객체로 이동시킨다. 교사가 "왜 안 되는지"를
  * 찾아 헤매지 않게 하는 것이 목적이다.
  */
-import type { WorksheetDoc } from '../model/types'
-import { toPublicDoc, type PublicWorksheetDoc } from '../model/publicDoc'
+import type { PDFCanvasDoc } from '../model/types'
+import { toPublicDoc, type PublicPDFCanvasDoc } from '../model/publicDoc'
 import { invalidObjectIds, validateDoc, type ValidationIssue, type ValidationResult } from './rules'
 
 export interface ExportPayload {
-  doc: WorksheetDoc
+  doc: PDFCanvasDoc
   /** 정답을 제거한 학생용 문서. 호스트가 과제 스냅샷을 만들 때 쓴다 (PLAN D14). */
-  publicDoc: PublicWorksheetDoc
+  publicDoc: PublicPDFCanvasDoc
   validation: ValidationResult
 }
 
@@ -29,7 +29,7 @@ export interface ExportGuardResult {
  *
  * 실패해도 `validation` 전체를 돌려주므로 호출자가 문제 개수를 세거나 목록을 보여줄 수 있다.
  */
-export function guardExport(doc: WorksheetDoc): ExportGuardResult {
+export function guardExport(doc: PDFCanvasDoc): ExportGuardResult {
   const validation = validateDoc(doc)
   if (!validation.ok) {
     // 객체 문제를 우선 안내한다. 페이지·문서 수준 문제(한도 초과)는 이동할 대상이 없다.

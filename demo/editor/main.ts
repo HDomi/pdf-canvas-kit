@@ -1,5 +1,5 @@
 /**
- * 개발용으로 WorksheetEditor를 마운트한다 (PLAN 14.1).
+ * 개발용으로 PDFCanvasEditor를 마운트한다 (PLAN 14.1).
  *
  * 호스트 앱 역할을 대신한다. pdf.js 자산을 설정하고 데모 port를 주입하며, 매번 업로드 팝업을
  * 클릭하지 않고 픽스처를 불러올 수 있는 dev 바를 붙인다.
@@ -12,9 +12,9 @@ import {
   hasPrototypeSave,
   loadPrototype,
   type SaveState,
-  type WorksheetDoc,
-} from '@lumiteach/worksheet-system'
-import { WorksheetEditor } from '@lumiteach/worksheet-system/vue'
+  type PDFCanvasDoc,
+} from 'pdf-canvas-kit'
+import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
 import '../styles.css'
 
 /**
@@ -48,7 +48,7 @@ const FIXTURES = [
 
 const DevHarness = defineComponent({
   setup() {
-    const doc = shallowRef<WorksheetDoc | null>(null)
+    const doc = shallowRef<PDFCanvasDoc | null>(null)
     const status = ref('픽스처를 눌러 불러오거나, 편집기에서 [문서 불러오기] 를 쓴다.')
     const locale = ref<'ko' | 'en'>('ko')
     const saveState = ref<SaveState>('disabled')
@@ -68,7 +68,7 @@ const DevHarness = defineComponent({
         return
       }
       const file = new File([await res.blob()], name, { type: 'application/pdf' })
-      const input = document.querySelector<HTMLInputElement>('.lws-modal input[type=file]')
+      const input = document.querySelector<HTMLInputElement>('.pck-modal input[type=file]')
       if (!input) {
         status.value = '업로드 팝업을 먼저 열어야 한다. [문서 불러오기] 클릭.'
         return
@@ -133,13 +133,13 @@ const DevHarness = defineComponent({
         h(
           'div',
           { class: 'editor-host' },
-          h(WorksheetEditor, {
+          h(PDFCanvasEditor, {
             doc: doc.value,
             locale: locale.value,
             // 콘솔 출력 StoragePort. 이걸 주면 자동저장이 켜진다.
             ports: { storage },
             onSaveStateChange: (state: SaveState) => (saveState.value = state),
-            onChange: (next: WorksheetDoc) => {
+            onChange: (next: PDFCanvasDoc) => {
               status.value = `${next.pages.length} 페이지 · "${next.title}"`
               // 상단바 [저장] 을 누르면 localStorage가 채워진다. 상태를 다시 읽어 표시를 맞춘다.
               hasSave.value = hasPrototypeSave()

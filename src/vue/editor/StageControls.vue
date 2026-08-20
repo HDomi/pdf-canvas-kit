@@ -33,10 +33,10 @@ function choose(action: () => void) {
 </script>
 
 <template>
-  <div class="lws-stage-controls">
+  <div class="pck-stage-controls">
     <button
       type="button"
-      class="lws-zoom-btn"
+      class="pck-zoom-btn"
       :disabled="!props.canZoomOut"
       :title="props.t('stage.zoomOut')"
       :aria-label="props.t('stage.zoomOut')"
@@ -47,7 +47,7 @@ function choose(action: () => void) {
 
     <button
       type="button"
-      class="lws-zoom-value"
+      class="pck-zoom-value"
       :aria-expanded="menuOpen"
       aria-haspopup="menu"
       @click="menuOpen = !menuOpen"
@@ -57,7 +57,7 @@ function choose(action: () => void) {
 
     <button
       type="button"
-      class="lws-zoom-btn"
+      class="pck-zoom-btn"
       :disabled="!props.canZoomIn"
       :title="props.t('stage.zoomIn')"
       :aria-label="props.t('stage.zoomIn')"
@@ -69,8 +69,8 @@ function choose(action: () => void) {
     <!-- 바깥 클릭은 아래의 오버레이 버튼이 처리한다. document 수준 리스너를 쓰면
          정상적인 스테이지 클릭까지 삼키게 된다. -->
     <template v-if="menuOpen">
-      <button type="button" class="lws-menu-scrim" tabindex="-1" @click="menuOpen = false" />
-      <div class="lws-zoom-menu" role="menu">
+      <button type="button" class="pck-menu-scrim" tabindex="-1" @click="menuOpen = false" />
+      <div class="pck-zoom-menu" role="menu">
         <button type="button" role="menuitem" @click="choose(() => emit('fitWidth'))">
           {{ props.t('stage.fitWidth') }}
         </button>

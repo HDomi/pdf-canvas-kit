@@ -8,9 +8,9 @@ import { ensurePdfWorker, pdfResourceParams } from './resources'
 
 /**
  * 한 워크시트의 최대 페이지 수는 500이다 (기획 2.2).
- * `LIMITS.pagesPerWorksheet` 와 같은 값이며, 서버도 같은 수치를 검증한다.
+ * `LIMITS.pagesPerDoc` 와 같은 값이며, 서버도 같은 수치를 검증한다.
  */
-export const MAX_WORKSHEET_PAGES = 500
+export const MAX_DOC_PAGES = 500
 
 /** 파일 1개당 업로드 상한(바이트) (기획 2.2). */
 export const MAX_FILE_BYTES = 500 * 1024 * 1024

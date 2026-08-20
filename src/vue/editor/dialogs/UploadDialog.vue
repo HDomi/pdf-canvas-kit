@@ -39,18 +39,18 @@ function onChange(e: Event) {
 </script>
 
 <template>
-  <div class="lws-modal-scrim" @click.self="busy ? null : emit('close')">
+  <div class="pck-modal-scrim" @click.self="busy ? null : emit('close')">
     <section
-      class="lws-modal"
+      class="pck-modal"
       role="dialog"
       aria-modal="true"
       :aria-label="props.t('upload.title')"
     >
-      <header class="lws-modal-head">
+      <header class="pck-modal-head">
         <h2>{{ props.t('upload.title') }}</h2>
         <button
           type="button"
-          class="lws-icon-btn"
+          class="pck-icon-btn"
           :disabled="busy"
           aria-label="close"
           @click="emit('close')"
@@ -59,7 +59,7 @@ function onChange(e: Event) {
         </button>
       </header>
 
-      <nav class="lws-tabs" role="tablist">
+      <nav class="pck-tabs" role="tablist">
         <button
           type="button"
           role="tab"
@@ -80,36 +80,36 @@ function onChange(e: Event) {
         </button>
       </nav>
 
-      <div v-if="tab === 'file'" class="lws-modal-body">
+      <div v-if="tab === 'file'" class="pck-modal-body">
         <template v-if="busy && props.progress">
-          <p class="lws-upload-hint">
+          <p class="pck-upload-hint">
             {{ props.progress.fileName }} — {{ props.t('upload.converting') }}
             <span v-if="props.progress.total" class="mono">
               {{ props.progress.page }} / {{ props.progress.total }}
             </span>
           </p>
-          <div class="lws-progress"><i :style="{ width: `${props.progress.ratio * 100}%` }" /></div>
-          <button type="button" class="lws-ghost-btn" @click="emit('cancel')">
+          <div class="pck-progress"><i :style="{ width: `${props.progress.ratio * 100}%` }" /></div>
+          <button type="button" class="pck-ghost-btn" @click="emit('cancel')">
             {{ props.t('confirm.cancel') }}
           </button>
         </template>
 
         <template v-else>
-          <p class="lws-upload-hint">{{ props.t('upload.hint') }}</p>
-          <p class="lws-upload-sub">{{ props.t('upload.subHint') }}</p>
-          <button type="button" class="lws-primary-btn" @click="inputEl?.click()">
+          <p class="pck-upload-hint">{{ props.t('upload.hint') }}</p>
+          <p class="pck-upload-sub">{{ props.t('upload.subHint') }}</p>
+          <button type="button" class="pck-primary-btn" @click="inputEl?.click()">
             {{ props.t('upload.action') }}
           </button>
           <input ref="inputEl" type="file" hidden :accept="accept" @change="onChange" />
-          <p class="lws-upload-limit">{{ props.t('upload.limit') }}</p>
-          <p class="lws-upload-formats">{{ props.t('upload.formats') }}</p>
+          <p class="pck-upload-limit">{{ props.t('upload.limit') }}</p>
+          <p class="pck-upload-formats">{{ props.t('upload.formats') }}</p>
         </template>
 
-        <p v-if="props.error" class="lws-upload-error" role="alert">{{ props.error }}</p>
+        <p v-if="props.error" class="pck-upload-error" role="alert">{{ props.error }}</p>
       </div>
 
-      <div v-else class="lws-modal-body">
-        <p class="lws-upload-sub">{{ props.t('upload.driveUnavailable') }}</p>
+      <div v-else class="pck-modal-body">
+        <p class="pck-upload-sub">{{ props.t('upload.driveUnavailable') }}</p>
       </div>
     </section>
   </div>

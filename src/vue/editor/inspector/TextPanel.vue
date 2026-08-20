@@ -34,20 +34,20 @@ const ALIGNS: TextObject['style']['align'][] = ['left', 'center', 'right']
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <h3 class="lws-field-label">{{ props.t('inspector.text') }}</h3>
+  <section class="pck-panel-section">
+    <h3 class="pck-field-label">{{ props.t('inspector.text') }}</h3>
     <textarea
-      class="lws-input lws-textarea"
+      class="pck-input pck-textarea"
       rows="3"
       :value="props.object.text"
       @input="emit('update', { text: ($event.target as HTMLTextAreaElement).value })"
     />
 
     <!-- 색은 공용 BoxStylePanel 이 담당한다. 두 곳에서 편집하면 어느 쪽이 이기는지 알 수 없다. -->
-    <label class="lws-field">
-      <span class="lws-field-label">{{ props.t('inspector.fontSize') }}</span>
+    <label class="pck-field">
+      <span class="pck-field-label">{{ props.t('inspector.fontSize') }}</span>
       <input
-        class="lws-input lws-input--num"
+        class="pck-input pck-input--num"
         type="number"
         min="4"
         max="200"
@@ -57,9 +57,9 @@ const ALIGNS: TextObject['style']['align'][] = ['left', 'center', 'right']
       />
     </label>
 
-    <div class="lws-field">
-      <span class="lws-field-label">{{ props.t('inspector.align') }}</span>
-      <div class="lws-segmented">
+    <div class="pck-field">
+      <span class="pck-field-label">{{ props.t('inspector.align') }}</span>
+      <div class="pck-segmented">
         <button
           v-for="a in ALIGNS"
           :key="a"
@@ -72,9 +72,9 @@ const ALIGNS: TextObject['style']['align'][] = ['left', 'center', 'right']
       </div>
     </div>
 
-    <label class="lws-field lws-field--inline">
+    <label class="pck-field pck-field--inline">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="props.object.style.bold"
         @change="patchStyle({ bold: ($event.target as HTMLInputElement).checked })"

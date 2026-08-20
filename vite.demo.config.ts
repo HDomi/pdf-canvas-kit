@@ -15,8 +15,8 @@ export default defineConfig({
      * package.json 의 `exports` 맵과 같은 구조다.
      */
     alias: [
-      { find: '@lumiteach/worksheet-system/vue', replacement: r('src/vue/index.ts') },
-      { find: '@lumiteach/worksheet-system', replacement: r('src/index.ts') },
+      { find: 'pdf-canvas-kit/vue', replacement: r('src/vue/index.ts') },
+      { find: 'pdf-canvas-kit', replacement: r('src/index.ts') },
       { find: '@core', replacement: r('src/core') },
     ],
   },

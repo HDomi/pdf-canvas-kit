@@ -6,21 +6,21 @@
  * 때문이다. deep reactivity는 변경마다 500페이지 트리를 훑으면서 얻는 게 없다.
  */
 import { computed, onScopeDispose, shallowRef, type ComputedRef, type ShallowRef } from 'vue'
-import { createWorksheetEngine, type EngineOptions, type WorksheetEngine } from '../../core/engine'
-import type { WorksheetDoc, WorksheetPage } from '../../core/model/types'
+import { createPDFCanvasEngine, type EngineOptions, type PDFCanvasEngine } from '../../core/engine'
+import type { PDFCanvasDoc, PDFCanvasPage } from '../../core/model/types'
 import type { SaveState } from '../../core/model/viewState'
 
 export interface UseEngine {
-  engine: WorksheetEngine
-  doc: ShallowRef<WorksheetDoc>
+  engine: PDFCanvasEngine
+  doc: ShallowRef<PDFCanvasDoc>
   /** 저장 배지가 구독하는 상태. StoragePort가 없으면 `disabled`. */
   saveState: ShallowRef<SaveState>
-  pages: ComputedRef<WorksheetPage[]>
+  pages: ComputedRef<PDFCanvasPage[]>
   pageCount: ComputedRef<number>
   canUndo: ShallowRef<boolean>
   canRedo: ShallowRef<boolean>
   /** 커맨드를 적용하고 undo/redo 플래그를 갱신한다. */
-  run: WorksheetEngine['run']
+  run: PDFCanvasEngine['run']
   undo: () => boolean
   redo: () => boolean
 }
@@ -28,7 +28,7 @@ export interface UseEngine {
 export function useEngine(options: EngineOptions = {}): UseEngine {
   const saveState = shallowRef<SaveState>('disabled')
 
-  const engine = createWorksheetEngine({
+  const engine = createPDFCanvasEngine({
     ...options,
     // 엔진이 상태를 밀어 주므로 폴링이 필요 없다.
     onSaveStateChange: (state) => {
@@ -36,7 +36,7 @@ export function useEngine(options: EngineOptions = {}): UseEngine {
       options.onSaveStateChange?.(state)
     },
   })
-  const doc = shallowRef<WorksheetDoc>(engine.doc.get())
+  const doc = shallowRef<PDFCanvasDoc>(engine.doc.get())
   saveState.value = engine.saveState()
   const canUndo = shallowRef(false)
   const canRedo = shallowRef(false)

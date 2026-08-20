@@ -7,7 +7,7 @@
  * 규칙은 순수 함수이며 문서만 입력으로 받는다. 그래서 서버가 같은 규칙을 재사용할 수 있다.
  */
 import { LIMITS } from '../config/defaults'
-import type { WorksheetDoc, WorksheetObject } from '../model/types'
+import type { PDFCanvasDoc, PDFCanvasObject } from '../model/types'
 import { countAnswerBoxes, isAnswerBox } from '../commands/objects'
 
 /** 검증 실패 코드. UI가 i18n 키로 매핑한다. */
@@ -64,7 +64,7 @@ function invalidPoints(points: number): boolean {
  *
  * 인스펙터가 이 함수를 직접 호출해 실시간 경고를 띄운다. 그래서 문서 전체를 훑지 않는다.
  */
-export function validateObject(obj: WorksheetObject): IssueCode[] {
+export function validateObject(obj: PDFCanvasObject): IssueCode[] {
   const codes: IssueCode[] = []
 
   if (isAnswerBox(obj) && invalidPoints(obj.points)) codes.push('POINTS_INVALID')
@@ -110,13 +110,13 @@ export function validateObject(obj: WorksheetObject): IssueCode[] {
  * 페이지가 0인 경우는 버튼 비활성으로도 막지만, 여기서도 코드를 낸다. 호출 경로가 여럿이므로
  * 한 곳에서 판단해야 한다.
  */
-export function validateDoc(doc: WorksheetDoc): ValidationResult {
+export function validateDoc(doc: PDFCanvasDoc): ValidationResult {
   const issues: ValidationIssue[] = []
 
   if (doc.pages.length === 0) {
     issues.push({ code: 'EMPTY_DOC', pageId: null, pageIndex: null, objectId: null })
   }
-  if (doc.pages.length > LIMITS.pagesPerWorksheet) {
+  if (doc.pages.length > LIMITS.pagesPerDoc) {
     issues.push({ code: 'PAGE_LIMIT', pageId: null, pageIndex: null, objectId: null })
   }
 

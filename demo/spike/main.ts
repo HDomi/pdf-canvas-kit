@@ -15,8 +15,8 @@ import {
   loadPdf,
   type PageBackground,
   type RasterPage,
-  type WorksheetPage,
-} from '@lumiteach/worksheet-system'
+  type PDFCanvasPage,
+} from 'pdf-canvas-kit'
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id)
@@ -104,8 +104,8 @@ function bytes(n: number): string {
 }
 
 /** 실제 컨버터 → 문서 단계가 할 일을 그대로 흉내낸다 (PLAN 10.1). */
-async function toWorksheetPages(raster: RasterPage[]): Promise<WorksheetPage[]> {
-  const pages: WorksheetPage[] = []
+async function toPDFCanvasPages(raster: RasterPage[]): Promise<PDFCanvasPage[]> {
+  const pages: PDFCanvasPage[] = []
   for (const r of raster) {
     const id = createId()
     const asset = await assets.persist(r.blob, { pageId: id, mime: r.blob.type })
@@ -123,7 +123,7 @@ async function toWorksheetPages(raster: RasterPage[]): Promise<WorksheetPage[]> 
   return pages
 }
 
-function renderPages(pages: WorksheetPage[], raster: RasterPage[]) {
+function renderPages(pages: PDFCanvasPage[], raster: RasterPage[]) {
   pagesBox.replaceChildren()
 
   pages.forEach((page, i) => {
@@ -176,7 +176,7 @@ function renderSummary(
   file: { name: string; size: number },
   raster: RasterPage[],
   ms: number,
-  pages: WorksheetPage[],
+  pages: PDFCanvasPage[],
 ) {
   const totalBytes = raster.reduce((n, r) => n + r.blob.size, 0)
   const sizes = new Set(pages.map((p) => `${p.size.width.toFixed(0)}x${p.size.height.toFixed(0)}`))
@@ -302,7 +302,7 @@ async function convert(file: File) {
     })
     const ms = performance.now() - t0
 
-    const pages = await toWorksheetPages(raster)
+    const pages = await toPDFCanvasPages(raster)
     setStatus(`<span class="ok">완료</span> — ${pages.length} 페이지, ${ms.toFixed(0)} ms`)
     renderSummary(file, raster, ms, pages)
     renderPages(pages, raster)

@@ -98,7 +98,7 @@ function onCompositionEnd() {
 <template>
   <div
     ref="el"
-    class="lws-obj-text"
+    class="pck-obj-text"
     :class="{ 'is-editing': props.editing }"
     :style="style"
     :contenteditable="props.editing"

@@ -8,5 +8,5 @@ const props = defineProps<{ object: MaskObject }>()
 </script>
 
 <template>
-  <div class="lws-obj-mask" :style="{ background: props.object.fill }" />
+  <div class="pck-obj-mask" :style="{ background: props.object.fill }" />
 </template>

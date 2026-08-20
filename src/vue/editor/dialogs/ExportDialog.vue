@@ -109,18 +109,18 @@ async function copyLink() {
 </script>
 
 <template>
-  <div class="lws-modal-scrim" @click.self="props.busy ? null : emit('close')">
+  <div class="pck-modal-scrim" @click.self="props.busy ? null : emit('close')">
     <section
-      class="lws-modal"
+      class="pck-modal"
       role="dialog"
       aria-modal="true"
       :aria-label="props.t('export.title')"
     >
-      <header class="lws-modal-head">
+      <header class="pck-modal-head">
         <h2>{{ props.t('export.title') }}</h2>
         <button
           type="button"
-          class="lws-icon-btn"
+          class="pck-icon-btn"
           :disabled="props.busy"
           aria-label="close"
           @click="emit('close')"
@@ -129,31 +129,31 @@ async function copyLink() {
         </button>
       </header>
 
-      <div class="lws-modal-body lws-modal-body--form">
+      <div class="pck-modal-body pck-modal-body--form">
         <!-- 내보낸 뒤에는 링크·QR만 보여준다. 설정을 다시 만지면 이미 만든 과제와 어긋난다. -->
         <template v-if="props.result">
-          <p class="lws-field-label">{{ props.t('export.link') }}</p>
-          <div class="lws-row">
-            <input class="lws-input" type="text" readonly :value="props.result.url" />
-            <button type="button" class="lws-ghost-btn" @click="copyLink">
+          <p class="pck-field-label">{{ props.t('export.link') }}</p>
+          <div class="pck-row">
+            <input class="pck-input" type="text" readonly :value="props.result.url" />
+            <button type="button" class="pck-ghost-btn" @click="copyLink">
               {{ copied ? props.t('export.copied') : props.t('export.copy') }}
             </button>
           </div>
           <img
             v-if="props.result.qrUrl"
-            class="lws-export-qr"
+            class="pck-export-qr"
             :src="props.result.qrUrl"
             :alt="props.t('export.qr')"
           />
-          <p class="lws-field-note">{{ props.t('export.afterNote') }}</p>
+          <p class="pck-field-note">{{ props.t('export.afterNote') }}</p>
         </template>
 
         <template v-else>
-          <label class="lws-field">
-            <span class="lws-field-label">{{ props.t('export.name') }}</span>
+          <label class="pck-field">
+            <span class="pck-field-label">{{ props.t('export.name') }}</span>
             <input
               v-model="title"
-              class="lws-input"
+              class="pck-input"
               type="text"
               :maxlength="LIMITS.titleChars"
               :placeholder="props.t('export.namePlaceholder')"
@@ -161,56 +161,56 @@ async function copyLink() {
             />
           </label>
 
-          <fieldset class="lws-field lws-fieldset">
-            <legend class="lws-field-label">{{ props.t('export.access') }}</legend>
-            <label class="lws-field--inline">
-              <input v-model="accessLevel" class="lws-check" type="radio" value="public" />
+          <fieldset class="pck-field pck-fieldset">
+            <legend class="pck-field-label">{{ props.t('export.access') }}</legend>
+            <label class="pck-field--inline">
+              <input v-model="accessLevel" class="pck-check" type="radio" value="public" />
               <span>{{ props.t('export.public') }}</span>
             </label>
-            <label class="lws-field--inline">
-              <input v-model="accessLevel" class="lws-check" type="radio" value="class" />
+            <label class="pck-field--inline">
+              <input v-model="accessLevel" class="pck-check" type="radio" value="class" />
               <span>{{ props.t('export.classOnly') }}</span>
             </label>
           </fieldset>
 
           <template v-if="isClassOnly">
-            <label class="lws-field">
-              <span class="lws-field-label">{{ props.t('export.class') }}</span>
-              <select v-model="classId" class="lws-input">
+            <label class="pck-field">
+              <span class="pck-field-label">{{ props.t('export.class') }}</span>
+              <select v-model="classId" class="pck-input">
                 <option :value="null" disabled>{{ props.t('export.classPlaceholder') }}</option>
                 <option v-for="c in props.classes ?? []" :key="c.id" :value="c.id">
                   {{ c.name }}
                 </option>
               </select>
-              <span v-if="(props.classes ?? []).length === 0" class="lws-field-note">
+              <span v-if="(props.classes ?? []).length === 0" class="pck-field-note">
                 {{ props.t('export.noClasses') }}
               </span>
             </label>
 
-            <fieldset class="lws-field lws-fieldset">
-              <legend class="lws-field-label">{{ props.t('export.submitLimit') }}</legend>
-              <label class="lws-field--inline">
-                <input v-model="submitLimit" class="lws-check" type="radio" value="once" />
+            <fieldset class="pck-field pck-fieldset">
+              <legend class="pck-field-label">{{ props.t('export.submitLimit') }}</legend>
+              <label class="pck-field--inline">
+                <input v-model="submitLimit" class="pck-check" type="radio" value="once" />
                 <span>{{ props.t('export.submitOnce') }}</span>
               </label>
-              <label class="lws-field--inline">
-                <input v-model="submitLimit" class="lws-check" type="radio" value="multiple" />
+              <label class="pck-field--inline">
+                <input v-model="submitLimit" class="pck-check" type="radio" value="multiple" />
                 <span>{{ props.t('export.submitMultiple') }}</span>
               </label>
             </fieldset>
           </template>
 
-          <label class="lws-field">
-            <span class="lws-field-label">{{ props.t('export.due') }}</span>
-            <input v-model="dueDate" class="lws-input" type="date" />
-            <span class="lws-field-note">{{ props.t('export.dueNote') }}</span>
+          <label class="pck-field">
+            <span class="pck-field-label">{{ props.t('export.due') }}</span>
+            <input v-model="dueDate" class="pck-input" type="date" />
+            <span class="pck-field-note">{{ props.t('export.dueNote') }}</span>
           </label>
 
-          <p v-if="props.error" class="lws-field-error" role="alert">{{ props.error }}</p>
+          <p v-if="props.error" class="pck-field-error" role="alert">{{ props.error }}</p>
 
           <button
             type="button"
-            class="lws-primary-btn lws-export-submit"
+            class="pck-primary-btn pck-export-submit"
             :disabled="!canSubmit"
             @click="onSubmit"
           >

@@ -1,19 +1,19 @@
 /**
- * Vue 엔트리 — `@lumiteach/worksheet-system/vue`.
+ * Vue 엔트리 — `pdf-canvas-kit/vue`.
  *
  * ```ts
- * import { WorksheetEditor } from '@lumiteach/worksheet-system/vue'
+ * import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
  * ```
  *
- * `WorksheetEditor` 는 클라이언트 전용이다. pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저
+ * `PDFCanvasEditor` 는 클라이언트 전용이다. pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저
  * API이므로 Nuxt에서는 `<ClientOnly>` 로 감싸야 한다 (PLAN D16).
  *
- * `WorksheetViewer` 는 아직 구현되지 않았다 (PLAN M10).
+ * `PDFCanvasViewer` 는 아직 구현되지 않았다 (PLAN M10).
  */
 import '../styles/tokens.css'
 import '../styles/editor.css'
 
-export { default as WorksheetEditor } from './WorksheetEditor.vue'
+export { default as PDFCanvasEditor } from './PDFCanvasEditor.vue'
 
 /**
  * 과제 내보내기 팝업. **옵션 컴포넌트다.**
@@ -35,7 +35,7 @@ export { useEngine } from './composables/useEngine'
 import type { AssetPort, ConverterPort, I18nPort, StoragePort } from '../core/ports'
 
 /** 호스트가 주입하는 의존성. 모두 optional이며 빠진 것은 내장 기본값이 채운다. */
-export interface WorksheetPorts {
+export interface PDFCanvasPorts {
   /** 래스터화된 페이지 이미지가 사는 곳. 기본은 세션 한정 blob URL. */
   asset?: AssetPort
   /** 문서 → 페이지 이미지. 기본은 브라우저 PDF 컨버터(PDF만). */
@@ -46,7 +46,7 @@ export interface WorksheetPorts {
   i18n?: I18nPort
 }
 
-export type WorksheetLocale = 'ko' | 'en'
+export type PDFCanvasLocale = 'ko' | 'en'
 
 /**
  * 시작 배율. 명시적 배율이거나, 스테이지 기준으로 계산되는 맞춤 모드.

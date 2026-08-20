@@ -19,7 +19,7 @@ const paper = computed(() => (props.size ? formatPaperLabel(props.size) : null))
 </script>
 
 <template>
-  <p v-if="props.total > 0" class="lws-pagemeta">
+  <p v-if="props.total > 0" class="pck-pagemeta">
     <span class="mono">{{ props.current }} / {{ props.total }}</span>
     <template v-if="paper"> · {{ paper }}</template>
   </p>

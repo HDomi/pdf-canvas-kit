@@ -6,7 +6,7 @@
  */
 export const ko = {
   'topbar.back': '뒤로 가기',
-  'topbar.titlePlaceholder': '제목 없는 Worksheet',
+  'topbar.titlePlaceholder': '제목 없는 문서',
   'topbar.undo': '되돌리기',
   'topbar.redo': '다시 실행',
   'topbar.export': '내보내기',
@@ -27,7 +27,7 @@ export const ko = {
   'pages.empty': '페이지 없음',
 
   'empty.title': '아직 불러온 문서가 없습니다',
-  'empty.description': 'PDF나 문서를 불러오면 온라인 문제지 편집을 시작할 수 있습니다.',
+  'empty.description': 'PDF나 문서를 불러오면 문서 편집을 시작할 수 있습니다.',
   'empty.action': '문서 불러오기',
 
   'toolbar.text': '텍스트 입력',
@@ -89,9 +89,9 @@ export const ko = {
   'stage.fitPage': '페이지 맞춤',
   'stage.actualSize': '100%',
 
-  'export.title': '워크시트 과제로 내보내기',
+  'export.title': '문서를 과제로 내보내기',
   'export.name': 'Assignment Name',
-  'export.namePlaceholder': 'Untitled Worksheet',
+  'export.namePlaceholder': 'Untitled Document',
   'export.access': '공개 범위',
   'export.public': 'Public',
   'export.classOnly': 'Class Only',
@@ -110,7 +110,7 @@ export const ko = {
   'export.copied': '복사됨',
   'export.qr': 'QR 코드',
   'export.afterNote':
-    '이후 워크시트를 수정해도 이 과제에는 반영되지 않습니다. 수정본을 내려면 다시 내보내 주세요.',
+    '이후 문서를 수정해도 이 과제에는 반영되지 않습니다. 수정본을 내려면 다시 내보내 주세요.',
   'export.failed': '내보내기에 실패했습니다. 다시 시도해 주세요.',
   'upload.title': 'Upload Documents',
   'upload.tabFile': 'From File',
@@ -126,7 +126,7 @@ export const ko = {
   // 기획 2.4 — 원문 그대로.
   'error.format': 'pdf, doc, docx, ppt, pptx 파일만 업로드할 수 있습니다.',
   'error.size': '최대 500MB까지 업로드할 수 있습니다.',
-  'error.pageLimit': '1개의 워크시트에 최대 500페이지까지 지원합니다.',
+  'error.pageLimit': '문서 하나에 최대 500페이지까지 지원합니다.',
   'error.convertFailed': '파일을 변환할 수 없습니다. 파일을 확인해 주세요.',
   'error.encrypted': '암호가 설정된 파일은 불러올 수 없습니다.',
   'error.serverConverter': '이 형식은 서버 변환이 필요합니다. 관리자에게 문의해 주세요.',

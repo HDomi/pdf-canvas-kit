@@ -1,9 +1,9 @@
 /**
- * `@lumiteach/worksheet-system` — 프레임워크 무관 코어.
+ * `pdf-canvas-kit` — 프레임워크 무관 코어.
  *
  * Vue 컴포넌트는 `/vue` 서브패스에 있다.
  * ```ts
- * import { WorksheetEditor } from '@lumiteach/worksheet-system/vue'
+ * import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
  * ```
  *
  * 이 엔트리는 문서 모델, 좌표 헬퍼, PDF 파이프라인, 호스트가 주입하는 port들을 내보낸다.
@@ -22,10 +22,10 @@ export type {
   BackgroundOrigin,
   PageBackground,
   PageSource,
-  WorksheetPage,
-  WorksheetDoc,
-  WorksheetObject,
-  WorksheetObjectType,
+  PDFCanvasPage,
+  PDFCanvasDoc,
+  PDFCanvasObject,
+  PDFCanvasObjectType,
   TextObject,
   ShapeObject,
   ShapeKind,
@@ -97,9 +97,9 @@ export type { History, HistoryEntry, HistoryOptions } from './core/store/history
 
 export * from './core/commands'
 
-export { createWorksheetEngine } from './core/engine'
+export { createPDFCanvasEngine } from './core/engine'
 export type {
-  WorksheetEngine,
+  PDFCanvasEngine,
   EngineOptions,
   EnginePorts,
   ImportProgress,
@@ -107,7 +107,7 @@ export type {
 } from './core/engine'
 
 export {
-  createWorksheetDoc,
+  createPDFCanvasDoc,
   createPage,
   createBlankPageLike,
   UNTITLED_TITLE,
@@ -129,9 +129,9 @@ export {
 export type { BoxStyleCss, BoxStylePatch } from './core/model/boxStyle'
 export { toPublicDoc, findAnswerFieldPaths } from './core/model/publicDoc'
 export type {
-  PublicWorksheetDoc,
-  PublicWorksheetPage,
-  PublicWorksheetObject,
+  PublicPDFCanvasDoc,
+  PublicPDFCanvasPage,
+  PublicPDFCanvasObject,
 } from './core/model/publicDoc'
 export {
   serializeDoc,
@@ -246,7 +246,7 @@ export {
   isPdf,
   fileExtension,
   MAX_FILE_BYTES,
-  MAX_WORKSHEET_PAGES,
+  MAX_DOC_PAGES,
   SUPPORTED_EXTENSIONS,
 } from './core/pdf'
 export type { LoadedPdf, LoadPdfOptions } from './core/pdf'

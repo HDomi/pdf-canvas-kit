@@ -3,7 +3,7 @@
  *
  * 세 그룹으로 나뉘며, 섞으면 문제가 생긴다.
  *
- * - **기획 한도** (`LIMITS`) — Worksheet 기획서에서 온 값. 바꾸면 교사가 만들 수 있는 결과물이
+ * - **기획 한도** (`LIMITS`) — 기획 스펙에서 온 값. 바꾸면 교사가 만들 수 있는 결과물이
  *   달라지고 서버도 같은 규칙을 검증하므로, 호스트가 임의로 조정할 값이 아니다.
  * - **편집 동작** (`EDITOR_DEFAULTS`) — 기본 객체 크기, 줌 단계, 이동 거리 같은 ergonomics.
  *   제품별로 조정해도 안전하다.
@@ -21,7 +21,7 @@ import type { Pt } from '../model/types'
  */
 export const LIMITS = {
   /** 한 워크시트의 최대 페이지 수 (기획 2.2). */
-  pagesPerWorksheet: 500,
+  pagesPerDoc: 500,
   /** 파일 1개당 최대 업로드 용량(바이트) (기획 2.2). */
   fileBytes: 500 * 1024 * 1024,
   /** 업로드 1회당 파일 수 (기획 2.2 — "1 limit"). */
@@ -74,7 +74,7 @@ export const EDITOR_DEFAULTS = {
   /**
    * 페이지와 스테이지 경계 사이의 여백(CSS px).
    *
-   * 맞춤 모드가 양축에서 이 값을 빼므로 src/styles/tokens.css 의 `--lws-stage-padding` 과
+   * 맞춤 모드가 양축에서 이 값을 빼므로 src/styles/tokens.css 의 `--pck-stage-padding` 과
    * 일치해야 한다. 어긋나면 "페이지 맞춤"이 페이지를 자르거나 눈에 보이는 여백을 남긴다
    * (ARCHITECTURE §3.2).
    */

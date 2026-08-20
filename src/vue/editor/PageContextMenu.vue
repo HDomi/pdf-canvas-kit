@@ -43,8 +43,8 @@ const style = computed(() => {
 
 <template>
   <!-- 바깥 클릭·우클릭으로 닫는다. document 리스너보다 스크림이 확실하다. -->
-  <div class="lws-menu-scrim" @pointerdown="emit('close')" @contextmenu.prevent="emit('close')" />
-  <div class="lws-context-menu" role="menu" :style="style">
+  <div class="pck-menu-scrim" @pointerdown="emit('close')" @contextmenu.prevent="emit('close')" />
+  <div class="pck-context-menu" role="menu" :style="style">
     <button type="button" role="menuitem" @click="emit('duplicate', props.pageIndex)">
       {{ props.t('pages.duplicate') }}
     </button>

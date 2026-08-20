@@ -37,10 +37,10 @@ const KINDS: { id: ShapeKind; label: string }[] = [
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <div class="lws-field">
-      <span class="lws-field-label">{{ props.t('inspector.shapeKind') }}</span>
-      <div class="lws-segmented">
+  <section class="pck-panel-section">
+    <div class="pck-field">
+      <span class="pck-field-label">{{ props.t('inspector.shapeKind') }}</span>
+      <div class="pck-segmented">
         <button
           v-for="k in KINDS"
           :key="k.id"
@@ -53,9 +53,9 @@ const KINDS: { id: ShapeKind; label: string }[] = [
       </div>
     </div>
 
-    <label class="lws-field lws-field--inline">
+    <label class="pck-field pck-field--inline">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="props.object.style.fill !== null"
         @change="
@@ -65,31 +65,31 @@ const KINDS: { id: ShapeKind; label: string }[] = [
       <span>{{ props.t('inspector.fill') }}</span>
       <input
         v-if="props.object.style.fill !== null"
-        class="lws-input lws-input--color"
+        class="pck-input pck-input--color"
         type="color"
         :value="props.object.style.fill"
         @input="patchStyle({ fill: ($event.target as HTMLInputElement).value })"
       />
-      <span v-else class="lws-field-note lws-field-note--inline">
+      <span v-else class="pck-field-note pck-field-note--inline">
         {{ props.t('inspector.noFill') }}
       </span>
     </label>
 
-    <div class="lws-field-grid">
-      <label class="lws-field">
-        <span class="lws-field-label">{{ props.t('inspector.stroke') }}</span>
+    <div class="pck-field-grid">
+      <label class="pck-field">
+        <span class="pck-field-label">{{ props.t('inspector.stroke') }}</span>
         <input
-          class="lws-input lws-input--color"
+          class="pck-input pck-input--color"
           type="color"
           :value="props.object.style.stroke"
           @input="patchStyle({ stroke: ($event.target as HTMLInputElement).value })"
         />
       </label>
 
-      <label class="lws-field">
-        <span class="lws-field-label">{{ props.t('inspector.strokeWidth') }}</span>
+      <label class="pck-field">
+        <span class="pck-field-label">{{ props.t('inspector.strokeWidth') }}</span>
         <input
-          class="lws-input lws-input--num"
+          class="pck-input pck-input--num"
           type="number"
           min="0.5"
           max="40"

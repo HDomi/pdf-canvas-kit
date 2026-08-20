@@ -4,7 +4,7 @@
  * 순수 함수로 두어 서버와 동일한 로직을 공유할 수 있게 한다. 클라이언트가 보여준 점수와 리포트가
  * 달라지는 상황을 막는 것이 목적이다.
  */
-import type { AnswerBox, WorksheetObject } from '../model/types'
+import type { AnswerBox, PDFCanvasObject } from '../model/types'
 import { matchesAnyAnswer, matchesChoiceSet } from './normalize'
 
 /** 학생의 한 문항 응답. */
@@ -31,7 +31,7 @@ export interface ItemScore {
 }
 
 /** Answer Box 여부. 채점 대상만 걸러낸다. */
-export function isGradableObject(obj: WorksheetObject): obj is AnswerBox {
+export function isGradableObject(obj: PDFCanvasObject): obj is AnswerBox {
   return obj.type === 'answer.short' || obj.type === 'answer.essay' || obj.type === 'answer.dropbox'
 }
 
@@ -91,7 +91,7 @@ export interface AttemptScore {
  * 쓰면 점수가 실제보다 낮게 보인다. 리포트가 "현재까지 채점된 범위"를 정확히 말할 수 있어야 한다.
  */
 export function scoreAttempt(
-  objects: readonly WorksheetObject[],
+  objects: readonly PDFCanvasObject[],
   responses: Readonly<Record<string, Response>>,
   verdicts: Readonly<Record<string, EssayVerdict>> = {},
 ): AttemptScore {

@@ -3,7 +3,7 @@
  */
 import { LIMITS } from '../config/defaults'
 import { UNTITLED_TITLE } from '../model/defaults'
-import type { WorksheetDoc } from '../model/types'
+import type { PDFCanvasDoc } from '../model/types'
 import { touch, type Command } from './index'
 
 /**
@@ -42,6 +42,6 @@ export function applyFileNameToTitle(fileName: string): Command {
 }
 
 /** 문서 전체를 교체한다. 저장소에서 불러온 직후 등. */
-export function replaceDoc(next: WorksheetDoc): Command {
+export function replaceDoc(next: PDFCanvasDoc): Command {
   return () => next
 }

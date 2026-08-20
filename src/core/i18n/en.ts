@@ -3,7 +3,7 @@ import type { I18nKey } from './ko'
 
 export const en: Record<I18nKey, string> = {
   'topbar.back': 'Back',
-  'topbar.titlePlaceholder': 'Untitled Worksheet',
+  'topbar.titlePlaceholder': 'Untitled Document',
   'topbar.undo': 'Undo',
   'topbar.redo': 'Redo',
   'topbar.export': 'Export',
@@ -24,7 +24,7 @@ export const en: Record<I18nKey, string> = {
   'pages.empty': 'No pages',
 
   'empty.title': 'No document loaded yet',
-  'empty.description': 'Import a PDF or document to start building the worksheet.',
+  'empty.description': 'Import a PDF or document to start building the document.',
   'empty.action': 'Import document',
 
   'toolbar.text': 'Text',
@@ -86,9 +86,9 @@ export const en: Record<I18nKey, string> = {
   'stage.fitPage': 'Fit page',
   'stage.actualSize': '100%',
 
-  'export.title': 'Export worksheet as assignment',
+  'export.title': 'Export document as assignment',
   'export.name': 'Assignment name',
-  'export.namePlaceholder': 'Untitled Worksheet',
+  'export.namePlaceholder': 'Untitled Document',
   'export.access': 'Access',
   'export.public': 'Public',
   'export.classOnly': 'Class only',
@@ -107,7 +107,7 @@ export const en: Record<I18nKey, string> = {
   'export.copied': 'Copied',
   'export.qr': 'QR code',
   'export.afterNote':
-    'Later edits to the worksheet do not affect this assignment. Export again to publish changes.',
+    'Later edits to the document do not affect this assignment. Export again to publish changes.',
   'export.failed': 'Export failed. Please try again.',
   'upload.title': 'Upload Documents',
   'upload.tabFile': 'From File',
@@ -122,7 +122,7 @@ export const en: Record<I18nKey, string> = {
 
   'error.format': 'Only pdf, doc, docx, ppt and pptx files can be uploaded.',
   'error.size': 'Files up to 500MB can be uploaded.',
-  'error.pageLimit': 'A worksheet supports up to 500 pages.',
+  'error.pageLimit': 'A document supports up to 500 pages.',
   'error.convertFailed': 'This file could not be converted. Please check the file.',
   'error.encrypted': 'Password-protected files cannot be imported.',
   'error.serverConverter': 'This format requires server-side conversion.',
@@ -130,7 +130,7 @@ export const en: Record<I18nKey, string> = {
   'error.titleMax': 'Up to 100 characters.',
   'error.max50': 'Up to 50 characters.',
   'error.duplicateChoice': 'That choice already exists.',
-  'error.boxLimit': 'Up to 30 answer boxes per page and 200 per worksheet.',
+  'error.boxLimit': 'Up to 30 answer boxes per page and 200 per document.',
   'error.answerRequired': 'Some questions have no correct answer set.',
   'error.dropboxIncomplete': 'Enter at least 2 choices and mark at least one correct.',
   'error.pointsRequired': 'Enter points (1 or more).',

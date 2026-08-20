@@ -10,7 +10,7 @@
  * `preview` rect만 갱신하고, `pointerup` 에서 커맨드를 한 번 커밋한다. 사용자 제스처 하나가
  * 히스토리 한 항목이 된다.
  */
-import type { Pt, Rect, Size, WorksheetObject } from '../model/types'
+import type { Pt, Rect, Size, PDFCanvasObject } from '../model/types'
 import { rectFromPoints } from '../geometry/constrain'
 import { moveRect, resizeRect, rotationFromPointer, type HandleId } from '../geometry/handles'
 import { pickObject, rectCenter } from '../geometry/hitTest'
@@ -59,7 +59,7 @@ export type PointerCommit =
 
 export interface MachineContext {
   page: Size
-  objects: readonly WorksheetObject[]
+  objects: readonly PDFCanvasObject[]
   /** 스냅 그리드(pt). 0이면 스냅 없음. */
   grid: number
   selectedIds: readonly string[]

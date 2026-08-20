@@ -6,7 +6,7 @@
 import { createId } from '../util/id'
 import { EDITOR_DEFAULTS, LIMITS } from '../config/defaults'
 import { clampIntoPage } from '../geometry/constrain'
-import type { AnswerBox, Rect, WorksheetDoc, WorksheetObject } from '../model/types'
+import type { AnswerBox, Rect, PDFCanvasDoc, PDFCanvasObject } from '../model/types'
 import { replacePage, touch, type Command } from './index'
 
 /** Answer Box 수량 한도를 넘길 때 던진다. UI가 기획 6.3 문구를 보여준다. */
@@ -15,8 +15,8 @@ export class AnswerBoxLimitError extends Error {
   constructor(scope: 'page' | 'doc') {
     super(
       scope === 'page'
-        ? `[worksheet] page answer box limit is ${LIMITS.answerBoxesPerPage}`
-        : `[worksheet] document answer box limit is ${LIMITS.answerBoxesPerDoc}`,
+        ? `[pdf-canvas-kit] page answer box limit is ${LIMITS.answerBoxesPerPage}`
+        : `[pdf-canvas-kit] document answer box limit is ${LIMITS.answerBoxesPerDoc}`,
     )
     this.name = 'AnswerBoxLimitError'
     this.scope = scope
@@ -28,11 +28,11 @@ export class AnswerBoxLimitError extends Error {
  *
  * 타입 가드로 선언해 호출부에서 `points` 같은 공통 필드에 접근할 수 있게 한다.
  */
-export function isAnswerBox(obj: WorksheetObject): obj is AnswerBox {
+export function isAnswerBox(obj: PDFCanvasObject): obj is AnswerBox {
   return obj.type === 'answer.short' || obj.type === 'answer.essay' || obj.type === 'answer.dropbox'
 }
 
-export function countAnswerBoxes(doc: WorksheetDoc): {
+export function countAnswerBoxes(doc: PDFCanvasDoc): {
   perPage: Map<string, number>
   total: number
 } {
@@ -52,7 +52,7 @@ export function countAnswerBoxes(doc: WorksheetDoc): {
  * @throws {AnswerBoxLimitError} Answer Box 수량 한도를 넘기면. 조용히 무시하지 않고 던지는 이유는,
  * 드래그했는데 아무 일도 일어나지 않으면 사용자가 원인을 알 수 없기 때문이다.
  */
-export function addObject(pageIndex: number, obj: WorksheetObject): Command {
+export function addObject(pageIndex: number, obj: PDFCanvasObject): Command {
   return (doc) => {
     const page = doc.pages[pageIndex]
     if (!page) return null
@@ -105,14 +105,14 @@ export function transformObjects(pageIndex: number, rects: ReadonlyMap<string, R
 /**
  * 객체 속성을 부분 갱신한다. 인스펙터 편집에 쓴다.
  *
- * 패치 타입은 유니온 전체(`WorksheetObject`)에 대한 Partial이다. 유형별로 좁힌 제네릭을 쓰면
+ * 패치 타입은 유니온 전체(`PDFCanvasObject`)에 대한 Partial이다. 유형별로 좁힌 제네릭을 쓰면
  * 호출부에서 매번 캐스트가 필요해지므로, 호출자가 올바른 유형에 올바른 필드를 넘긴다고 신뢰한다.
  * 인스펙터 패널이 이미 유형별로 분리돼 있어 실수 여지가 작다.
  */
 export function updateObject(
   pageIndex: number,
   objectId: string,
-  patch: Partial<WorksheetObject>,
+  patch: Partial<PDFCanvasObject>,
 ): Command {
   return (doc) => {
     const next = replacePage(doc, pageIndex, (page) => {
@@ -180,8 +180,8 @@ export function duplicateObjects(pageIndex: number, ids: readonly string[]): Com
 
 /** 복제 결과로 새로 생긴 객체 id들. 복제 직후 선택을 옮길 때 쓴다. */
 export function newIdsAfterDuplicate(
-  before: WorksheetDoc,
-  after: WorksheetDoc,
+  before: PDFCanvasDoc,
+  after: PDFCanvasDoc,
   pageIndex: number,
 ): string[] {
   const prev = new Set((before.pages[pageIndex]?.objects ?? []).map((o) => o.id))
@@ -212,7 +212,7 @@ export function setRotation(pageIndex: number, objectId: string, deg: number): C
 }
 
 /** `rotation` 필드를 제거한 사본. */
-function omitRotation<T extends WorksheetObject>(obj: T): T {
+function omitRotation<T extends PDFCanvasObject>(obj: T): T {
   const { rotation: _rotation, ...rest } = obj
   return rest as T
 }

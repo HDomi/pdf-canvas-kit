@@ -8,10 +8,10 @@
  * 디코딩하지 않는다.
  */
 import { computed } from 'vue'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 
 const props = defineProps<{
-  page: WorksheetPage
+  page: PDFCanvasPage
   index: number
   active: boolean
   /** 드래그 중인 항목인지. 반투명하게 표시한다. */
@@ -38,7 +38,7 @@ const ratio = computed(() => `${props.page.size.width} / ${props.page.size.heigh
 
 <template>
   <li
-    class="lws-thumb-item"
+    class="pck-thumb-item"
     :class="{
       'is-dragging': props.dragging,
       'is-drop-before': props.dropBefore,
@@ -48,14 +48,14 @@ const ratio = computed(() => `${props.page.size.width} / ${props.page.size.heigh
   >
     <button
       type="button"
-      class="lws-thumb"
+      class="pck-thumb"
       :class="{ 'is-active': props.active }"
       :aria-current="props.active ? 'page' : undefined"
       @click="emit('select', props.index)"
       @pointerdown="emit('pointerdown', props.index, $event)"
       @contextmenu.prevent="emit('contextmenu', props.index, $event)"
     >
-      <span class="lws-thumb-paper" :style="{ aspectRatio: ratio }">
+      <span class="pck-thumb-paper" :style="{ aspectRatio: ratio }">
         <img
           v-if="image"
           :src="image.url"
@@ -65,7 +65,7 @@ const ratio = computed(() => `${props.page.size.width} / ${props.page.size.heigh
           draggable="false"
         />
       </span>
-      <span class="lws-thumb-no">{{ props.index + 1 }}</span>
+      <span class="pck-thumb-no">{{ props.index + 1 }}</span>
     </button>
   </li>
 </template>

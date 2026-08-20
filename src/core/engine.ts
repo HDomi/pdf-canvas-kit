@@ -14,9 +14,9 @@ import { createDebouncedSaver, type DebouncedSaver } from './autosave/debouncedS
 import { touch, type Command } from './commands'
 import { appendPages } from './commands/pages'
 import { applyFileNameToTitle } from './commands/doc'
-import { createWorksheetDoc } from './model/defaults'
-import { toPublicDoc, type PublicWorksheetDoc } from './model/publicDoc'
-import type { PageBackground, WorksheetDoc, WorksheetPage } from './model/types'
+import { createPDFCanvasDoc } from './model/defaults'
+import { toPublicDoc, type PublicPDFCanvasDoc } from './model/publicDoc'
+import type { PageBackground, PDFCanvasDoc, PDFCanvasPage } from './model/types'
 import { createPdfjsConverter } from './pdf/pdfjsConverter'
 import type { AssetPort, ConverterPort, I18nPort, StoragePort } from './ports'
 import { ConvertError, type ConvertProgress } from './ports/ConverterPort'
@@ -33,7 +33,7 @@ export interface EnginePorts {
 }
 
 export interface EngineOptions {
-  doc?: WorksheetDoc | null
+  doc?: PDFCanvasDoc | null
   ports?: EnginePorts
   /** undo 깊이. 기본값은 `EDITOR_DEFAULTS.historyLimit`. */
   historyLimit?: number
@@ -56,13 +56,13 @@ export interface ImportProgress extends ConvertProgress {
 }
 
 export interface ImportResult {
-  pages: WorksheetPage[]
+  pages: PDFCanvasPage[]
   /** 소요 시간(ms). spike 화면과 로깅에 쓴다. */
   elapsedMs: number
 }
 
-export interface WorksheetEngine {
-  readonly doc: Store<WorksheetDoc>
+export interface PDFCanvasEngine {
+  readonly doc: Store<PDFCanvasDoc>
   readonly history: History
   /** 마지막 저장 성공 이후 문서가 바뀌었으면 true. */
   isDirty(): boolean
@@ -101,16 +101,16 @@ export interface WorksheetEngine {
   cancelImport(): void
 
   /** 정답을 제거한 문서. 뷰어 프리뷰용 (PLAN D14). */
-  toPublicDoc(): PublicWorksheetDoc
+  toPublicDoc(): PublicPDFCanvasDoc
 
   /** blob URL을 해제하고 대기 중인 작업을 중단한다. */
   destroy(): void
 
-  subscribe(fn: (doc: WorksheetDoc) => void): Unsubscribe
+  subscribe(fn: (doc: PDFCanvasDoc) => void): Unsubscribe
 }
 
-export function createWorksheetEngine(options: EngineOptions = {}): WorksheetEngine {
-  const doc = createStore<WorksheetDoc>(options.doc ?? createWorksheetDoc())
+export function createPDFCanvasEngine(options: EngineOptions = {}): PDFCanvasEngine {
+  const doc = createStore<PDFCanvasDoc>(options.doc ?? createPDFCanvasDoc())
   const history = createHistory(
     options.historyLimit === undefined ? {} : { limit: options.historyLimit },
   )
@@ -121,7 +121,7 @@ export function createWorksheetEngine(options: EngineOptions = {}): WorksheetEng
   const converter = options.ports?.converter ?? createPdfjsConverter()
   const storage = options.ports?.storage ?? noopStoragePort()
 
-  let savedSnapshot: WorksheetDoc = doc.get()
+  let savedSnapshot: PDFCanvasDoc = doc.get()
   let controller: AbortController | null = null
 
   /**
@@ -225,7 +225,7 @@ export function createWorksheetEngine(options: EngineOptions = {}): WorksheetEng
           onProgress: (p) => onProgress?.({ ...p, fileName: file.name, phase: 'converting' }),
         })
 
-        const pages: WorksheetPage[] = []
+        const pages: PDFCanvasPage[] = []
         for (const [i, r] of raster.entries()) {
           const id = createId()
           const stored = await asset.persist(r.blob, {

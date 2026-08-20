@@ -57,19 +57,19 @@ const duplicate = computed(() => props.issues.includes('DROPBOX_DUPLICATE_CHOICE
 </script>
 
 <template>
-  <section class="lws-panel-section">
-    <h3 class="lws-field-label">{{ props.t('inspector.choices') }}</h3>
+  <section class="pck-panel-section">
+    <h3 class="pck-field-label">{{ props.t('inspector.choices') }}</h3>
 
-    <div v-for="(choice, i) in props.object.choices" :key="choice.id" class="lws-row">
+    <div v-for="(choice, i) in props.object.choices" :key="choice.id" class="pck-row">
       <input
-        class="lws-check"
+        class="pck-check"
         type="checkbox"
         :checked="props.object.correctChoiceIds.includes(choice.id)"
         :aria-label="`correct ${i + 1}`"
         @change="toggleCorrect(choice.id)"
       />
       <input
-        class="lws-input"
+        class="pck-input"
         type="text"
         :value="choice.label"
         :maxlength="LIMITS.choiceChars"
@@ -78,7 +78,7 @@ const duplicate = computed(() => props.issues.includes('DROPBOX_DUPLICATE_CHOICE
       />
       <button
         type="button"
-        class="lws-row-btn"
+        class="pck-row-btn"
         :disabled="!canRemove"
         aria-label="remove"
         @click="removeChoice(choice.id)"
@@ -89,19 +89,19 @@ const duplicate = computed(() => props.issues.includes('DROPBOX_DUPLICATE_CHOICE
 
     <button
       type="button"
-      class="lws-dashed-btn lws-dashed-btn--sm"
+      class="pck-dashed-btn pck-dashed-btn--sm"
       :disabled="!canAdd"
       @click="addChoice"
     >
       {{ props.t('inspector.addChoice') }}
     </button>
 
-    <p v-if="fewChoices || noCorrect" class="lws-field-error" role="alert">
+    <p v-if="fewChoices || noCorrect" class="pck-field-error" role="alert">
       {{ props.t('error.dropboxIncomplete') }}
     </p>
-    <p v-if="duplicate" class="lws-field-error" role="alert">
+    <p v-if="duplicate" class="pck-field-error" role="alert">
       {{ props.t('error.duplicateChoice') }}
     </p>
-    <p class="lws-field-note">{{ props.t('inspector.correctHint') }}</p>
+    <p class="pck-field-note">{{ props.t('inspector.correctHint') }}</p>
   </section>
 </template>

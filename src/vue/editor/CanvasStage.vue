@@ -9,11 +9,11 @@
  * 없으므로 pad가 페이지를 중앙에 둔다.
  */
 import { computed, ref } from 'vue'
-import type { WorksheetPage } from '../../core/model/types'
+import type { PDFCanvasPage } from '../../core/model/types'
 import PageFrame from './PageFrame.vue'
 
 const props = defineProps<{
-  page: WorksheetPage | null
+  page: PDFCanvasPage | null
   scale: number
   panArmed: boolean
   panning: boolean
@@ -60,8 +60,8 @@ defineExpose({ scrollEl, frameEl })
 </script>
 
 <template>
-  <div ref="scrollEl" class="lws-stage" :class="cursorClass" tabindex="0" @wheel="onWheel">
-    <div class="lws-stage-pad">
+  <div ref="scrollEl" class="pck-stage" :class="cursorClass" tabindex="0" @wheel="onWheel">
+    <div class="pck-stage-pad">
       <PageFrame
         v-if="props.page"
         ref="frameRef"

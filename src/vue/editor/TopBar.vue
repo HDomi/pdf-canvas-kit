@@ -34,10 +34,10 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <header class="lws-topbar">
+  <header class="pck-topbar">
     <button
       type="button"
-      class="lws-icon-btn"
+      class="pck-icon-btn"
       :title="props.t('topbar.back')"
       :aria-label="props.t('topbar.back')"
       @click="emit('back')"
@@ -53,11 +53,11 @@ const emit = defineEmits<{
 
     <SaveBadge :state="props.saveState" :t="props.t" />
 
-    <div class="lws-topbar-spacer" />
+    <div class="pck-topbar-spacer" />
 
     <button
       type="button"
-      class="lws-icon-btn"
+      class="pck-icon-btn"
       :disabled="!props.canUndo"
       :title="props.t('topbar.undo')"
       :aria-label="props.t('topbar.undo')"
@@ -67,7 +67,7 @@ const emit = defineEmits<{
     </button>
     <button
       type="button"
-      class="lws-icon-btn"
+      class="pck-icon-btn"
       :disabled="!props.canRedo"
       :title="props.t('topbar.redo')"
       :aria-label="props.t('topbar.redo')"
@@ -76,12 +76,12 @@ const emit = defineEmits<{
       ↷
     </button>
 
-    <span class="lws-topbar-divider" />
+    <span class="pck-topbar-divider" />
 
     <!-- 프로토타입 저장 버튼. 실서버가 붙으면 [내보내기] 로 되돌린다 (PLAN 18.5). -->
     <button
       type="button"
-      class="lws-primary-btn"
+      class="pck-primary-btn"
       :disabled="!props.canSave || props.saving"
       :title="props.t('topbar.saveHint')"
       @click="emit('manualSave')"

@@ -92,12 +92,12 @@ const rotateStyle = computed(() => {
 
 <template>
   <!-- 회전은 이 래퍼가 담당한다. 핸들 좌표를 개별로 회전 계산하지 않는다. -->
-  <div class="lws-handle-group" :style="groupStyle">
+  <div class="pck-handle-group" :style="groupStyle">
     <button
       v-for="id in HANDLE_IDS"
       :key="id"
       type="button"
-      class="lws-handle"
+      class="pck-handle"
       :data-handle="id"
       :style="styleFor(id)"
       :aria-label="`resize ${id}`"
@@ -107,7 +107,7 @@ const rotateStyle = computed(() => {
     <button
       v-if="props.rotatable"
       type="button"
-      class="lws-handle lws-handle--rotate"
+      class="pck-handle pck-handle--rotate"
       :style="rotateStyle"
       aria-label="rotate"
       @pointerdown.stop.prevent="emit('grabRotate', $event)"

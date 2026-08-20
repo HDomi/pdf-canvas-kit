@@ -26,10 +26,10 @@ function onInput(e: Event) {
 </script>
 
 <template>
-  <label class="lws-field">
-    <span class="lws-field-label">{{ props.t('inspector.points') }}</span>
+  <label class="pck-field">
+    <span class="pck-field-label">{{ props.t('inspector.points') }}</span>
     <input
-      class="lws-input lws-input--num"
+      class="pck-input pck-input--num"
       type="number"
       min="1"
       step="1"

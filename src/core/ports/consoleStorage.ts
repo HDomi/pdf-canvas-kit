@@ -12,7 +12,7 @@
  * 없고, 그게 실제로 저장될 형태라고 오해할 여지도 생긴다.
  */
 import { findBlobBackgrounds, isSerializable } from '../model/serialize'
-import type { WorksheetDoc } from '../model/types'
+import type { PDFCanvasDoc } from '../model/types'
 import type { StoragePort } from './StoragePort'
 
 export interface ConsoleStorageOptions {
@@ -28,7 +28,7 @@ export interface ConsoleStorageOptions {
 }
 
 /** 사람이 읽을 수 있도록 배경 URL을 줄인 사본. 저장 페이로드가 아니다. */
-function describe(doc: WorksheetDoc, verbose: boolean): unknown {
+function describe(doc: PDFCanvasDoc, verbose: boolean): unknown {
   return {
     ...doc,
     pages: doc.pages.map((p) => ({
@@ -45,7 +45,7 @@ function describe(doc: WorksheetDoc, verbose: boolean): unknown {
 }
 
 export function createConsoleStoragePort(options: ConsoleStorageOptions = {}): StoragePort {
-  const label = options.label ?? '[worksheet]'
+  const label = options.label ?? '[pdf-canvas-kit]'
   const verbose = options.verbose ?? false
 
   return {

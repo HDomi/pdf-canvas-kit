@@ -14,7 +14,7 @@ export {
   isPdf,
   fileExtension,
   MAX_FILE_BYTES,
-  MAX_WORKSHEET_PAGES,
+  MAX_DOC_PAGES,
   SUPPORTED_EXTENSIONS,
 } from './loadPdf'
 export {

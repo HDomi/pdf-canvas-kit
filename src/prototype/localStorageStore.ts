@@ -8,12 +8,16 @@
  *
  * | 키 | 내용 |
  * | --- | --- |
- * | `IMAGES` | `{ [assetId]: base64 data URL }` |
- * | `SAVED_DOC` | 문서 JSON. 배경 `url` 은 `local:<assetId>` 참조 |
+ * | `pdf-canvas-kit.images` | `{ [assetId]: base64 data URL }` |
+ * | `pdf-canvas-kit.doc` | 문서 JSON. 배경 `url` 은 `pck-local:<assetId>` 참조 |
  *
  * 이미지와 문서를 나눈 이유: 한 덩어리로 넣으면 문서 구조를 눈으로 확인할 때마다 수백 KB의
- * base64를 헤집어야 한다. 나눠 두면 `SAVED_DOC` 만 읽어 구조를 볼 수 있고, 실제 서버가
+ * base64를 헤집어야 한다. 나눠 두면 문서 키만 읽어 구조를 볼 수 있고, 실제 서버가
  * 이미지를 별도 스토리지에 두는 형태와도 같은 모양이 된다.
+ *
+ * **키에 패키지 이름을 붙인다.** localStorage 는 오리진 하나를 호스트 앱과 공유하므로,
+ * `IMAGES` 처럼 흔한 이름을 쓰면 호스트의 키를 덮어쓸 수 있다. 라이브러리가 남의 네임스페이스를
+ * 침범하지 않는다.
  *
  * ## 한계 (프로토타입인 이유)
  *
@@ -21,24 +25,29 @@
  * 팽창하므로 **약 9~18페이지에서 한계에 닿는다.** 초과하면 `QuotaExceededError` 를 그대로
  * 던진다 — 조용히 잘라내면 나중에 없는 페이지를 찾게 된다.
  */
-import type { PageBackground, WorksheetDoc } from '../core/model/types'
+import type { PageBackground, PDFCanvasDoc } from '../core/model/types'
 
 /** 이미지 저장 키. */
-export const IMAGES_KEY = 'IMAGES'
+export const IMAGES_KEY = 'pdf-canvas-kit.images'
 /** 문서 저장 키. */
-export const SAVED_DOC_KEY = 'SAVED_DOC'
+export const SAVED_DOC_KEY = 'pdf-canvas-kit.doc'
 
-/** 배경 `url` 에 쓰는 참조 접두사. */
-export const LOCAL_REF_PREFIX = 'local:'
+/**
+ * 배경 `url` 에 쓰는 참조 접두사.
+ *
+ * `local:` 이 아니라 접두사를 붙였다 — 저장된 문서 JSON 안에 남는 값이므로, 나중에 이 문서를
+ * 읽는 쪽이 "이건 누가 만든 참조인가" 를 알 수 있어야 한다.
+ */
+export const LOCAL_REF_PREFIX = 'pck-local:'
 
-/** `IMAGES` 의 형태. */
+/** 이미지 맵의 형태. */
 export type ImageMap = Record<string, string>
 
 export class PrototypeQuotaError extends Error {
   readonly approxBytes: number
   constructor(approxBytes: number, cause?: unknown) {
     super(
-      `[worksheet:prototype] localStorage quota exceeded (~${Math.round(approxBytes / 1024 / 1024)}MB). ` +
+      `[pdf-canvas-kit:prototype] localStorage quota exceeded (~${Math.round(approxBytes / 1024 / 1024)}MB). ` +
         'localStorage 는 오리진당 5~10MB 입니다. 페이지를 줄이거나 RENDER_DEFAULTS.targetPx 를 낮춰 주세요.',
       cause === undefined ? undefined : { cause },
     )
@@ -59,7 +68,7 @@ function toDataUrl(blob: Blob): Promise<string> {
     reader.onload = () => {
       const result = reader.result
       if (typeof result === 'string') resolve(result)
-      else reject(new Error('[worksheet:prototype] readAsDataURL did not return a string'))
+      else reject(new Error('[pdf-canvas-kit:prototype] readAsDataURL did not return a string'))
     }
     reader.onerror = () => reject(reader.error ?? new Error('FileReader failed'))
     reader.readAsDataURL(blob)
@@ -70,7 +79,7 @@ function toDataUrl(blob: Blob): Promise<string> {
 async function readAsDataUrl(url: string): Promise<string> {
   if (url.startsWith('data:')) return url
   const res = await fetch(url)
-  if (!res.ok) throw new Error(`[worksheet:prototype] could not read ${url} (${res.status})`)
+  if (!res.ok) throw new Error(`[pdf-canvas-kit:prototype] could not read ${url} (${res.status})`)
   return toDataUrl(await res.blob())
 }
 
@@ -90,7 +99,7 @@ export interface SaveResult {
  *
  * @throws {PrototypeQuotaError} localStorage 용량을 넘겼을 때
  */
-export async function savePrototype(doc: WorksheetDoc): Promise<SaveResult> {
+export async function savePrototype(doc: PDFCanvasDoc): Promise<SaveResult> {
   const images: ImageMap = {}
 
   const pages = await Promise.all(
@@ -112,7 +121,7 @@ export async function savePrototype(doc: WorksheetDoc): Promise<SaveResult> {
     }),
   )
 
-  const payload: WorksheetDoc = { ...doc, pages }
+  const payload: PDFCanvasDoc = { ...doc, pages }
   const docJson = JSON.stringify(payload)
   const imagesJson = JSON.stringify(images)
   const approxBytes = docJson.length + imagesJson.length
@@ -134,11 +143,11 @@ export async function savePrototype(doc: WorksheetDoc): Promise<SaveResult> {
  * 뷰어가 이걸 그대로 렌더할 수 있다. 이미지가 없는 참조는 `blank` 배경으로 떨어뜨린다 —
  * 깨진 이미지 아이콘보다 빈 페이지가 낫고, 무엇이 없는지 콘솔로 알린다.
  */
-export function loadPrototype(): WorksheetDoc | null {
+export function loadPrototype(): PDFCanvasDoc | null {
   const docJson = localStorage.getItem(SAVED_DOC_KEY)
   if (!docJson) return null
 
-  const doc = JSON.parse(docJson) as WorksheetDoc
+  const doc = JSON.parse(docJson) as PDFCanvasDoc
   const imagesJson = localStorage.getItem(IMAGES_KEY)
   const images = (imagesJson ? JSON.parse(imagesJson) : {}) as ImageMap
 
@@ -151,7 +160,7 @@ export function loadPrototype(): WorksheetDoc | null {
       const assetId = bg.url.slice(LOCAL_REF_PREFIX.length)
       const dataUrl = images[assetId]
       if (!dataUrl) {
-        console.warn(`[worksheet:prototype] image ${assetId} missing — rendering a blank page`)
+        console.warn(`[pdf-canvas-kit:prototype] image ${assetId} missing — rendering a blank page`)
         return { ...page, background: { kind: 'blank' as const } }
       }
       return { ...page, background: { ...bg, url: dataUrl } }

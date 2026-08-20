@@ -20,16 +20,16 @@ const emit = defineEmits<{
 </script>
 
 <template>
-  <div class="lws-modal-scrim" @click.self="emit('cancel')">
-    <section class="lws-modal lws-modal--confirm" role="alertdialog" aria-modal="true">
-      <p class="lws-confirm-message">{{ props.message }}</p>
-      <div class="lws-confirm-actions">
-        <button type="button" class="lws-ghost-btn" @click="emit('cancel')">
+  <div class="pck-modal-scrim" @click.self="emit('cancel')">
+    <section class="pck-modal pck-modal--confirm" role="alertdialog" aria-modal="true">
+      <p class="pck-confirm-message">{{ props.message }}</p>
+      <div class="pck-confirm-actions">
+        <button type="button" class="pck-ghost-btn" @click="emit('cancel')">
           {{ props.cancelLabel }}
         </button>
         <button
           type="button"
-          class="lws-primary-btn"
+          class="pck-primary-btn"
           :class="{ 'is-danger': props.danger }"
           @click="emit('confirm')"
         >

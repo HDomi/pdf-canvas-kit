@@ -8,7 +8,7 @@
 import { computed } from 'vue'
 import { mergeBoxStyle, type BoxStylePatch } from '../../../core/model/boxStyle'
 import { validateObject } from '../../../core/validation/rules'
-import type { BoxStyle, TextObject, WorksheetObject } from '../../../core/model/types'
+import type { BoxStyle, TextObject, PDFCanvasObject } from '../../../core/model/types'
 import BoxStylePanel from './BoxStylePanel.vue'
 import DropboxPanel from './DropboxPanel.vue'
 import EssayPanel from './EssayPanel.vue'
@@ -19,7 +19,7 @@ import TextPanel from './TextPanel.vue'
 
 const props = defineProps<{
   /** 선택된 객체들. 0개면 빈 상태, 2개 이상이면 개수만 보여준다. */
-  selected: WorksheetObject[]
+  selected: PDFCanvasObject[]
   /** 자동 부여된 문항 번호. 수동 입력이 비어 있을 때 placeholder로 보여준다 (PLAN Q9). */
   autoNumber?: string | null
   t: (key: string, vars?: Record<string, unknown>) => string
@@ -27,7 +27,7 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  update: [objectId: string, patch: Partial<WorksheetObject>]
+  update: [objectId: string, patch: Partial<PDFCanvasObject>]
   remove: [objectId: string]
   /** 회전은 별도 커맨드다. Answer Box를 거르는 불변식이 커맨드에 있다. */
   rotate: [objectId: string, deg: number]
@@ -111,7 +111,7 @@ function patchBoxStyle(p: BoxStylePatch) {
   }
 
   const merged = mergeBoxStyle(boxStyle.value, p)
-  patch({ style: merged } as Partial<WorksheetObject>)
+  patch({ style: merged } as Partial<PDFCanvasObject>)
 }
 
 /** 회전 가능한 유형만 회전 입력을 보여준다 (PLAN Q8). */
@@ -122,33 +122,33 @@ const rotatable = computed(
     single.value?.type === 'mask',
 )
 
-function patch(p: Partial<WorksheetObject>) {
+function patch(p: Partial<PDFCanvasObject>) {
   if (!single.value || props.readOnly) return
   emit('update', single.value.id, p)
 }
 </script>
 
 <template>
-  <aside class="lws-inspector">
-    <header class="lws-panel-head">
+  <aside class="pck-inspector">
+    <header class="pck-panel-head">
       <span>{{ props.t('inspector.title') }}</span>
-      <span v-if="typeLabel" class="lws-panel-count">{{ typeLabel }}</span>
+      <span v-if="typeLabel" class="pck-panel-count">{{ typeLabel }}</span>
     </header>
 
-    <div class="lws-inspector-body">
-      <p v-if="props.selected.length === 0" class="lws-panel-empty">
+    <div class="pck-inspector-body">
+      <p v-if="props.selected.length === 0" class="pck-panel-empty">
         {{ props.t('inspector.empty') }}
       </p>
 
-      <p v-else-if="!single" class="lws-panel-empty">
+      <p v-else-if="!single" class="pck-panel-empty">
         {{ props.t('inspector.multiple', { count: props.selected.length }) }}
       </p>
 
       <template v-else>
-        <label v-if="isAnswerBox" class="lws-field">
-          <span class="lws-field-label">{{ props.t('inspector.label') }}</span>
+        <label v-if="isAnswerBox" class="pck-field">
+          <span class="pck-field-label">{{ props.t('inspector.label') }}</span>
           <input
-            class="lws-input"
+            class="pck-input"
             type="text"
             maxlength="12"
             :value="'label' in single ? (single.label ?? '') : ''"
@@ -156,10 +156,10 @@ function patch(p: Partial<WorksheetObject>) {
             @input="
               patch({
                 label: ($event.target as HTMLInputElement).value,
-              } as Partial<WorksheetObject>)
+              } as Partial<PDFCanvasObject>)
             "
           />
-          <span class="lws-field-note">{{ props.t('inspector.labelNote') }}</span>
+          <span class="pck-field-note">{{ props.t('inspector.labelNote') }}</span>
         </label>
 
         <PointsField
@@ -167,9 +167,9 @@ function patch(p: Partial<WorksheetObject>) {
           :model-value="single.points"
           :invalid="issues.includes('POINTS_INVALID')"
           :t="props.t"
-          @update:model-value="patch({ points: $event } as Partial<WorksheetObject>)"
+          @update:model-value="patch({ points: $event } as Partial<PDFCanvasObject>)"
         />
-        <p v-if="issues.includes('POINTS_INVALID')" class="lws-field-error" role="alert">
+        <p v-if="issues.includes('POINTS_INVALID')" class="pck-field-error" role="alert">
           {{ props.t('error.pointsRequired') }}
         </p>
 
@@ -208,10 +208,10 @@ function patch(p: Partial<WorksheetObject>) {
 
         <BoxStylePanel v-if="styleable" :style="boxStyle" :t="props.t" @update="patchBoxStyle" />
 
-        <label v-if="rotatable" class="lws-field">
-          <span class="lws-field-label">{{ props.t('inspector.rotation') }}</span>
+        <label v-if="rotatable" class="pck-field">
+          <span class="pck-field-label">{{ props.t('inspector.rotation') }}</span>
           <input
-            class="lws-input lws-input--num"
+            class="pck-input pck-input--num"
             type="number"
             min="0"
             max="359"
@@ -225,7 +225,7 @@ function patch(p: Partial<WorksheetObject>) {
 
         <button
           type="button"
-          class="lws-ghost-btn lws-inspector-delete"
+          class="pck-ghost-btn pck-inspector-delete"
           :disabled="props.readOnly"
           @click="emit('remove', single.id)"
         >

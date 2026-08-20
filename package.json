@@ -55,8 +55,9 @@
     "fixtures": "node scripts/make-fixtures.mjs",
     "license-check": "npx --yes license-checker-rseidelsohn --production --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;CC0-1.0;Unlicense;0BSD'",
     "copy:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
-    "postinstall": "node scripts/copy-pdfjs-assets.mjs",
-    "prepublishOnly": "npm run typecheck && npm run lint && npm run checks && npm run build"
+    "prepare": "node scripts/copy-pdfjs-assets.mjs",
+    "verify:tarball": "node scripts/verify-tarball.mjs",
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run checks && npm run build && npm run verify:tarball"
   },
   "dependencies": {
     "pdfjs-dist": "^6.2.108"

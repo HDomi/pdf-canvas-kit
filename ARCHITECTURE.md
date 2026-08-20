@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.7 |
+| 문서 버전 | arch-2.8 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R9 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R10 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -486,6 +486,31 @@ D25(커스텀 객체 레지스트리)로 얻은 것을 잃는다.
 
 QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
 
+## 7.8 패키징 경계 ★
+
+`files` 에 들어가는 것은 `dist` · `README.md` · `LICENSE` **뿐**이다. 그래서 npm 라이프사이클
+훅을 고를 때 규칙이 하나 있다.
+
+| 훅 | 레포에서 `npm install` | publish 전 | **소비자가 설치할 때** |
+| --- | --- | --- | --- |
+| `postinstall` | 실행 | — | **실행** |
+| `prepare` | 실행 | 실행 | 실행 안 함 |
+| `prepublishOnly` | — | 실행 | — |
+
+**레포 안의 파일을 건드리는 스크립트는 `postinstall` 에 두지 않는다.** tarball 에 그 파일이
+없으므로 소비자 설치가 `MODULE_NOT_FOUND` 로 죽는다. `copy:pdfjs` 가 정확히 그 사고를 냈다
+(PLAN 20.19) — 데모 폴더로 pdf.js 자산을 복사하는 스크립트인데 소비자에게도 실행됐다.
+
+```jsonc
+// ✗ 소비자 설치가 죽는다 — scripts/ 가 tarball 에 없다
+"postinstall": "node scripts/copy-pdfjs-assets.mjs"
+// ✓ 레포 개발자와 publish 에만 필요하다
+"prepare": "node scripts/copy-pdfjs-assets.mjs"
+```
+
+`npm pack --dry-run` 은 **파일 목록만** 보여주고 설치를 실행하지 않는다. 이 종류는
+**tarball 을 실제 앱에 설치해야만** 잡힌다.
+
 ## 8. 디렉토리
 
 ```
@@ -681,12 +706,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **245 케이스 / 35 그룹** (`PCK_BREAKDOWN=1 npm run checks` 로 내역 확인)
+   **251 케이스 / 36 그룹** (`PCK_BREAKDOWN=1 npm run checks` 로 내역 확인)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 245 / 245 passed · 35 groups · ok  (실패 시 exit 1)
+npm run checks                    # 251 / 251 passed · 36 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -1240,6 +1265,20 @@ DOM 을 직접 들고 있기 때문의 제약이고, portal 경로에는 해당�
 | 갱신 | `onUpdate(fn)` | 리렌더 |
 | 목록 증감 | DOM 을 손으로 | `map` / `v-for` |
 | 포커스 가드 | **필요** | 불필요 |
+
+### ⚠️ 슬롯 맵 타입은 `any` 여야 한다
+
+```ts
+// src/react/index.tsx
+export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
+```
+
+`kind` 마다 `Data` 가 다른 컴포넌트를 한 맵에 담아야 한다. `never` 로 좁히면 `onChange`
+(**반공변**)가 소비자 컴포넌트를 거절하고, `unknown` 으로 넓히면 `data`(공변)가 거절한다.
+양쪽을 통과하는 것은 `any` 뿐이다 — `AnyObjectTypeDef` 가 `validate` 때문에 같은 선택을 했다.
+
+**소비자가 캐스트를 써야 하면 그건 API 버그다.** R10 에서 실제 앱에 설치해 보고서야 잡혔다
+(PLAN 20.19). 데모에서 `as never` 로 우회하지 않는다 — 우회하면 같은 회귀를 다시 못 잡는다.
 
 ### ⚠️ `position: fixed` 는 갇힌다
 

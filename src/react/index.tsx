@@ -54,8 +54,19 @@ export interface CustomSlotProps<Data = unknown> {
   onChange: (next: Data) => void
 }
 
-/** `kind` → 컴포넌트. 등록되지 않은 `kind` 는 그리지 않는다. */
-export type SlotMap = Record<string, (props: CustomSlotProps<never>) => ReactNode>
+/**
+ * `kind` → 컴포넌트. 등록되지 않은 `kind` 는 그리지 않는다.
+ *
+ * `any` 가 여기서는 정확한 선택이다. `kind` 마다 `Data` 가 다른 컴포넌트를 한 맵에 담아야
+ * 하는데, `never` 로 두면 `onChange: (next: never) => void` 가 되어 **반공변 위치에서**
+ * `CustomSlotProps<Note>` 컴포넌트가 거절되고, `unknown` 으로 두면 이번엔 `data` 쪽(공변)이
+ * 거절된다. 양쪽을 통과하는 것은 `any` 뿐이다 — `AnyObjectTypeDef` 가 같은 이유로 같은
+ * 선택을 했다 (`core/objectTypes.ts`).
+ *
+ * 슬롯 내부의 타입 안전은 컴포넌트가 `CustomSlotProps<Data>` 를 명시해서 얻는다.
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 
 export interface PDFCanvasEditorProps extends Omit<
   EditorProps,
@@ -184,7 +195,7 @@ export function PDFCanvasEditor({
         createPortal(
           <Slot
             objectId={objectId}
-            data={obj.data as never}
+            data={obj.data}
             onChange={(next: unknown) => handleRef.current?.updateObjectData(objectId, next)}
           />,
           el,

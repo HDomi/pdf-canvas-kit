@@ -223,8 +223,8 @@ function App() {
           initialDoc={loaded}
           ports={{ storage }}
           objectTypes={[choice]}
-          renderObject={{ 'demo.choice': ChoiceCanvas as never }}
-          renderInspector={{ 'demo.choice': ChoiceInspector as never }}
+          renderObject={{ 'demo.choice': ChoiceCanvas }}
+          renderInspector={{ 'demo.choice': ChoiceInspector }}
           onChange={(doc) => setStatus(`${doc.pages.length} 페이지 · "${doc.title}"`)}
           style={{ height: '100%' }}
         />

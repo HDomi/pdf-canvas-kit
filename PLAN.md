@@ -3,7 +3,7 @@
 | 항목 | 내용 |
 | --- | --- |
 | 대상 기획 | PDFCanvas v0.19 (초안) |
-| 문서 버전 | plan-2.2 |
+| 문서 버전 | plan-2.3 |
 | 최초 작성일 | 2026.08.19 |
 | 최종 수정일 | 2026.08.20 |
 | 범위 | `PDFCanvasEditor` 우선 구현, `PDFCanvasViewer` 골격만 |
@@ -1912,7 +1912,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R7** ✅ | 인스펙터 | 패널 8개 → 파일 5개 ✅. 검증 경고 · BoxStyle 3상태 포함. `/checks/` **295 케이스 / 40 그룹**. 상세 20.12 |
 | **R8** ✅ | 커스텀 객체 레지스트리 | Answer Box 제거 + `objectTypes` 레지스트리 ✅ (D25). **2,277줄 삭제 / 990줄 추가.** 상세 20.13 |
 | **R9** ✅ | 프레임워크 래퍼 | facade `createPDFCanvasEditor` + `/react` · `/vue` 엔트리 + portal 배선 + 데모 2개 ✅. 래퍼 번들 **React 2.0KB · Vue 3.0KB**. `/checks/` **251 케이스 / 36 그룹**. 상세 20.17 |
-| **R10** | 배포 준비 | `npm pack` 산출물을 React 앱·Vue 앱에 각각 설치해 동작. 문서 3종 갱신 |
+| **R10** ✅ | 배포 준비 | tarball 을 React 앱·Vue 앱에 실제 설치해 검증 ✅. **배포를 막는 버그 2건을 여기서만 잡았다** — `postinstall` 누락 파일, `SlotMap` 반공변. 상세 20.19 |
 | **R11** | `PDFCanvasViewer` | 읽기 전용 렌더 + `Viewer` 슬롯. 원본 저장소에도 뷰어 코드는 없어 새로 쓴다 |
 | **R12** | 크롬 슬롯 | 크롬 조각 10개를 슬롯으로 교체 가능하게 (D27). **캔버스는 닫아둔다.** R11 이 컨트롤러를 건드린 뒤에 계약을 확정한다 |
 
@@ -2736,8 +2736,8 @@ R3 에서 남긴 질문은 "controlled 가 아닌 prop 을 `doc` 이라 불러�
 | 데모 5개 빌드 (`/editor/` `/react/` `/vue/` `/checks/` `/spike/`) | ✅ |
 | `npm pack` 산출물에 `dist/react`·`dist/vue` 의 `.js` + `.d.ts` | ✅ |
 | `destroy()` 멱등 · 마운트 통지 · `update()` 가 `initialDoc` 무시 | ✅ 케이스로 고정 (6건) |
-| **portal 안에서 보기 추가·삭제 중 포커스 유지** | ⏳ 브라우저 확인 필요 — happy-dom 은 포커스·레이아웃이 없다 |
-| **React·Vue 양쪽 조작 동등성** (드래그·줌·IME) | ⏳ 같은 이유 |
+| **portal 안에서 보기 추가·삭제 중 포커스 유지** | ✅ 브라우저 확인 (2026.08.20) — 가드 없이 동작한다 |
+| **React·Vue 양쪽 조작 동등성** (드래그·줌·IME) | ✅ 브라우저 확인 (2026.08.20). React 는 StrictMode 로 띄워 `destroy()` 멱등까지 함께 확인 |
 
 #### 함께 넣은 케이스
 
@@ -2780,3 +2780,82 @@ export function confirmDialog(props: ConfirmDialogProps): HTMLElement
 
 R11 이 `PDFCanvasViewer` 를 만들면서 컨트롤러를 건드린다. 슬롯 계약을 그 전에 확정하면 두 번
 고치게 되므로 **R11 이후**에 시작한다.
+
+### 20.19 R10 — tarball 설치 검증 (2026.08.20)
+
+`npm pack --dry-run` 은 **파일 목록만** 보여준다. 설치를 실행하지 않으므로 설치 시점의 실패를
+잡지 못한다. 실제 소비자 앱 두 개를 만들어 tarball 을 설치했고, **배포를 막는 버그 2건이
+여기서만 드러났다.**
+
+#### 버그 1 — `postinstall` 이 tarball 에 없는 파일을 실행한다 (치명)
+
+```
+npm error command sh -c node scripts/copy-pdfjs-assets.mjs
+npm error Error: Cannot find module '.../node_modules/pdf-canvas-kit/scripts/copy-pdfjs-assets.mjs'
+```
+
+`files` 는 `["dist", "README.md", "LICENSE"]` 라 `scripts/` 가 tarball 에 없다. 그런데
+`postinstall` 이 그 파일을 실행한다 — **어떤 소비자도 설치를 완료할 수 없다.**
+
+그 스크립트는 pdf.js 자산을 `demo/public/pdfjs` 로 복사하는 **데모용**이다. 소비자는 자기 앱의
+서빙 폴더로 복사해야 하고 README 가 그 방법을 안내한다. 즉 소비자에게 실행될 이유가 없다.
+
+`postinstall` → **`prepare`** 로 옮겼다. npm 은 `prepare` 를 레포에서 `npm install` 할 때와
+publish 전에만 돌리고, **의존성으로 설치될 때는 실행하지 않는다.** 정확히 원하는 경계다.
+
+| | `postinstall` | `prepare` |
+| --- | --- | --- |
+| 레포에서 `npm install` | 실행 | 실행 |
+| publish 전 | — | 실행 |
+| **소비자가 설치할 때** | **실행 (문제)** | **실행 안 함** |
+
+`files` 에 `scripts/` 를 넣는 방법도 있었지만 버렸다 — 소비자 `node_modules` 에 데모용
+스크립트를 배포하는 것이고, 실행되면 소비자 프로젝트에 `demo/public/` 을 만든다.
+
+#### 버그 2 — `SlotMap` 이 소비자 컴포넌트를 거절한다
+
+```ts
+// ✗ R9 에서 쓴 것
+export type SlotMap = Record<string, (props: CustomSlotProps<never>) => ReactNode>
+```
+
+```
+error TS2322: Type '({ data }: CustomSlotProps<Note>) => Element' is not assignable to
+  type '(props: CustomSlotProps<never>) => ReactNode'.
+    Types of property 'onChange' are incompatible.
+      Type '(next: never) => void' is not assignable to type '(next: Note) => void'.
+```
+
+`onChange` 는 **반공변** 위치다. `never` 로 두면 `data`(공변)는 통과하지만 `onChange` 가 막힌다.
+`unknown` 은 반대로 `data` 에서 막힌다. **양쪽을 통과하는 것은 `any` 뿐이다** —
+`AnyObjectTypeDef = ObjectTypeDef<any>` 가 `validate` 의 반공변 때문에 같은 선택을 했다.
+
+> ⚠️ **이 버그는 R9 에서 이미 신호를 보냈다.** `demo/react/main.tsx` 에 `ChoiceCanvas as never`
+> 캐스트를 쓰면서 타입이 잘못됐다는 증거를 손에 들고도 넘겼다. **공개 API 가 소비자에게
+> 캐스트를 요구하면 그건 API 버그다** — 소비자는 그 캐스트를 발명할 수 없다.
+> 데모의 캐스트도 함께 지웠다. 캐스트가 남아 있으면 같은 회귀를 다시 못 잡는다.
+
+#### 검증 방법
+
+두 앱 모두 `skipLibCheck: false` 로 타입체크했다 — 그래야 생성된 `.d.ts` 자체의 품질이 검사된다.
+
+| | React 앱 | Vue 앱 |
+| --- | --- | --- |
+| 프레임워크 | React 19 + `@vitejs/plugin-react` | Vue 3.5 + `@vitejs/plugin-vue` (SFC) |
+| 타입체크 | `tsc --noEmit` exit 0 | `vue-tsc --noEmit` exit 0 |
+| 빌드 | 704KB (pdfjs 포함) + CSS 19.1KB | 579KB + CSS 19.1KB |
+| 슬롯 | `createPortal` — 캐스트 없이 붙는다 | `Teleport` — SFC 컴포넌트 그대로 |
+| preview 서버 | :4301 — HTML·JS·CSS 전부 200 | :4302 — 동일 |
+
+**alias 를 하나도 쓰지 않았다.** `exports` 맵과 `node_modules` 경로 해석만으로 동작한다 —
+데모(`vite.demo.config.ts`)는 alias 로 소스를 가리키므로 이 경로를 검증하지 못한다.
+
+React 앱은 `StrictMode` 로 띄웠고 편집기가 두 벌 남지 않는다.
+
+#### 확인하지 못한 것
+
+| | |
+| --- | --- |
+| 실제 registry 설치 (`npm publish` 후) | ⏳ 미배포. `file:` 프로토콜과 registry 는 tarball 해석이 같지만 동일하다고 단정하지 않는다 |
+| pdf.js 자산 복사를 소비자가 직접 하는 경로 | ⏳ 두 앱 모두 `workerSrc` 만 설정했고 PDF 를 실제로 열지는 않았다. CJK 폰트 누락은 그 경로에서만 드러난다 |
+| peer 미설치 시 경고 (Vue 앱에 react 없음 / 반대) | ✅ optional peer 라 경고 없음 — 두 앱 설치 로그에 peer 경고가 없었다 |

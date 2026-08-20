@@ -68,6 +68,11 @@ export const en: Record<I18nKey, string> = {
   'inspector.rubric': 'Grading guide',
   'inspector.rubricPlaceholder': 'Criteria or model answer (teacher only, hidden from students)',
   'inspector.essayNote': 'Essays are graded manually in the report after submission.',
+
+  /* 캔버스 위 Answer Box 상태 문구. 2026.08.20 추가 (구 하드코딩 제거). */
+  'canvas.noAnswer': 'No answer set',
+  'canvas.essayManual': 'Essay · manual grading',
+  'canvas.dropboxIncomplete': 'Choices or answer missing',
   'inspector.text': 'Content',
   'inspector.fontSize': 'Size',
   'inspector.color': 'Colour',

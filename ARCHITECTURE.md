@@ -5,9 +5,9 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-1.8 |
+| 문서 버전 | arch-1.9 |
 | 최종 수정일 | 2026.08.20 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R3 완료 — PLAN 20장) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R3 완료, R4 부분 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
 
 ---
@@ -529,6 +529,12 @@ src/
 ├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
 │  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
 │  h.ts                      ★ el · svg · when · list — DOM 바인딩 (§13)
+│  editor/                    재작성된 UI (구 src/vue/editor/**)
+│    pageFrame.ts            ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
+│    pageBackground.ts         배경 이미지 또는 빈 종이
+│    selectionOverlay.ts      ★ 스케일 밖 — 선택 테두리·마퀴
+│    resizeHandles.ts         ★ 9방향 + 회전. 래퍼 회전 · 핸들 역회전
+│    objects/*.ts            ★ pt를 px로 그대로. units import 금지
 ├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
 │  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
 │  stage.ts                   배율·맞춤·앵커 줌
@@ -536,7 +542,7 @@ src/
 │  pointerTool.ts             포인터 → 상태 머신
 │  pageNav.ts pan.ts panelSizes.ts pageReorder.ts
 │  engineState.ts i18n.ts editorState.ts textEntry.ts
-├─ vue/                      모든 UI  ⚠️ R9 에서 삭제 예정 (PLAN D23)
+├─ vue/                      구 Vue SFC 층  ⚠️ R9 에서 삭제 예정 (PLAN D23)
 │  ├─ PDFCanvasEditor.vue     3분할 레이아웃 + 뷰 상태
 │  ├─ composables/
 │  │   useEngine.ts           engine → Vue reactive 브릿지
@@ -674,12 +680,12 @@ localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.11
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **202 케이스 / 27 그룹** (순수 101 + 반응성 35 + DOM 33 + 컨트롤러 33 — §12·§13·§14)
+   **241 케이스 / 34 그룹** (순수 101 + 반응성 35 + DOM 33 + 컨트롤러 33 + 렌더 39 — §12~§14)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 202 / 202 passed · 27 groups · ok  (실패 시 exit 1)
+npm run checks                    # 241 / 241 passed · 34 groups · ok  (실패 시 exit 1)
 PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 ```
 
@@ -697,7 +703,8 @@ PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
 | `demo/checks/reactiveCases.ts` | 반응성 케이스 — 상태 변화 **순서**를 확인 |
 | `demo/checks/domCases.ts` | 렌더 층 케이스 — 바인딩·조건부·**키 리스트 재조정**. DOM 이 필요하다 |
 | `demo/checks/controllerCases.ts` | 컨트롤러 조립 — signal 배선·액션. DOM 이 필요하다 |
-| `demo/checks/allCases.ts` | 넷을 합친 단일 출처 |
+| `demo/checks/objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조. DOM 이 필요하다 |
+| `demo/checks/allCases.ts` | 다섯을 합친 단일 출처 |
 
 DOM 케이스는 헤드리스에서 **happy-dom**(dev 의존성)으로 돈다. 없으면 `h.ts` 전체가 게이트에서
 빠지는데, 키 기반 재조정은 눈으로 확인하기 가장 어려운 코드라 그건 받아들일 수 없었다.

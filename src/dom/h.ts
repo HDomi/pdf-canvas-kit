@@ -120,15 +120,30 @@ export type ClassValue =
   | MaybeReactive<string | null | undefined>
   | Record<string, MaybeReactive<boolean | null | undefined>>
 
+/** 스타일 프로퍼티 하나의 값. 숫자는 px 로, `null`·`undefined`·`''` 는 제거로 해석된다. */
+export type StyleProp = string | number | null | undefined
+
 /**
- * 스타일. 문자열이거나 프로퍼티 맵이다.
+ * 스타일. 세 가지 형태를 받는다.
+ *
+ * | 형태 | 쓰는 곳 |
+ * | --- | --- |
+ * | `'left:10px'` · `() => '…'` | 문자열 그대로 |
+ * | `{ left: 10, top: () => y.value }` | **키가 고정**일 때. 항목마다 effect 가 붙는다 |
+ * | `() => ({ ... })` | **키 집합이 동적**일 때. 사라진 키를 제거한다 |
+ *
+ * 세 번째가 필요한 이유: `boxStyleToCss()` 는 지정된 필드만 내보낸다(§3.3). 교사가 배경색을
+ * 껐을 때 그 키가 사라지므로, 이전 키를 지워 주지 않으면 색이 화면에 남는다.
  *
  * `--pck-*` 같은 CSS 변수도 키로 쓸 수 있다 — 패널 폭을 CSS 변수로 내려보내는 데 필요하다
  * (ARCHITECTURE §7.6). `setProperty` 를 쓰므로 커스텀 프로퍼티가 그대로 동작한다.
  */
 export type StyleValue =
-  | MaybeReactive<string | null | undefined>
-  | Record<string, MaybeReactive<string | number | null | undefined>>
+  | string
+  | null
+  | undefined
+  | (() => string | Record<string, StyleProp> | null | undefined)
+  | Record<string, MaybeReactive<StyleProp>>
 
 /** 속성 값. `null` · `undefined` · `false` 면 속성을 **제거**한다. */
 export type AttrValue = MaybeReactive<string | number | boolean | null | undefined>
@@ -183,27 +198,48 @@ function applyClass(node: Element, value: ClassValue): void {
 function applyStyle(node: Element, value: StyleValue): void {
   const style = (node as HTMLElement | SVGElement).style
 
+  const setProp = (name: string, raw: StyleProp) => {
+    if (raw === null || raw === undefined || raw === '') style.removeProperty(name)
+    else style.setProperty(name, typeof raw === 'number' ? `${raw}px` : raw)
+  }
+
   if (typeof value === 'string' || value === null || value === undefined) {
     if (value) node.setAttribute('style', value)
     return
   }
 
   if (typeof value === 'function') {
+    /*
+     * 문자열과 레코드를 모두 받는다. 레코드일 때는 **이전에 설정했던 키 중 사라진 것을 지운다** —
+     * 그러지 않으면 `boxStyleToCss()` 가 필드를 빼도 화면에 옛 값이 남는다.
+     */
+    let prevKeys: string[] = []
     effect(() => {
       const v = value()
-      if (v) node.setAttribute('style', v)
-      else node.removeAttribute('style')
+
+      if (v === null || v === undefined) {
+        for (const k of prevKeys) style.removeProperty(k)
+        prevKeys = []
+        node.removeAttribute('style')
+        return
+      }
+
+      if (typeof v === 'string') {
+        prevKeys = []
+        node.setAttribute('style', v)
+        return
+      }
+
+      for (const k of prevKeys) if (!(k in v)) style.removeProperty(k)
+      for (const [k, raw] of Object.entries(v)) setProp(k, raw)
+      prevKeys = Object.keys(v)
     })
     return
   }
 
   for (const [name, v] of Object.entries(value)) {
-    const set = (raw: string | number | null | undefined) => {
-      if (raw === null || raw === undefined || raw === '') style.removeProperty(name)
-      else style.setProperty(name, typeof raw === 'number' ? `${raw}px` : raw)
-    }
-    if (typeof v === 'function') effect(() => set(v()))
-    else set(v)
+    if (typeof v === 'function') effect(() => setProp(name, v()))
+    else setProp(name, v)
   }
 }
 

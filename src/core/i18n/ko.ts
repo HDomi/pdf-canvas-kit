@@ -71,6 +71,16 @@ export const ko = {
   'inspector.rubric': '채점 가이드',
   'inspector.rubricPlaceholder': '채점 기준·모범답안 (교사용, 학생에게 노출되지 않음)',
   'inspector.essayNote': '서술형은 학생 제출 후 Report에서 교사가 수동 채점합니다.',
+
+  /*
+   * 캔버스 위 Answer Box 에 겹쳐 표시하는 짧은 상태 문구.
+   *
+   * 2026.08.20 추가. 이전에는 객체 뷰 컴포넌트에 한국어로 **하드코딩**돼 있었다 —
+   * `locale: 'en'` 으로 써도 캔버스에만 한국어가 남았다 (기획 3.2 하드코딩 금지).
+   */
+  'canvas.noAnswer': '정답 미입력',
+  'canvas.essayManual': '서술형 · 수동 채점',
+  'canvas.dropboxIncomplete': '보기·정답 미완성',
   'inspector.text': '내용',
   'inspector.fontSize': '크기',
   'inspector.color': '색',

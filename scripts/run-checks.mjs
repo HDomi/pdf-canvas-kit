@@ -148,6 +148,7 @@ try {
       REACTIVE_GROUPS: 'reactive',
       DOM_GROUPS: 'dom',
       CONTROLLER_GROUPS: 'controller',
+      OBJECT_RENDER_GROUPS: 'render',
     }
     for (const [k, label] of Object.entries(src)) {
       const g = mod[k]

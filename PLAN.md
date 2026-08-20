@@ -1898,7 +1898,7 @@ npm run typecheck && npm run lint && npm run build && npm run checks
 | **R1** ✅ | 리네임 · 패키징 골격 | `pdf-canvas-kit` · `pck-` · MIT · `exports` 맵 3엔트리 ✅. **코드·설정에 옛 이름 0건** ✅. 네 게이트 + 데모 빌드 통과 ✅. 상세 20.6 |
 | **R2** ✅ | 반응성 · DOM substrate | `reactive.ts` + `h.ts` ✅. `/checks/` 케이스 추가 (DOM 33건). happy-dom 으로 헤드리스 실행. 상세 20.7 |
 | **R3** ✅ | 컨트롤러 이식 | composables 9개 + 루트 스크립트 → `src/controller/` ✅ (이동이 아니라 **복사** — D23). ESLint 경계 규칙 추가 + 발동 확인 ✅. `/checks/` **202 케이스 / 27 그룹**. 상세 20.8 |
-| **R4** | 객체 · 페이지 렌더 | 객체 7종 + `PageFrame` + 배경 + 오버레이 + 핸들. `/editor-dom/` 에서 렌더·선택 확인 |
+| **R4** 🟡 | 객체 · 페이지 렌더 | 객체 7종 + `pageFrame` + 배경 + 오버레이 + 핸들 ✅. `/checks/` **241 케이스 / 34 그룹** (렌더 39건 추가). `/editor-dom/` 은 R5 에서 — 스테이지 없이는 띄울 화면이 없다. 상세 20.9 |
 | **R5** | 스테이지 | 줌 · 팬 · 포인터 배선. `/editor-dom/` 에서 생성·이동·리사이즈·회전 동작 |
 | **R6** | 크롬 | 상단바 · 툴바 · 썸네일 · 줌 컨트롤 · 다이얼로그 · 컨텍스트 메뉴 |
 | **R7** | 인스펙터 | 패널 8개. 검증 경고 · 박스 색 편집 포함 |
@@ -2094,3 +2094,70 @@ ESLint 가 `src/dom/**` · `src/controller/**` 의 `vue` · `react` import 를 �
 1. 그대로 두고 문서에 명시 (문서 교체는 `key` 변경으로 리마운트)
 2. `doc` 변경을 감지해 엔진 문서를 교체 — 히스토리를 어떻게 할지 정해야 한다
 3. prop 이름을 `initialDoc` 으로 바꿔 계약을 이름으로 드러낸다
+
+### 20.9 R4 — 객체 · 페이지 렌더 (2026.08.20)
+
+`src/vue/editor/` 의 SFC 11개 → `src/dom/editor/` 의 TS 10개.
+
+| 신규 | 구 SFC |
+| --- | --- |
+| `objects/objectView.ts` | `ObjectView.vue` (+ `answerBadges` 공용 추출) |
+| `objects/textObjectView.ts` ★ | `TextObjectView.vue` (한글 IME) |
+| `objects/shapeObjectView.ts` | `ShapeObjectView.vue` |
+| `objects/{short,essay,dropbox}AnswerView.ts` | 같은 이름의 SFC 3개 |
+| `objects/maskView.ts` | `MaskView.vue` |
+| `pageFrame.ts` · `pageBackground.ts` | `PageFrame.vue` · `PageBackgroundView.vue` |
+| `selectionOverlay.ts` · `resizeHandles.ts` | 같은 이름의 SFC 2개 |
+
+ESLint 의 `geometry/units` 금지 규칙을 `src/dom/editor/objects/**` 로 확장하고 **발동을 확인했다.**
+객체 뷰가 좌표를 변환하려 하면 그 자체가 설계 위반이다(PLAN 5.3).
+
+#### 이번에 고친 것 — 캔버스 문구가 하드코딩돼 있었다
+
+`ShortAnswerView` · `EssayAnswerView` · `DropboxAnswerView` 가 `정답 미입력` ·
+`서술형 · 수동 채점` · `보기·정답 미완성` 을 **한국어 문자열로 컴포넌트에 박아** 두고 있었다.
+`locale: 'en'` 으로 써도 캔버스에만 한국어가 남는다 — 기획 3.2 하드코딩 금지 위반이다.
+
+i18n 키 3개(`canvas.noAnswer` · `canvas.essayManual` · `canvas.dropboxIncomplete`)를 ko/en 양쪽에
+추가하고 `t()` 를 거치게 했다. 같은 케이스를 ko/en 두 번 돌려 영어가 나오는 것까지 고정했다.
+
+> ⚠️ **별건으로 남은 것**: `ko.ts` 의 132개 값 중 **14개가 영어**다. `pages.title`(PAGES) ·
+> `inspector.title`(INSPECTOR) 는 와이어프레임 의도일 수 있지만, `upload.*` 8개와 `export.*` 4개는
+> 미번역으로 보인다. 제품 문구 결정이라 임의로 바꾸지 않았다. ko/en 키 집합은 132개로 일치한다.
+
+#### `h.ts` 에 동적 스타일 레코드를 추가했다
+
+`style: () => ({ ... })` 형태를 지원한다. `boxStyleToCss()` 는 **지정된 필드만** 내보내므로
+(ARCHITECTURE §3.3) 교사가 배경색을 끄면 그 키가 사라진다. 이전 키를 지워 주지 않으면 색이
+화면에 남는다. 사라진 키를 제거하는 로직을 넣었다.
+
+#### 이식하다 잡은 것 2건
+
+| 지점 | 내용 |
+| --- | --- |
+| 텍스트 최초 렌더 | 문서→DOM effect 가 `editing` 이면 건너뛰는데, **첫 실행도 건너뛰고 있었다.** `editing` 이 처음부터 true 인 상태로 마운트되면 텍스트가 아예 안 보인다. 가드는 타이핑 중 캐럿을 지키려는 것이고 아직 쓰지 않은 상태에는 지킬 캐럿이 없다 |
+| 케이스 기대값 | `rectToFrame` 이 `frameRect.left/top` 을 **더하지 않는다**고 잘못 알고 기대값을 썼다. 오버레이가 프레임 안에 절대배치되므로 더하면 이중 가산이다 — 코드가 맞았다 |
+
+전자는 세 의존성(`text` · `editing` · `composing`)을 조건 **앞에서 모두 읽어야** 한다는 제약이
+함께 붙는다. `&&` 로 짧게 끊으면 추적되지 않아 `editing` 이 false 로 바뀔 때 effect 가 돌지 않는다.
+
+#### 검증 — 렌더 케이스 39건 (전체 241)
+
+가장 중요한 것은 **pt 가 px 로 그대로 나가는가**다. 배율이 객체 스타일에 섞이면 이중 적용이고,
+증상은 "확대하면 객체가 점점 멀어진다" 로 원인을 찾기 어렵다(CLAUDE.md 6장의 단골 실수).
+
+| 고정한 것 |
+| --- |
+| 객체 rect 가 곱셈 없이 px 로 나간다 · preview 가 문서 값을 대신한다 |
+| 회전 0 이면 `transform` 을 남기지 않는다 |
+| 페이지 프레임은 `size*scale`, 안쪽은 pt + `scale()` — 배율을 바꿔도 안쪽 pt 는 불변 |
+| 오버레이가 스케일된 엘리먼트 **밖**에 있다 (핸들 크기 고정 — D5) |
+| 선택 박스가 **프레임 로컬** 좌표다 (frameRect 이중 가산 방지) |
+| 회전 시 래퍼가 돌고 핸들은 역회전한다 |
+| 도형이 SVG 네임스페이스로 만들어진다 — 자식까지 |
+| 빈 배경이면 `<img>` 를 만들지 않는다 (빈 `src` 요청 방지) |
+| 편집 중에는 문서 값이 DOM 을 덮지 않는다 |
+
+**여전히 덮이지 않는 것**: happy-dom 은 레이아웃이 없다. 실제 겹침·핸들 잡기·**한글 IME 조합**은
+브라우저에서 손으로 확인해야 한다. IME 는 조합 이벤트와 selection 이 happy-dom 에 없어 원리적으로
+헤드리스 검증이 불가능하다.

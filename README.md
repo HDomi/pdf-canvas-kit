@@ -113,7 +113,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | [`/editor/`](http://localhost:3100/editor/) | `PDFCanvasEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
 | [`/spike/`](http://localhost:3100/spike/) | PDF를 페이지 이미지로 변환. 페이지별 pt 크기·해상도·소요시간·폰트 진단 |
 | `/viewer/` | `PDFCanvasViewer` (미구현) |
-| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 검증 — **202 케이스 / 27 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
+| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **241 케이스 / 34 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
 
 `/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
 `/spike/` 는 PDF를 끌어다 놓아도 된다.
@@ -161,7 +161,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | `npm run typecheck` | `vue-tsc` + node config 타입체크 |
 | `npm run lint` | ESLint + Prettier 검사 |
 | `npm run fix` | ESLint --fix + Prettier --write |
-| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (202 케이스. 실패 시 exit 1) |
+| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (241 케이스. 실패 시 exit 1) |
 | `npm run fixtures` | 테스트 PDF 생성 (크기 혼합·회전·CropBox·100페이지·손상) |
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |

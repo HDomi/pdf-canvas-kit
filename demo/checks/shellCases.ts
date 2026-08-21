@@ -856,4 +856,146 @@ export const SHELL_GROUPS: CaseGroup[] = [
       },
     ],
   },
+
+  {
+    title: 'shell — 썸네일 객체 표시 ★',
+    note: '모양은 사각형으로 단순화하되 색은 실제 값을 쓴다. 단색으로 그리면 캔버스의 빨간 도형이 썸네일에서 다른 색으로 보여 "다른 객체" 처럼 읽힌다.',
+    cases: [
+      {
+        name: '객체가 썸네일에 나타난다',
+        expected: 1,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 's1',
+                      type: 'shape',
+                      shape: 'rect',
+                      rect: { x: 0, y: 0, w: 100, h: 50 },
+                      style: { fill: '#c0392b', stroke: '#111', strokeWidth: 2 },
+                    },
+                  ],
+                }),
+              ],
+            }),
+          })
+          const n = host.querySelectorAll('.pck-thumb-obj').length
+          editor.destroy()
+          host.remove()
+          return n
+        },
+      },
+      {
+        /*
+         * ★ 실제 색을 인라인으로 받는다. 단색으로 그리면 캔버스와 달라 보인다.
+         */
+        /*
+         * 값을 그대로 비교한다. 브라우저는 `#c0392b` 를 `rgb(192, 57, 43)` 으로 정규화하지만
+         * happy-dom 은 넣은 문자열을 그대로 둔다 — 정규화 여부는 검증 대상이 아니다.
+         */
+        name: '★ 도형의 실제 색을 쓴다',
+        expected: ['#c0392b', '#111111'],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 's1',
+                      type: 'shape',
+                      shape: 'rect',
+                      rect: { x: 0, y: 0, w: 100, h: 50 },
+                      style: { fill: '#c0392b', stroke: '#111111', strokeWidth: 2 },
+                    },
+                  ],
+                }),
+              ],
+            }),
+          })
+          const box = host.querySelector<HTMLElement>('.pck-thumb-obj')
+          const r = [box?.style.background ?? '', box?.style.borderColor ?? '']
+          editor.destroy()
+          host.remove()
+          return r
+        },
+      },
+      {
+        /*
+         * 색이 없는 객체는 인라인 값을 비워 CSS 토큰 기본값으로 떨어진다.
+         * `null` 을 넣으면 속성이 남아 토큰을 가린다.
+         */
+        name: '색이 없으면 인라인 값을 비운다 (토큰 기본값이 이긴다)',
+        expected: ['', ''],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 's1',
+                      type: 'shape',
+                      shape: 'rect',
+                      rect: { x: 0, y: 0, w: 100, h: 50 },
+                      // fill 이 null — 투명 도형이다
+                      style: { fill: null, stroke: '', strokeWidth: 2 },
+                    },
+                  ],
+                }),
+              ],
+            }),
+          })
+          const box = host.querySelector<HTMLElement>('.pck-thumb-obj')
+          const r = [box?.style.background ?? 'x', box?.style.borderColor ?? 'x']
+          editor.destroy()
+          host.remove()
+          return r
+        },
+      },
+      {
+        name: '위치·크기가 퍼센트다 (배율과 무관)',
+        expected: ['0%', '0%'],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 's1',
+                      type: 'shape',
+                      shape: 'rect',
+                      rect: { x: 0, y: 0, w: 100, h: 50 },
+                      style: { fill: '#000', stroke: '#000', strokeWidth: 1 },
+                    },
+                  ],
+                }),
+              ],
+            }),
+          })
+          const box = host.querySelector<HTMLElement>('.pck-thumb-obj')
+          const r = [box?.style.left ?? '', box?.style.top ?? '']
+          editor.destroy()
+          host.remove()
+          return r
+        },
+      },
+    ],
+  },
 ]

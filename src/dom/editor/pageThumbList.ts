@@ -4,11 +4,17 @@
  * 썸네일 클릭이 스테이지를 전환하고(PLAN 6.2), 위아래로 드래그하면 순서가 바뀐다.
  * 클릭과 드래그를 구분하는 임계값은 컨트롤러의 `pageReorder` 가 관리한다.
  *
- * ## 객체는 위치·크기만 사각형으로 표시한다 (2026.08.21)
+ * ## 객체는 사각형으로, **자기 색으로** 표시한다 (2026.08.21)
  *
- * 객체를 제대로 렌더하지 않는다. 썸네일에서 필요한 정보는 **어디에 뭐가 있는지**뿐이고,
- * 텍스트 내용이나 도형 모양은 그 크기에서 읽히지 않는다. 실제 뷰를 재사용하면 커스텀 객체의
- * 슬롯까지 객체당 한 번씩 더 불려 소비자 코드가 페이지 수만큼 중복 실행된다.
+ * 객체를 제대로 렌더하지 않는다. 텍스트 내용이나 도형 모양(타원·화살표)은 썸네일 크기에서
+ * 읽히지 않고, 실제 뷰를 재사용하면 커스텀 객체 슬롯이 객체당 한 번씩 더 불려 소비자 코드가
+ * 페이지 수만큼 중복 실행된다.
+ *
+ * 다만 **색은 실제 값을 쓴다.** 처음에는 단색(accent)으로 그렸는데, 캔버스의 빨간 도형이
+ * 썸네일에서 보라색으로 보여 "다른 객체" 처럼 읽혔다. 모양을 단순화하는 것과 색을 바꾸는
+ * 것은 다른 이야기다 — 색은 어느 객체인지 알아보는 단서다.
+ *
+ * 색이 없는 객체(투명 배경 텍스트 등)는 토큰 기본값으로 떨어진다. 그 경우에도 자리는 보인다.
  *
  * 좌표는 **퍼센트**로 쓴다. 페이지 크기로 나누면 배율이 필요 없고, 크기가 섞인 문서에서도
  * 각 썸네일이 자기 비율로 맞는다 (`aspect-ratio` 가 이미 그 비율을 잡고 있다).
@@ -29,7 +35,7 @@
 import { el, list, when } from '../h'
 import { text } from '../../core/config/strings'
 import type { ReadSignal } from '../reactive'
-import type { PDFCanvasPage } from '../../core/model/types'
+import type { PDFCanvasObject, PDFCanvasPage } from '../../core/model/types'
 
 export interface PageThumbListProps {
   pages: ReadSignal<PDFCanvasPage[]>
@@ -44,6 +50,26 @@ export interface PageThumbListProps {
   onAddBlank: () => void
   onDuplicate: (index: number) => void
   onRemove: (index: number) => void
+}
+
+/**
+ * 썸네일에 쓸 색. 캔버스와 같은 값을 읽는다.
+ *
+ * 유형마다 색이 사는 곳이 다르다 — 도형은 `style.fill`/`stroke`, 텍스트·커스텀은 박스 스타일,
+ * 마스크는 `fill` 하나다. 없으면 `null` 을 돌려 CSS 토큰 기본값으로 떨어지게 한다.
+ */
+function objectColors(obj: PDFCanvasObject): { fill: string | null; stroke: string | null } {
+  switch (obj.type) {
+    case 'shape':
+      return { fill: obj.style.fill, stroke: obj.style.stroke }
+    case 'mask':
+      // 마스크는 채우기만 있다. 테두리를 그리면 가리려는 영역이 오히려 눈에 띈다.
+      return { fill: obj.fill, stroke: null }
+    case 'text':
+      return { fill: obj.style.fill ?? null, stroke: obj.style.stroke ?? null }
+    case 'custom':
+      return { fill: obj.style?.fill ?? null, stroke: obj.style?.stroke ?? null }
+  }
 }
 
 function thumb(
@@ -131,6 +157,7 @@ function thumb(
                     style: () => {
                       const { width, height } = page.value.size
                       const r = obj.value.rect
+                      const c = objectColors(obj.value)
                       return {
                         left: `${(r.x / width) * 100}%`,
                         top: `${(r.y / height) * 100}%`,
@@ -138,6 +165,12 @@ function thumb(
                         height: `${(r.h / height) * 100}%`,
                         // 회전은 중심 기준. 캔버스와 같은 규칙이다.
                         transform: obj.value.rotation ? `rotate(${obj.value.rotation}deg)` : '',
+                        /*
+                         * 실제 색. `null` 이면 빈 문자열을 줘 CSS 토큰 기본값이 이긴다 —
+                         * 인라인 스타일에 `null` 을 넣으면 속성이 남아 토큰을 가린다.
+                         */
+                        background: c.fill ?? '',
+                        'border-color': c.stroke ?? '',
                       }
                     },
                   }),

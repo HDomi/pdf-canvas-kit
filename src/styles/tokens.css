@@ -129,10 +129,12 @@
   --pck-menu-border: var(--pck-line);
   --pck-menu-shadow: var(--pck-shadow);
   --pck-menu-radius: var(--pck-radius-sm);
-  /* 썸네일의 객체 자리 표시. 내용이 아니라 위치만 보여주는 용도다. */
+  /*
+   * 썸네일 객체의 **기본** 색. 객체가 자기 색을 가지고 있으면 그것이 이긴다 —
+   * 색이 없는 객체(투명 배경 텍스트 등)만 이 값으로 그려진다.
+   */
   --pck-thumb-obj-stroke: color-mix(in srgb, var(--pck-accent) 55%, transparent);
   --pck-thumb-obj-fill: color-mix(in srgb, var(--pck-accent) 14%, transparent);
-  --pck-thumb-obj-custom: #7c4dff;
   --pck-page-border: var(--pck-line);
 
   /* ---- 선택 오버레이 (줌 transform 밖에 그린다) ------------------------- */

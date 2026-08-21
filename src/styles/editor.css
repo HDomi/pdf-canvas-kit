@@ -283,8 +283,11 @@
   /**
  * 썸네일의 객체 자리 표시 (2026.08.21).
  *
- * 내용을 그리지 않고 **어디에 뭐가 있는지**만 보여준다. 유형별로 색을 바꿔 텍스트와 도형과
- * 커스텀 객체를 구분한다 — 썸네일 크기에서 읽히는 정보는 그 정도다.
+ * 모양은 사각형으로 단순화하되 **색은 객체의 실제 값**을 인라인으로 받는다. 여기 토큰은
+ * 색이 없는 객체(투명 배경 텍스트 등)의 **기본값**이다 — 인라인 값이 있으면 그것이 이긴다.
+ *
+ * 유형별 규칙에서 색을 강제하지 않는다. 강제하면 인라인 값과 싸우고, 결국 어느 쪽이 이기는지
+ * 특이도로 결정돼 예측이 어려워진다. 유형 구분은 **테두리 모양**으로만 한다.
  */
   .pck-thumb-obj {
     position: absolute;
@@ -296,13 +299,14 @@
     pointer-events: none;
   }
 
+  /* 커스텀 객체는 점선으로 구분한다. 색은 객체가 정한다 */
   .pck-thumb-obj[data-type='custom'] {
-    border-color: var(--pck-thumb-obj-custom);
-    background: color-mix(in srgb, var(--pck-thumb-obj-custom) 22%, transparent);
+    border-style: dashed;
   }
 
+  /* 마스크는 가리는 영역이므로 테두리를 지운다 */
   .pck-thumb-obj[data-type='mask'] {
-    border-style: dashed;
+    border-color: transparent;
   }
 
   .pck-thumb-paper img {

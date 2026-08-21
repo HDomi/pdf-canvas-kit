@@ -8,6 +8,12 @@
 
 ## 배포
 
+- [ ] **`0.1.0-beta.1` 배포** — `./publish.sh 0.1.0-beta.1`
+  - prerelease 라 `next` 태그로 올라간다. `latest` 를 건드리지 않으므로 소비자가 실수로
+    받지 않는다 — 실제 앱에 붙여 본 것이 `examples/` 뿐이라 그렇게 시작한다
+  - [ ] 배포 후: 빈 프로젝트에서 `npm i @h_domi/pdf-canvas-kit@next` 로 registry 경로 확인
+    (`file:` 프로토콜과 tarball 해석이 같지만 **동일하다고 단정하지 않았다**)
+  - [ ] beta 로 실제 앱을 한 번 만들어 본 뒤 `0.1.0` (latest) 로 승격
 - [ ] **npm publish** — `./publish.sh` 로 한다 (gitignore 대상. `DRY_RUN=1` 로 먼저 확인)
   - `npm login` 이 선행돼야 한다. scoped 패키지라 `publishConfig.access = "public"` 이 필수다
   - ⚠️ `verify:tarball` 을 `prepublishOnly` 에 넣지 않는다 — `publish → prepublishOnly →

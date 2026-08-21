@@ -3,8 +3,13 @@
 ## 설치
 
 ```bash
-npm install @h_domi/pdf-canvas-kit
+npm install @h_domi/pdf-canvas-kit@next
 ```
+
+**`@next` 가 필요하다.** 첫 공개가 prerelease(`0.1.0-beta.1`)이고 `latest` 태그는 아직
+비어 있다 — 실제 앱에 붙여 본 것이 레포의 [examples](../examples) 뿐이라 그렇게 시작했다.
+
+`latest` 가 나오면 태그 없이 설치할 수 있다.
 
 런타임 의존성은 `pdfjs-dist` 하나다. `react` · `vue` 는 **optional peer** 라 쓰는 쪽만 설치된다.
 

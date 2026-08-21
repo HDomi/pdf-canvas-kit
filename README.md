@@ -5,7 +5,8 @@ PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **텍스트·도�
 React·Vue 래퍼가 같은 컴포넌트를 제공한다.
 
 ```bash
-npm install @h_domi/pdf-canvas-kit
+# 첫 공개는 beta 다. latest 태그는 아직 비어 있다
+npm install @h_domi/pdf-canvas-kit@next
 ```
 
 ```tsx

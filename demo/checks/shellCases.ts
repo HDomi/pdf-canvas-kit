@@ -998,4 +998,59 @@ export const SHELL_GROUPS: CaseGroup[] = [
       },
     ],
   },
+
+  {
+    title: 'shell — JSON 출력 버튼 ★',
+    note: '저장이 아니라 현재 상태를 보는 버튼이다. serializeDoc 의 blob 가드를 태우면 데모에서 늘 막혀 정작 보고 싶은 내용을 못 본다.',
+    cases: [
+      {
+        /*
+         * ★ blob 배경이 있어도 출력해야 한다.
+         *
+         * serializeDoc 은 저장 경로의 가드다 — 세션이 끝나면 죽는 URL 을 저장하지 못하게 한다.
+         * 이 버튼의 목적은 다르므로 그 가드를 태우지 않는다. 대신 경고로 알린다.
+         */
+        name: '★ blob 배경이 있어도 던지지 않는다',
+        expected: true,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  /*
+                   * origin: 'blob' 이 세션 한정이다. serializeDoc 이 이것을 거부한다 —
+                   * 이 버튼은 그 가드를 태우지 않는다는 것이 검증 대상이다.
+                   */
+                  background: {
+                    kind: 'image',
+                    url: 'blob:http://x/abc',
+                    origin: 'blob',
+                    naturalWidth: 1240,
+                    naturalHeight: 1754,
+                    renderScale: 2,
+                  },
+                }),
+              ],
+            }),
+          })
+          // 컨트롤러의 manualSave 를 직접 부를 수 없으므로 셸의 버튼을 누른다.
+          const btn = [...host.querySelectorAll('button')].find((b) =>
+            b.className.includes('pck-primary-btn'),
+          )
+          let threw = false
+          try {
+            btn?.click()
+          } catch {
+            threw = true
+          }
+          editor.destroy()
+          host.remove()
+          return !threw
+        },
+      },
+    ],
+  },
 ]

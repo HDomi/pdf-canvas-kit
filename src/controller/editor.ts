@@ -30,7 +30,6 @@ import { EDITOR_DEFAULTS } from '../core/config/defaults'
 import { configureStrings, text, type StringKey } from '../core/config/strings'
 import { configureIcons, type IconName } from '../core/config/icons'
 import { setTitle } from '../core/commands/doc'
-import { serializeDoc } from '../core/model/serialize'
 import {
   addObject,
   ObjectLimitError,
@@ -1143,37 +1142,69 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /* --------------------------------------------------------- 수동 저장 -- */
 
   /**
-   * 상단바 저장 버튼. **문서 JSON 을 콘솔에 출력한다.**
+   * 상단바 버튼. **문서 JSON 을 콘솔에 출력한다.**
    *
-   * 실서버가 없는 동안의 자리다. 저장 파이프라인 자체는 `ports.storage` 가 담당하고
-   * (자동저장·디바운스·재시도), 이 버튼은 **지금 문서 상태를 눈으로 확인하는 수단**이다 —
-   * 디버깅할 때 실제로 그게 필요하다.
+   * 실서버가 없는 동안의 자리다. 저장 파이프라인은 `ports.storage` 가 담당하고
+   * (자동저장·디바운스·재시도), 이 버튼은 **지금 문서 상태를 눈으로 확인하는 수단**이다.
    *
-   * `serializeDoc` 을 거치므로 blob 배경이 남아 있으면 던진다. 그게 맞는 동작이다 — 그 문서는
-   * 저장할 수 없고, 버튼을 눌러 알게 되는 편이 낫다. 배경을 먼저 승격한다
-   * (`handle.promoteBackgrounds()`).
+   * ## `serializeDoc` 을 쓰지 않는다
+   *
+   * 그 함수는 "저장 가능한 문서인가" 를 검사해 blob 배경이 있으면 **던진다** — 세션이 끝나면
+   * 죽는 URL 을 저장하는 것을 막기 위해서다(§7.1). 그건 저장 경로에서 옳다.
+   *
+   * 그런데 이 버튼의 목적은 저장이 아니라 **현재 상태 보기**다. `asset` port 없이 PDF 를 올리면
+   * 배경이 전부 blob 이므로, 그 가드를 태우면 데모에서는 버튼이 늘 막힌다 — 정작 보고 싶은
+   * 문서 내용을 못 본다.
+   *
+   * 그래서 그대로 찍고, **저장할 수 없는 상태라는 사실은 경고로 함께 알린다.** 두 가지가
+   * 다른 정보이므로 하나를 다른 하나로 막지 않는다.
    */
   const manualSaving = signal(false)
+
+  /** 세션 한정 blob 배경을 가진 페이지 수. 0 이면 저장 가능한 문서다. */
+  function blobBackgroundCount(): number {
+    return doc.value.pages.filter((p) => {
+      const bg = p.background
+      return bg.kind === 'image' && bg.url.startsWith('blob:')
+    }).length
+  }
 
   function manualSave() {
     if (manualSaving.value || pageCount.value === 0) return
     manualSaving.value = true
     toolError.value = null
     try {
-      const json = serializeDoc(doc.value)
+      const json = JSON.stringify(doc.value, null, 2)
       /*
        * `console.log` 를 쓴다. `debug` 는 기본 로그 레벨에서 접혀 있어 붙여넣으려는 사람이
        * 찾지 못한다 — 이 출력의 목적이 복사다.
        */
       // eslint-disable-next-line no-console
       console.log(
-        `[pdf-canvas-kit] document JSON · ${pageCount.value} pages · ${(json.length / 1024).toFixed(1)}KB`,
+        `[pdf-canvas-kit] document JSON · ${pageCount.value} pages · ` +
+          `${(json.length / 1024).toFixed(1)}KB`,
       )
       // eslint-disable-next-line no-console
       console.log(json)
-      engine.markSaved()
+
+      /*
+       * 저장 가능성은 별도로 알린다.
+       *
+       * 이 문서를 그대로 서버에 보내면 다음 세션에 배경이 죽는다. `ports.asset` 을 주고
+       * `promoteBackgrounds()` 를 부르면 영속 URL 로 바뀐다 — 데모에는 그 port 가 없어
+       * blob 이 정상이다.
+       */
+      const blobs = blobBackgroundCount()
+      if (blobs > 0) {
+        console.warn(
+          `[pdf-canvas-kit] ${blobs} page(s) still use session-only blob URLs. ` +
+            'This document cannot be saved as-is — provide ports.asset and call ' +
+            'promoteBackgrounds() first. (The JSON above is still the real document state.)',
+        )
+      }
+
+      // 저장한 것이 아니므로 dirty 를 지우지 않는다. 배지가 거짓말을 하면 안 된다.
     } catch (err) {
-      // 직렬화 거부(blob 배경)가 여기로 온다. 문구를 그대로 보여준다.
       toolError.value = err instanceof Error ? err.message : String(err)
       console.error(err)
     } finally {

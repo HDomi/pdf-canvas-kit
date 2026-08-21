@@ -176,14 +176,26 @@ export const PDFCanvasEditor = defineComponent({
       doc.value = handle.getDoc()
     })
 
-    // prop 변경을 흘린다. `initialDoc` 류는 facade 가 무시한다.
+    /*
+     * prop 변경을 흘린다. `initialDoc` 류는 facade 가 무시한다.
+     *
+     * ⚠️ **`handle?.update({ … props.x … })` 로 쓰면 안 된다.**
+     *
+     * optional chaining 이 짧은 순환하면 **인자 표현식도 평가되지 않는다.** `watchEffect` 의
+     * 첫 실행은 `setup` 시점이고 그때 `handle` 은 아직 `null` 이므로(생성은 `onMounted`),
+     * prop 이 한 번도 읽히지 않아 **의존성이 등록되지 않는다.** 그러면 이후 prop 이 바뀌어도
+     * 이 effect 는 영원히 다시 돌지 않는다 — 2026.08.21 에 뷰어에서 그 버그가 났다.
+     *
+     * 객체를 먼저 만들어 prop 을 확실히 읽는다.
+     */
     watchEffect(() => {
-      handle?.update({
+      const next: Partial<EditorProps> = {
         readOnly: props.readOnly,
         ...(props.autosave !== undefined ? { autosave: props.autosave } : {}),
         ...(props.ports ? { ports: props.ports } : {}),
         ...(props.uploadFile ? { uploadFile: props.uploadFile } : {}),
-      })
+      }
+      handle?.update(next)
     })
 
     onBeforeUnmount(() => {
@@ -308,12 +320,18 @@ export const PDFCanvasViewer = defineComponent({
       })
     })
 
-    // `doc` 과 `maxScale` 을 흘린다. 뷰어는 controlled 다.
+    /*
+     * `doc` 과 `maxScale` 을 흘린다. 뷰어는 controlled 다.
+     *
+     * ⚠️ prop 을 먼저 읽는다. optional chaining 안에서 읽으면 첫 실행(`handle === null`)에
+     * 의존성이 등록되지 않아 이후 갱신이 전부 무시된다 — 위 편집기 쪽 주석 참고.
+     */
     watchEffect(() => {
-      handle?.update({
+      const next = {
         doc: props.doc,
         ...(props.maxScale !== undefined ? { maxScale: props.maxScale } : {}),
-      })
+      }
+      handle?.update(next)
     })
 
     onBeforeUnmount(() => {

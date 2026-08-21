@@ -3183,3 +3183,50 @@ registry 를 찾는다 — `file:` 이 심링크를 만들고, 그 심링크가 
 같은 작업에서 요청받은 것. 내용을 그리지 않고 **위치·크기만 사각형으로** 표시한다 — 썸네일
 크기에서 읽히는 정보는 그 정도이고, 실제 뷰를 재사용하면 커스텀 객체 슬롯이 페이지 수만큼
 중복 실행된다. 좌표는 퍼센트라 배율이 필요 없고, 비용은 `LIMITS.objectsPerDoc`(200) 이하다.
+
+### 20.23 Vue 래퍼가 prop 갱신을 흘리지 못했다 (2026.08.21)
+
+Vue 예제에서 PDF 를 불러오고 [뷰어로 보내기] 를 눌러도 뷰어가 **"표시할 문서가 없습니다"**
+에 머물렀다. `toPublicDoc()` 은 정상이고 `publicDoc` 도 채워졌는데 화면이 안 바뀌었다.
+
+```ts
+// ✗ R9 부터 있던 코드
+watchEffect(() => {
+  handle?.update({ doc: props.doc, … })
+})
+```
+
+**optional chaining 이 짧은 순환하면 인자 표현식도 평가되지 않는다.** `watchEffect` 의 첫
+실행은 `setup` 시점이고 그때 `handle` 은 아직 `null` 이다(생성은 `onMounted`). 그래서
+`props.doc` 이 **한 번도 읽히지 않고 의존성이 등록되지 않는다** — 이후 prop 이 바뀌어도 이
+effect 는 영원히 다시 돌지 않는다.
+
+```ts
+// ✓ 객체를 먼저 만들어 prop 을 확실히 읽는다
+watchEffect(() => {
+  const next = { doc: props.doc, … }
+  handle?.update(next)
+})
+```
+
+**편집기 래퍼도 같은 코드였다.** `initialDoc` 은 최초 1회라 티가 나지 않았지만 `readOnly` ·
+`autosave` · `ports` · `uploadFile` 갱신이 전부 무시되고 있었다. 케이스가 그것까지 잡았다.
+
+React 는 `useEffect` 가 매 렌더 후 돌고 의존성 배열이 없어 같은 문제가 없다.
+
+#### Vue 래퍼 케이스가 없어서 샜다
+
+`wrapperCases.ts` 에 React 만 있었다. Vue 를 추가하면서 넷을 확인한다.
+
+| | |
+| --- | --- |
+| `expose` 로 `handle` 에 닿는다 | |
+| **`doc` prop 갱신이 뷰어에 반영된다** | ★ 이 버그 |
+| **`readOnly` prop 갱신이 편집기에 반영된다** | ★ 같은 함정 |
+| 편집기 → 뷰어 왕복 (`toPublicDoc` → 렌더) | |
+
+**수정을 되돌려 정확히 3건이 실패하는 것을 확인했다.** SFC 없이 `h()` 로 쓴다 — 헤드리스
+러너에 `plugin-vue` 가 없고, 넣으면 케이스 전체의 번들 경로가 바뀐다.
+
+> **같은 계약을 두 방식으로 구현하면 한쪽만 깨진다.** 20.21 의 React `ref` 버그와 대칭이다 —
+> 그때는 Vue 가 무사했고 이번에는 React 가 무사했다. 래퍼 케이스를 양쪽 다 두는 이유가 그것이다.

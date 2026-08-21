@@ -57,7 +57,7 @@ const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 | 인스펙터 | 완료 (R7) |
 | 커스텀 객체 레지스트리 | 완료 (R8) — 소비자가 타입을 정의한다 |
 | 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) |
-| 검증 케이스 | **283건 / 41 그룹** (`npm run checks`) |
+| 검증 케이스 | **287건 / 42 그룹** (`npm run checks`) |
 | npm 배포 | **미배포.** tarball 설치 검증은 완료 (R10) — React 19 앱 · Vue 3.5 앱 |
 | `PDFCanvasViewer` | 완료 (R11) — 연속 스크롤 · 페이지별 fit-to-width · `renderViewer` 슬롯 |
 | 크롬 UI 슬롯 교체 | **미구현** (R12) — 결정은 D27 |
@@ -124,7 +124,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | [`/viewer/`](http://localhost:3100/viewer/) | 편집기와 뷰어를 나란히 — `toPublicDoc()` 이 정답을 지우는 것을 확인한다 |
 | **[React 예제](http://localhost:3101/)** | **별칭 없이 설치된 `dist` 를 쓴다.** 공개 API 를 바꿨으면 여기서 확인한다 |
 | **[Vue 예제](http://localhost:3102/)** | 같음. `demo/` 는 별칭이라 export 누락을 보지 못한다 |
-| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **283 케이스 / 41 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
+| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **287 케이스 / 42 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
 
 `/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
 `/spike/` 는 PDF를 끌어다 놓아도 된다.
@@ -173,7 +173,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | `npm run typecheck` | `vue-tsc` + node config 타입체크 |
 | `npm run lint` | ESLint + Prettier 검사 |
 | `npm run fix` | ESLint --fix + Prettier --write |
-| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (283 케이스. 실패 시 exit 1) |
+| `npm run checks` | **검증 케이스를 브라우저 없이 실행** (287 케이스. 실패 시 exit 1) |
 | `npm run fixtures` | 테스트 PDF 생성 (크기 혼합·회전·CropBox·100페이지·손상) |
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |

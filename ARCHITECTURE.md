@@ -1317,6 +1317,25 @@ assignRef(refProp, handle)
 
 `wrapperCases.ts` 가 이 불변식을 지킨다 — React 런타임을 실제로 띄우는 유일한 케이스다.
 
+### ⚠️ `handle?.update({ … props.x … })` 로 쓰지 않는다 (Vue)
+
+```ts
+// ✗ optional chaining 이 짧은 순환하면 인자 표현식도 평가되지 않는다
+watchEffect(() => {
+  handle?.update({ doc: props.doc })
+})
+
+// ✓ 객체를 먼저 만들어 prop 을 확실히 읽는다
+watchEffect(() => {
+  const next = { doc: props.doc }
+  handle?.update(next)
+})
+```
+
+`watchEffect` 의 첫 실행은 `setup` 시점이고 그때 `handle` 은 `null` 이다(생성은 `onMounted`).
+prop 이 한 번도 읽히지 않으면 **의존성이 등록되지 않아 이후 갱신이 전부 무시된다**
+(PLAN 20.23). React 는 `useEffect` 가 매 렌더 후 돌아 같은 문제가 없다.
+
 ### ⚠️ Vue 의 `expose` 는 타입을 남기지 않는다
 
 React 의 `useImperativeHandle` 은 `ref` 타입을 자동으로 잡지만, Vue 의 `expose()` 는 런타임

@@ -1,5 +1,5 @@
 /**
- * 프레임워크 래퍼 검증 (PLAN 20.21).
+ * 프레임워크 래퍼 검증 (PLAN 20.21 · 20.23).
  *
  * 여기서 확인하는 것은 **소비자가 facade 에 닿을 수 있는가**다. 래퍼가 화면을 그려도 `ref` 가
  * 비어 있으면 `toPublicDoc()` 이 조용히 `undefined` 를 돌려주고, 호스트의 [내보내기] 버튼이
@@ -7,8 +7,9 @@
  *
  * ## JSX 를 쓰지 않는다
  *
- * 헤드리스 러너(`scripts/run-checks.mjs`)에 `@vitejs/plugin-react` 가 없다. 플러그인을 넣으면
- * 케이스 전체의 번들 경로가 바뀌므로, 여기서만 `createElement` 를 직접 부른다.
+ * 헤드리스 러너(`scripts/run-checks.mjs`)에 `@vitejs/plugin-react` 도 `plugin-vue` 도 없다.
+ * 플러그인을 넣으면 케이스 전체의 번들 경로가 바뀌므로, `createElement` 와 `h()` 를 직접
+ * 부른다 — SFC 없이도 래퍼 계약은 전부 확인된다.
  *
  * ## effect flush 를 직접 다룬다
  *
@@ -17,11 +18,18 @@
  * 마운트가 끝난 상태를 볼 수 있다. **이 순서 차이가 검증 대상 그 자체다** — 래퍼가 layout
  * effect 에서 `ref` 를 채우면 그 시점의 facade 는 아직 없다.
  */
+import { createApp, defineComponent, h, nextTick, ref, shallowRef } from 'vue'
 import { createElement, createRef } from 'react'
 import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { PDFCanvasEditor, PDFCanvasViewer } from '../../src/react/index'
 import type { EditorHandle, ViewerHandle } from '../../src/react/index'
+import {
+  PDFCanvasEditor as VueEditor,
+  PDFCanvasViewer as VueViewer,
+  type PDFCanvasEditorRef,
+} from '../../src/vue/index'
+import type { PublicPDFCanvasDoc } from 'pdf-canvas-kit'
 import { asPublicDoc, createPDFCanvasDoc, createPage, A4_PT } from 'pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
@@ -42,7 +50,7 @@ async function mounted<T>(
 
 const oneDoc = () => createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] })
 
-export const WRAPPER_GROUPS: CaseGroup[] = [
+const REACT_GROUPS: CaseGroup[] = [
   {
     title: 'react 래퍼 — ref 로 facade 에 닿는다 ★',
     note: 'useImperativeHandle 은 layout effect 라 편집기를 만드는 useEffect 보다 먼저 돈다. 그걸로 ref 를 채우면 null 이 박히고, 소비자의 [내보내기] 가 에러 없이 아무 일도 하지 않는다.',
@@ -112,6 +120,134 @@ export const WRAPPER_GROUPS: CaseGroup[] = [
   },
 ]
 
+/* ------------------------------------------------------------ Vue 래퍼 -- */
+
+/** Vue 앱을 마운트하고 `nextTick` + 태스크 양보까지 기다린다. */
+async function vueMounted<T>(
+  setup: (host: HTMLElement) => void,
+  read: (host: HTMLElement) => Promise<T> | T,
+): Promise<T> {
+  const host = document.createElement('div')
+  document.body.append(host)
+  setup(host)
+  await nextTick()
+  for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0))
+  const result = await read(host)
+  host.remove()
+  return result
+}
+
+const twoPageDoc = () =>
+  createPDFCanvasDoc({ pages: [createPage({ size: A4_PT }), createPage({ size: A4_PT })] })
+
+const VUE_GROUPS: CaseGroup[] = [
+  {
+    title: 'vue 래퍼 — prop 갱신이 흘러야 한다 ★',
+    note: '⚠️ handle?.update({ … props.x … }) 로 쓰면 optional chaining 이 짧은 순환해 인자 표현식도 평가되지 않는다. watchEffect 의 첫 실행은 setup 시점이고 그때 handle 은 null 이므로 의존성이 등록되지 않고, 이후 갱신이 전부 무시된다.',
+    cases: [
+      {
+        name: 'expose 로 handle 에 닿는다',
+        expected: ['set', true],
+        actual: () => {
+          const r = ref<PDFCanvasEditorRef | null>(null)
+          return vueMounted(
+            (host) => {
+              const App = defineComponent({
+                setup: () => () => h(VueEditor, { ref: r, initialDoc: twoPageDoc() }),
+              })
+              createApp(App).mount(host)
+            },
+            () => [
+              r.value === null ? 'null' : 'set',
+              typeof r.value?.handle?.toPublicDoc === 'function',
+            ],
+          )
+        },
+      },
+      {
+        /*
+         * ★ 이 케이스가 2026.08.21 의 버그를 잡는다.
+         *
+         * 편집기에서 [뷰어로 보내기] 를 눌러도 뷰어가 "표시할 문서가 없습니다" 에 머물렀다.
+         * doc prop 이 바뀌었는데 watchEffect 가 다시 돌지 않았기 때문이다.
+         */
+        name: '★ doc prop 갱신이 뷰어에 반영된다 (optional chaining 함정)',
+        expected: [0, 2],
+        actual: () => {
+          const doc = shallowRef<PublicPDFCanvasDoc | null>(null)
+          return vueMounted(
+            (host) => {
+              const App = defineComponent({
+                setup: () => () => h(VueViewer, { doc: doc.value }),
+              })
+              createApp(App).mount(host)
+            },
+            async (host) => {
+              const before = host.querySelectorAll('.pck-page-frame').length
+              doc.value = asPublicDoc(twoPageDoc())
+              await nextTick()
+              for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0))
+              return [before, host.querySelectorAll('.pck-page-frame').length]
+            },
+          )
+        },
+      },
+      {
+        name: '★ 편집기의 readOnly prop 갱신도 흘러야 한다 (같은 함정)',
+        expected: [false, true],
+        actual: () => {
+          const readOnly = ref(false)
+          const r = ref<PDFCanvasEditorRef | null>(null)
+          return vueMounted(
+            (host) => {
+              const App = defineComponent({
+                setup: () => () =>
+                  h(VueEditor, { ref: r, initialDoc: twoPageDoc(), readOnly: readOnly.value }),
+              })
+              createApp(App).mount(host)
+            },
+            async (host) => {
+              // 읽기 전용이면 툴바 도구가 비활성된다.
+              const enabled = () =>
+                host.querySelector<HTMLButtonElement>('.pck-toolbar button')?.disabled ?? null
+              const before = enabled()
+              readOnly.value = true
+              await nextTick()
+              for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0))
+              return [before, enabled()]
+            },
+          )
+        },
+      },
+      {
+        name: '뷰어가 편집기 문서를 그대로 그린다 (편집기 → 뷰어 왕복)',
+        expected: 2,
+        actual: () => {
+          const r = ref<PDFCanvasEditorRef | null>(null)
+          const doc = shallowRef<PublicPDFCanvasDoc | null>(null)
+          return vueMounted(
+            (host) => {
+              const App = defineComponent({
+                setup: () => () => [
+                  h(VueEditor, { ref: r, initialDoc: twoPageDoc() }),
+                  h(VueViewer, { doc: doc.value }),
+                ],
+              })
+              createApp(App).mount(host)
+            },
+            async (host) => {
+              doc.value = r.value!.handle!.toPublicDoc()
+              await nextTick()
+              for (let i = 0; i < 3; i++) await new Promise((r) => setTimeout(r, 0))
+              return host.querySelectorAll('.pck-viewer .pck-page-frame').length
+            },
+          )
+        },
+      },
+    ],
+  },
+]
+
 /*
  * ref 를 케이스 밖에 두는 이유: `actual` 이 두 콜백으로 나뉘어 있고, 렌더 콜백이 만든 ref 를
  * 읽기 콜백이 봐야 한다. 케이스마다 별도 ref 를 써서 서로 간섭하지 않게 한다.
@@ -119,3 +255,6 @@ export const WRAPPER_GROUPS: CaseGroup[] = [
 const refEditor = createRef<EditorHandle>()
 const refEditor2 = createRef<EditorHandle>()
 const refViewer = createRef<ViewerHandle>()
+
+/** React·Vue 두 그룹. 러너와 화면이 이 배열만 본다. */
+export const WRAPPER_GROUPS: CaseGroup[] = [...REACT_GROUPS, ...VUE_GROUPS]

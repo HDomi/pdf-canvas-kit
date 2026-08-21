@@ -2,7 +2,7 @@
  * M1 스파이크. PDF를 페이지 이미지로 바꾸고 변환 결과를 그대로 보여준다.
  *
  * 위험한 사실들을 눈에 보이게 만드는 것이 목적이다 — 페이지별 pt 크기, 래스터 픽셀 크기,
- * 사용한 배율, 소요 시간 (PLAN M1 DoD).
+ * 사용한 배율, 소요 시간.
  */
 import { createId } from '../../src/core/util/id'
 import {
@@ -103,7 +103,7 @@ function bytes(n: number): string {
   return n < 1024 * 1024 ? `${(n / 1024).toFixed(0)} KB` : `${(n / 1024 / 1024).toFixed(2)} MB`
 }
 
-/** 실제 컨버터 → 문서 단계가 할 일을 그대로 흉내낸다 (PLAN 10.1). */
+/** 실제 컨버터 → 문서 단계가 할 일을 그대로 흉내낸다. */
 async function toPDFCanvasPages(raster: RasterPage[]): Promise<PDFCanvasPage[]> {
   const pages: PDFCanvasPage[] = []
   for (const r of raster) {
@@ -135,7 +135,7 @@ function renderPages(pages: PDFCanvasPage[], raster: RasterPage[]) {
     const el = document.createElement('div')
     el.className = 'page'
 
-    // CSS px 폭 = pt 값. 이게 PLAN 5.3의 요점이다. 래스터 픽셀 크기는 레이아웃에 전혀
+    // CSS px 폭 = pt 값. 이게의 요점이다. 래스터 픽셀 크기는 레이아웃에 전혀
     // 등장하지 않으므로, 다른 해상도로 다시 렌더해도 아무것도 움직이지 않는다.
     const shown = Math.min(240, page.size.width)
     el.innerHTML = `
@@ -344,7 +344,7 @@ fileInput.addEventListener('change', () => {
 })
 cancelBtn.addEventListener('click', () => controller?.abort())
 
-// 화면 전체에 드래그 앤 드롭을 받는다. 교사가 가장 먼저 시도할 방식이다.
+// 화면 전체에 드래그 앤 드롭을 받는다. 편집기가 가장 먼저 시도할 방식이다.
 document.addEventListener('dragover', (e) => e.preventDefault())
 document.addEventListener('drop', (e) => {
   e.preventDefault()

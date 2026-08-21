@@ -1,7 +1,7 @@
 /**
- * 8방향 리사이즈 핸들 + 회전 핸들 (PLAN 11.3).
+ * 8방향 리사이즈 핸들 + 회전 핸들.
  *
- * **배율 transform 밖에** 그린다 (PLAN D5). 안에 두면 25% 배율에서 핸들이 2px 로 줄어 잡을 수
+ * **배율 transform 밖에** 그린다 (핸들·마퀴는 scale 밖 오버레이다). 안에 두면 25% 배율에서 핸들이 2px 로 줄어 잡을 수
  * 없다. 그래서 좌표는 `rectToFrame` 으로 화면 px 로 변환하고, 핸들 자체 크기는 배율과 무관하게
  * 고정한다.
  *
@@ -28,7 +28,7 @@ import type { Rect } from '../../core/model/types'
 export interface ResizeHandlesProps {
   rect: () => Rect
   viewport: () => PageViewport
-  /** 회전 핸들을 그릴지. Answer Box 는 회전하지 않는다 (PLAN Q8). */
+  /** 회전 핸들을 그릴지. Answer Box 는 회전하지 않는다. */
   rotatable: () => boolean
   /** 현재 각도(deg). 드래그 중이면 미리보기 값이 들어온다. */
   rotation: () => number

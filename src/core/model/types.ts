@@ -1,13 +1,13 @@
 /**
  * 문서 모델.
- * PLAN 4장(데이터 모델)과 5장(좌표계) 참고.
+ *(데이터 모델)과 5장(좌표계) 참고.
  */
 
-/** 1pt = 1/72 inch. 저장되는 모든 좌표의 단위 (PLAN D3). */
+/** 1pt = 1/72 inch. 저장되는 모든 좌표의 단위 (좌표는 페이지 로컬 pt 절대값이다). */
 export type Pt = number
 
 /**
- * 페이지 로컬 사각형(pt). 좌상단 원점, y-down (PLAN D6).
+ * 페이지 로컬 사각형(pt). 좌상단 원점, y-down (y축은 y-down 이다).
  *
  * 두 코너가 아니라 `{x, y, w, h}` 인 이유: CSS `left/top/width/height` 에 그대로 매핑되고,
  * 리사이즈 계산에서 음수 폭 예외 처리가 필요 없다.
@@ -31,7 +31,7 @@ export interface Size {
 
 /**
  * 배경 이미지 URL의 성질.
- * - `blob`   메모리 object URL. 새로고침 시 소멸, **직렬화 불가** (PLAN 4.1).
+ * - `blob`   메모리 object URL. 새로고침 시 소멸, **직렬화 불가**.
  * - `inline` base64 data URL. 문서 JSON에 그대로 실린다.
  * - `remote` 업로드 완료(S3 등). JSON에는 `assetId` + `url` 만 남는다.
  */
@@ -44,7 +44,7 @@ export type PageBackground =
       url: string
       origin: BackgroundOrigin
       assetId?: string
-      /** 래스터 픽셀 크기. 품질 판단에만 쓰고 좌표 계산에는 절대 쓰지 않는다 (PLAN 5.7). */
+      /** 래스터 픽셀 크기. 품질 판단에만 쓰고 좌표 계산에는 절대 쓰지 않는다. */
       naturalWidth: number
       naturalHeight: number
       /** 래스터화에 사용한 배율. 재렌더 판단용. */
@@ -69,7 +69,7 @@ export interface PDFCanvasPage {
   id: string
   /**
    * pt 크기. **페이지마다 각자 갖는다** — 한 PDF에 A4·A3·가로 페이지가 섞일 수 있고,
-   * 문서 단일 크기를 가정하면 배경이 왜곡된다 (PLAN D7).
+   * 문서 단일 크기를 가정하면 배경이 왜곡된다 (페이지가 각자 size 를 갖는다).
    */
   size: Size
   background: PageBackground
@@ -80,13 +80,13 @@ export interface PDFCanvasPage {
 }
 
 /**
- * 교사가 편집하는 워크시트 — **정답을 포함한다**.
+ * 편집기에서 편집하는 워크시트 — **정답을 포함한다**.
  *
- * 학생에게 이 타입을 그대로 넘기면 안 된다. `toPublicDoc()` 이 정답 필드를 제거하고
- * 별도 타입을 돌려주므로 실수는 컴파일 시점에 걸린다 (PLAN D14).
+ * 뷰어에 이 타입을 그대로 넘기면 안 된다. `toPublicDoc()` 이 정답 필드를 제거하고
+ * 별도 타입을 돌려주므로 실수는 컴파일 시점에 걸린다 (정답은 편집 문서에만 있다).
  *
  * 뷰 상태(배율·스크롤·선택·현재 페이지)는 의도적으로 여기에 없다. `EditorViewState` 에 두는데,
- * 문서에 섞으면 배율만 바꿔도 dirty가 되고 자동저장이 돈다 (PLAN 6.6).
+ * 문서에 섞으면 배율만 바꿔도 dirty가 되고 자동저장이 돈다.
  */
 export interface PDFCanvasDoc {
   /** 구조가 바뀌면 올린다. `migrate.ts` 가 이전 문서를 올려준다. */
@@ -95,7 +95,7 @@ export interface PDFCanvasDoc {
   /** 상단 바와 My Storage에 표시된다. 최대 100자 (기획 4.2). */
   title: string
   /**
-   * 교사가 타이틀을 한 번이라도 손으로 고쳤는지.
+   * 사용자가 타이틀을 한 번이라도 손으로 고쳤는지.
    *
    * 기획 4.2 규칙을 구현한다 — 손대지 않은 타이틀은 첫 업로드 시 파일명으로 바뀌지만,
    * 직접 고친 타이틀은 이후 업로드에도 덮어쓰지 않는다.
@@ -131,13 +131,13 @@ export interface BoxStyle {
 /** 모든 캔버스 객체가 공유하는 필드. */
 interface ObjectBase {
   id: string
-  /** 페이지 로컬 pt 좌표의 위치·크기 (PLAN D3). */
+  /** 페이지 로컬 pt 좌표의 위치·크기 (좌표는 페이지 로컬 pt 절대값이다). */
   rect: Rect
   /**
    * 객체 중심 기준 시계방향 각도(deg).
    *
-   * 텍스트와 도형만 회전한다. Answer Box는 0으로 고정 — 폼 요소가 기울면 학생의 입력과
-   * 모바일 렌더가 깨진다 (PLAN Q8).
+   * 텍스트와 도형만 회전한다. Answer Box는 0으로 고정 — 폼 요소가 기울면 뷰어의 입력과
+   * 모바일 렌더가 깨진다.
    */
   rotation?: number
   /** 잠긴 객체는 렌더되지만 선택되지 않는다. */
@@ -182,7 +182,7 @@ export interface ShapeObject extends ObjectBase {
  * 배경의 일부를 가리는 불투명 사각형.
  *
  * 기획은 툴바에 지우개를 두었지만 동작을 정의하지 않았다. 현재 툴은 객체를 삭제하는 쪽으로
- * 구현했고, 이 타입은 "배경 가리기" 해석을 위해 남겨 둔다 (PLAN Q1).
+ * 구현했고, 이 타입은 "배경 가리기" 해석을 위해 남겨 둔다.
  * 나중 버전이 쓴 문서도 파싱되도록 유니온에 포함한다.
  */
 export interface MaskObject extends ObjectBase {
@@ -192,7 +192,7 @@ export interface MaskObject extends ObjectBase {
 }
 
 /**
- * 소비자가 정의한 커스텀 객체 (PLAN D25).
+ * 소비자가 정의한 커스텀 객체 (커스텀 객체는 소비자가 정의한다).
  *
  * 이 패키지는 **기본 틀**만 제공한다 — pt 사각형, 리사이즈 핸들, 배경·테두리, 회전.
  * 그 안에 무엇을 그릴지는 소비자가 `objectTypes` 레지스트리로 정한다.
@@ -212,7 +212,7 @@ export interface MaskObject extends ObjectBase {
  * 이전 판에는 `ShortAnswerBox` · `EssayAnswerBox` · `DropboxAnswerBox` 가 있었고, 그에 딸린
  * 채점·문항 번호·정답 제거·검증이 코어에 있었다. 그건 **문제지 편집기**의 기능이고 이 패키지의
  * 이름과 범위(PDF 위에 객체를 배치하는 도구)와 맞지 않았다. 문제지 도메인은 소비자 앱으로
- * 옮겼다 — 상세는 PLAN D25.
+ * 옮겼다 — 상세는 커스텀 객체는 소비자가 정의한다.
  */
 export interface CustomObject extends ObjectBase {
   type: 'custom'
@@ -226,7 +226,7 @@ export interface CustomObject extends ObjectBase {
    */
   data: unknown
   /**
-   * 시각 스타일. 미지정 필드는 CSS 토큰 기본값을 따른다 (PLAN 18.8).
+   * 시각 스타일. 미지정 필드는 CSS 토큰 기본값을 따른다.
    *
    * 기본 틀의 배경·테두리·글자색이다. 콘텐츠 내부 스타일은 소비자 컴포넌트가 정한다.
    */
@@ -245,7 +245,7 @@ export type PDFCanvasObjectType = PDFCanvasObject['type']
 declare const PUBLIC_BRAND: unique symbol
 
 /**
- * 비밀이 제거된 문서. **뷰어는 이것만 받는다** (PLAN D14 · D28).
+ * 비밀이 제거된 문서. **뷰어는 이것만 받는다** (정답은 편집 문서에만 있다 / 뷰어는 브랜드 타입만 받는다).
  *
  * 구조는 `PDFCanvasDoc` 과 같다. 다른 것은 **어떻게 얻었는지**뿐이고, 그 출처를 타입이
  * 기억한다. 브랜드가 없으면 뷰어에 넘길 수 없으므로 아래가 컴파일 에러다.
@@ -267,7 +267,7 @@ export type PublicPDFCanvasDoc = PDFCanvasDoc & { readonly [PUBLIC_BRAND]: true 
  * `toPublicDoc()` 을 거치지 않은 문서 — JSON 응답, localStorage 복원 — 에는 브랜드가 없다.
  * 그 문서가 이미 정답을 제거한 것이라면 여기서 단언한다.
  *
- * ⚠️ **이름 그대로 단언이다. 검사하지 않는다.** 이 함수를 부르는 쪽이 "서버가 학생용으로
+ * ⚠️ **이름 그대로 단언이다. 검사하지 않는다.** 이 함수를 부르는 쪽이 "서버가 뷰어용으로
  * 내려준 문서" 임을 보장해야 한다. 편집 문서를 여기 통과시키면 정답이 그대로 뷰어 DOM 에
  * 들어간다 — 그때 타입은 아무 말도 해 주지 않는다.
  */

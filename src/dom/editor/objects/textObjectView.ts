@@ -20,7 +20,7 @@
  * 구 `src/vue/editor/objects/TextObjectView.vue` 의 이식.
  *
  * ⚠️ **IME 동작은 헤드리스로 검증되지 않는다.** happy-dom 에 조합 이벤트와 selection 이 없다.
- * 축소·확대 배율 양쪽에서 브라우저로 확인해야 한다 (PLAN 20.5).
+ * 축소·확대 배율 양쪽에서 브라우저로 확인해야 한다.
  */
 import { el } from '../../h'
 import { effect, signal, type ReadSignal } from '../../reactive'

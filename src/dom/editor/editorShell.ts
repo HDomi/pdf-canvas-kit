@@ -1,5 +1,5 @@
 /**
- * 편집기 전체 셸 — 3분할 레이아웃 (PLAN 6.1).
+ * 편집기 전체 셸 — 3분할 레이아웃.
  *
  * 구 `src/vue/PDFCanvasEditor.vue` 의 `<template>` 이식. 스크립트 부분은 R3 에서
  * `controller/editor.ts` 로 갔으므로 여기는 **조립만** 한다.
@@ -116,7 +116,7 @@ export function editorShell(c: EditorController): HTMLElement {
 
           /*
            * `position: relative` 래퍼. 줌 컨트롤이 페이지와 함께 스크롤돼 사라지면 안 되므로
-           * 스크롤 컨테이너 **밖**에 있어야 한다 (PLAN 6.1).
+           * 스크롤 컨테이너 **밖**에 있어야 한다.
            */
           el('div', { class: 'pck-stage-wrap' }, [
             when(

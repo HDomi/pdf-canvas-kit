@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * Vue 소비자 예제 (PLAN 20.22 · 20.24).
+ * Vue 소비자 예제.
  *
  * `demo/` 와 다른 점이 하나뿐이지만 그것이 핵심이다. **별칭이 없다.** `pdf-canvas-kit` 을
  * `node_modules` 에서 `exports` 맵으로 해석하므로 빌드 산출물과 진입점 정의가 틀리면 여기서
@@ -48,7 +48,7 @@ import ZoomOutIcon from './icons/ZoomOutIcon.vue'
 import { closeIconNode } from './icons/closeIconNode'
 
 /*
- * 문구를 호스트가 정한다 (PLAN D32).
+ * 문구를 호스트가 정한다 (문구·아이콘은 prop 으로 받는다).
  *
  * 번역이 필요한 앱은 자기 i18n 에서 뽑아 넘긴다. **최초 1회만 읽는다** — 언어를 런타임에
  * 바꾸려면 컴포넌트를 다시 마운트한다.

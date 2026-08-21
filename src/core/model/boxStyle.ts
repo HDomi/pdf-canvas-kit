@@ -1,5 +1,5 @@
 /**
- * 박스 스타일 해석 (PLAN 18.8).
+ * 박스 스타일 해석.
  *
  * 모델의 `BoxStyle` 은 모든 필드가 optional이다. "지정하지 않음" 을 유지해야 CSS 토큰으로 테마를
  * 바꿀 수 있기 때문이다(ARCHITECTURE §3). 렌더는 지정된 값만 인라인 스타일로 내보내야 한다.
@@ -50,7 +50,7 @@ export function boxStyleToCss(style: BoxStyle | undefined, opts: ResolveOptions 
     }
   }
   if (style?.strokeWidth !== undefined && style.stroke !== null) {
-    // pt를 px로 그대로 쓴다. 배율은 부모 transform이 처리한다 (PLAN 5.3).
+    // pt를 px로 그대로 쓴다. 배율은 부모 transform이 처리한다.
     css.borderWidth = `${style.strokeWidth}px`
   }
 

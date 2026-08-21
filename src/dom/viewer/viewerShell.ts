@@ -1,10 +1,10 @@
 /**
- * 뷰어 화면 전체 (PLAN D15 · R11).
+ * 뷰어 화면 전체 (편집기는 데스크탑 전용, 뷰어만 반응형이다).
  *
  * ## 편집기와 정반대의 스테이지
  *
  * 편집기는 한 페이지만 담고 사용자가 배율을 정한다 (D8). 뷰어는 **모든 페이지를 세로로 잇고**
- * 배율을 컨테이너 폭에서 파생시킨다. 학생은 문제를 위에서 아래로 훑기 때문이다.
+ * 배율을 컨테이너 폭에서 파생시킨다. 독자는 위에서 아래로 훑기 때문이다.
  *
  * ```
  * .pck-viewer                 스크롤 컨테이너 (overflow-y: auto)
@@ -60,7 +60,7 @@ export function viewerShell(props: ViewerShellProps): HTMLElement {
      *
      * 호스트가 아직 `doc` 을 주지 않았을 때 회색 판만 남으면 "깨진 것" 처럼 보인다 —
      * 2026.08.21 에 소비자 앱에서 실제로 그렇게 보였다. 편집기의 `emptyState` 와 달리
-     * 버튼이 없다: 학생은 문서를 불러올 수 없고, 이 상태를 푸는 것은 호스트의 몫이다.
+     * 버튼이 없다: 뷰어는 문서를 불러올 수 없고, 이 상태를 푸는 것은 호스트의 몫이다.
      */
     when(
       () => props.pages.value.length === 0,
@@ -69,7 +69,7 @@ export function viewerShell(props: ViewerShellProps): HTMLElement {
     el('div', { class: 'pck-viewer-pages' }, [
       /*
        * 페이지 키는 `id` 다. 인덱스로 두면 호스트가 문서를 교체할 때 모든 페이지가
-       * 재생성되어 스크롤 위치와 학생이 입력 중인 폼이 날아간다.
+       * 재생성되어 스크롤 위치와 뷰어에서 입력 중인 폼이 날아간다.
        */
       list(
         () => props.pages.value,

@@ -1,5 +1,5 @@
 /**
- * 호스트가 만든 확인 모달 (PLAN D31).
+ * 호스트가 만든 확인 모달 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
  *
  * **편집기는 이 컴포넌트의 존재를 모른다.** `onRequestConfirm` 으로 요청만 받고, 결과를
  * `handle.confirmPending()` · `cancelPending()` 으로 돌려준다.

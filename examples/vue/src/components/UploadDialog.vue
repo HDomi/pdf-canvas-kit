@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * 호스트가 만든 문서 불러오기 모달 (PLAN D31).
+ * 호스트가 만든 문서 불러오기 모달 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
  *
  * 편집기의 내장 업로드 팝업을 대체한다. 파일을 고르면 `handle.importFile(file)` 로 넘기고,
  * 진행률·오류는 `onImportStateChange` 로 받은 것을 그린다.

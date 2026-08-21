@@ -1,5 +1,5 @@
 /**
- * 반응성 프리미티브 검증 케이스 (PLAN D20 · 17.2).
+ * 반응성 프리미티브 검증 케이스 (미세 반응성으로 DOM 을 직접 바인딩한다. VDOM 이 없다).
  *
  * `src/dom/reactive.ts` 는 UI 층 전체가 올라앉는 바닥이다. 여기가 틀리면 증상이 "어떤 값이
  * 가끔 안 바뀐다" 로 나타나고, 그건 컴포넌트 어디를 봐도 원인이 안 보인다. 그래서 케이스를
@@ -17,7 +17,7 @@ import type { CaseGroup } from './cases'
 export const REACTIVE_GROUPS: CaseGroup[] = [
   {
     title: 'reactive — signal · effect',
-    note: 'effect 는 동기다. 대입이 끝난 다음 줄에서 DOM 과 레이아웃을 바로 읽을 수 있다는 뜻이고, 좌표 변환이 이 성질에 의존한다 (PLAN 5.4).',
+    note: 'effect 는 동기다. 대입이 끝난 다음 줄에서 DOM 과 레이아웃을 바로 읽을 수 있다는 뜻이고, 좌표 변환이 이 성질에 의존한다.',
     cases: [
       {
         name: 'signal 읽기·쓰기',
@@ -84,7 +84,7 @@ export const REACTIVE_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: 'dispose 는 멱등이다 (React StrictMode 이중 언마운트 — PLAN 20.5)',
+        name: 'dispose 는 멱등이다 (React StrictMode 이중 언마운트)',
         expected: true,
         actual: () => {
           const a = signal(1)

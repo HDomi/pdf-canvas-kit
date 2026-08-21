@@ -1,12 +1,12 @@
 /**
- * 편집기 셸 조립 검증 (PLAN 20.11, R6).
+ * 편집기 셸 조립 검증.
  *
  * 여기서 확인하는 것은 **조립이 되는가**다. 컨트롤러가 내놓는 표면과 컴포넌트가 기대하는 prop 이
  * 어긋나면 `editorShell()` 이 던지거나 조용히 빈 노드를 만든다. 그 종류의 버그는 브라우저를
  * 열어야만 보이는데, 조립 자체는 레이아웃이 필요 없으므로 여기서 잡을 수 있다.
  *
  * ⚠️ **동작은 여기서 검증되지 않는다.** 클릭·드래그·줌 앵커링·한글 IME 는 실제 레이아웃과
- * 포인터 이벤트가 필요하다 (PLAN 20.5). 이 파일은 "화면이 만들어지는가" 까지다.
+ * 포인터 이벤트가 필요하다. 이 파일은 "화면이 만들어지는가" 까지다.
  */
 import { editorShell } from '../../src/dom/editor/editorShell'
 import { createPDFCanvasEditor } from '../../src/dom/createEditor'
@@ -194,7 +194,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
       },
       {
         /*
-         * 내장 도구는 텍스트·도형·지우개 셋뿐이다 (PLAN D25). 커스텀 타입을 등록하면 그만큼
+         * 내장 도구는 텍스트·도형·지우개 셋뿐이다 (커스텀 객체는 소비자가 정의한다). 커스텀 타입을 등록하면 그만큼
          * 늘어난다 — 툴바가 레지스트리에서 만들어지므로 하드코딩된 개수가 없다.
          */
         name: '내장 도구 3개 + 복제·삭제 2개',
@@ -316,7 +316,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'shell — 도구 · 커스텀 객체 (PLAN D25, 20.16) ★',
+    title: 'shell — 도구 · 커스텀 객체 (커스텀 객체는 소비자가 정의한다) ★',
     note: '실제 포인터 경로를 돌린다. happy-dom 은 레이아웃이 없어 좌표는 0이지만, 커밋이 나가고 상태가 바뀌는 것은 확인된다.',
     cases: [
       {
@@ -348,7 +348,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
           ),
       },
       {
-        name: 'Shift 를 누른 채 만들면 도구가 유지된다 (PLAN Q3)',
+        name: 'Shift 를 누른 채 만들면 도구가 유지된다',
         expected: ['custom:demo.a', 2],
         actual: () =>
           withShell(
@@ -371,7 +371,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
         /*
          * ★ 2026.08.20 버그. `when` 은 조건을 `!!cond()` 로 보므로 `'demo.a'` → `'demo.b'`
          * 처럼 둘 다 truthy 인 변화를 감지하지 못한다. 단답형을 편집하다 선택형을 고르면
-         * 단답형 패널이 그대로 남았다 (PLAN 20.16). `keyed` 로 고쳤다.
+         * 단답형 패널이 그대로 남았다. `keyed` 로 고쳤다.
          */
         name: '★ kind 가 바뀌면 인스펙터 패널이 바뀐다 (keyed)',
         expected: [true, false, false, true],
@@ -423,7 +423,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'facade — createPDFCanvasEditor (PLAN 20.17) ★',
+    title: 'facade — createPDFCanvasEditor ★',
     note: '프레임워크 래퍼가 의존하는 유일한 표면이다. 여기가 흔들리면 React·Vue 양쪽이 함께 깨진다.',
     cases: [
       {
@@ -457,7 +457,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
         /*
          * ★ React StrictMode 는 개발 모드에서 effect 를 두 번 돌리고 정리도 두 번 부른다.
          * `destroy()` 가 멱등이 아니면 두 번째 호출에서 던지거나 리스너가 두 벌 남는다
-         * (PLAN 20.5).
+         *.
          */
         name: '★ destroy 는 멱등이다 (React StrictMode 이중 언마운트)',
         expected: true,
@@ -537,7 +537,7 @@ export const SHELL_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: 'update 는 initialDoc 을 무시한다 (이름이 계약이다 — PLAN 20.8)',
+        name: 'update 는 initialDoc 을 무시한다 (이름이 계약이다)',
         expected: 1,
         actual: () => {
           const host = document.createElement('div')

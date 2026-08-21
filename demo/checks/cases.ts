@@ -1,5 +1,5 @@
 /**
- * 순수 함수 검증 케이스 (PLAN 17.2).
+ * 순수 함수 검증 케이스.
  *
  * 렌더와 데이터를 분리해 둔다. 나중에 테스트 러너를 도입하면 이 배열을 그대로 소비할 수 있다.
  * 지금은 `/checks/` 화면이 표로 렌더하고 불일치 행을 빨갛게 칠한다.
@@ -67,7 +67,7 @@ const vp = (scale: number, left = 100, top = 50): PageViewport => ({
 const round = (n: number, digits = 4) => Number(n.toFixed(digits))
 
 /**
- * 커스텀 객체 (PLAN D25).
+ * 커스텀 객체 (커스텀 객체는 소비자가 정의한다).
  *
  * 구 `shortBox` · `dropboxBox` · `essayBox` 를 대신한다. 이 패키지는 `data` 를 해석하지 않으므로
  * 케이스도 내용을 신경 쓰지 않는다 — 확인하는 것은 기본 틀의 기하와 스타일이다.
@@ -85,7 +85,7 @@ function customBox(over: Partial<CustomObject> = {}): CustomObject {
 
 export const GROUPS: CaseGroup[] = [
   {
-    title: '좌표 왕복 (PLAN 5.4)',
+    title: '좌표 왕복',
     note: 'clientToPage → pageToFrame 왕복이 원래 값으로 돌아와야 한다. 배율·오프셋과 무관하다.',
     cases: [
       ...[0.25, 0.8, 1, 2.5, 4].map((scale) => ({
@@ -114,7 +114,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '클램프·최소 크기 (PLAN 11.3)',
+    title: '클램프·최소 크기',
     note: 'Answer Box 최소 80×32pt, 텍스트·도형 8×8pt. 이동은 크기를 바꾸지 않는다.',
     cases: [
       {
@@ -129,9 +129,9 @@ export const GROUPS: CaseGroup[] = [
       },
       {
         /*
-         * 구 판은 Answer Box 에 80×32pt 최소 크기를 코어에 박아 뒀다(학생이 탭할 수 있어야
+         * 구 판은 Answer Box 에 80×32pt 최소 크기를 코어에 박아 뒀다(모바일에서 탭할 수 있어야
          * 하므로). 그 판단은 콘텐츠를 아는 쪽의 것이라 `objectType.minSize` 로 옮겼고,
-         * `minSizeFor` 는 override 를 받는다 (PLAN D25).
+         * `minSizeFor` 는 override 를 받는다 (커스텀 객체는 소비자가 정의한다).
          */
         name: '커스텀 최소 크기는 override 로 들어온다',
         expected: { x: 10, y: 10, w: 80, h: 32 },
@@ -164,7 +164,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '핸들 리사이즈 (PLAN 11.3)',
+    title: '핸들 리사이즈',
     note: 'se는 좌상단 고정, nw는 우하단 고정. Shift는 종횡비, Alt는 중심 기준.',
     cases: [
       {
@@ -237,7 +237,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '회전된 객체 리사이즈 (PLAN 18.7)',
+    title: '회전된 객체 리사이즈',
     note: '핸들의 반대편(앵커)이 화면상 같은 자리에 머물러야 한다. 축 보정만으로는 미끄러진다.',
     cases: [
       {
@@ -364,7 +364,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '히트 테스트 · 회전 (PLAN 5.5)',
+    title: '히트 테스트 · 회전',
     note: '포인터를 역회전시켜 축 정렬 사각형과 비교한다.',
     cases: [
       {
@@ -436,7 +436,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '회전 (PLAN 5.5, Q8)',
+    title: '회전',
     note: '12시 방향을 0°로 보는 시계방향 각도. CSS rotate() 와 같은 방향이다.',
     cases: [
       {
@@ -473,7 +473,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '줌 · 페이지 인덱스 (PLAN 6.4, 6.6)',
+    title: '줌 · 페이지 인덱스',
     cases: [
       { name: '프리셋 위로', expected: 1.25, actual: () => stepZoom(1, 1) },
       { name: '프리셋 아래로', expected: 0.75, actual: () => stepZoom(1, -1) },
@@ -486,7 +486,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '용지 이름 (PLAN 6.7)',
+    title: '용지 이름',
     note: '±3pt 허용. 매칭되지 않으면 raw pt로 떨어진다.',
     cases: [
       {
@@ -518,7 +518,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '검증 규칙 (PLAN 12, D25)',
+    title: '검증 규칙 (커스텀 객체는 소비자가 정의한다)',
     note: '이 패키지가 아는 것은 문서·페이지 수준 규칙과 등록되지 않은 kind 뿐이다. 커스텀 객체의 내용 검증은 소비자 objectType.validate(data) 가 한다.',
     cases: [
       {
@@ -617,7 +617,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '식별자 생성 (PLAN 18.9)',
+    title: '식별자 생성',
     note: 'crypto.randomUUID 는 secure context 전용이다. LAN 주소에서는 getRandomValues 폴백을 쓴다.',
     cases: [
       {
@@ -654,7 +654,7 @@ export const GROUPS: CaseGroup[] = [
   },
 
   {
-    title: '박스 색 스타일 (PLAN 18.8)',
+    title: '박스 색 스타일',
     note: '미지정 필드는 CSS로 내보내지 않는다 — 그래야 토큰 기본값이 유지된다. null 은 "투명/없음" 이라는 명시적 지정이다.',
     cases: [
       {

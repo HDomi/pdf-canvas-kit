@@ -1,5 +1,5 @@
 /**
- * imperative facade — 프레임워크 래퍼의 **유일한 접점** (PLAN 20.2).
+ * imperative facade — 프레임워크 래퍼의 **유일한 접점**.
  *
  * ```ts
  * const editor = createPDFCanvasEditor(container, { initialDoc, objectTypes })
@@ -37,7 +37,7 @@ export interface EditorHandle {
    * 이름 그대로 최초 1회만 읽는다 (ARCHITECTURE §14.2).
    */
   update(next: Partial<EditorProps>): void
-  /** 멱등이다. React StrictMode 의 이중 언마운트에 대비한다 (PLAN 20.5). */
+  /** 멱등이다. React StrictMode 의 이중 언마운트에 대비한다. */
   destroy(): void
 
   /** 현재 문서. 편집기가 소유한다. */
@@ -46,7 +46,7 @@ export interface EditorHandle {
   subscribe(fn: (doc: PDFCanvasDoc) => void): Dispose
 
   /**
-   * 커스텀 객체의 데이터를 바꾼다 (PLAN D25).
+   * 커스텀 객체의 데이터를 바꾼다 (커스텀 객체는 소비자가 정의한다).
    *
    * 래퍼가 portal 안에서 받은 `onChange` 가 이걸 부른다. 커맨드 한 번이라 undo 한 항목이 된다.
    */
@@ -70,7 +70,7 @@ export interface EditorHandle {
   cancelImport(): void
 
   /**
-   * 대기 중인 확인 동작을 수행한다 (PLAN D31).
+   * 대기 중인 확인 동작을 수행한다 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
    *
    * `onRequestConfirm` 으로 확인을 위임한 호스트가 자기 모달의 [확인] 에 연결한다.
    * 대기 중인 것이 없으면 아무 일도 하지 않는다.

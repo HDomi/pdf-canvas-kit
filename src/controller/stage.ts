@@ -1,5 +1,5 @@
 /**
- * 스테이지 배율. 맞춤 모드, 앵커 기준 줌, 리사이즈 추적 (PLAN 6.4–6.5).
+ * 스테이지 배율. 맞춤 모드, 앵커 기준 줌, 리사이즈 추적.
  *
  * ## 순서 함정 — Vue 판과 달라진 지점
  *
@@ -12,7 +12,7 @@
  * 같은 순서 제약이 동기 코드로 성립하고, 함수들이 `Promise` 를 반환하지 않는다.
  *
  * ⚠️ **이 성질은 실제 브라우저에서 확인해야 한다.** happy-dom 은 `getBoundingClientRect()` 가
- * 전부 0 이라 헤드리스 검증으로 덮이지 않는다 (PLAN 20.5).
+ * 전부 0 이라 헤드리스 검증으로 덮이지 않는다.
  *
  * 구 `src/vue/composables/useStage.ts` 의 이식.
  */
@@ -28,7 +28,7 @@ export interface StageOptions {
   pageSize: ReadSignal<Size | null>
   /**
    * 시작 배율.
-   * @default 'fit-page' — 로드 시 페이지 전체가 보인다. 교사가 어디서 작업할지 정하기 전에
+   * @default 'fit-page' — 로드 시 페이지 전체가 보인다. 편집기가 어디서 작업할지 정하기 전에
    * 무엇을 올렸는지 먼저 확인할 수 있어야 한다.
    */
   initialScale?: number | 'fit-width' | 'fit-page'
@@ -44,7 +44,7 @@ export interface Stage {
   setFitMode: (mode: Exclude<FitMode, 'none'>) => void
   /** 배율을 직접 지정하고 `fitMode: 'none'` 으로 전환한다. */
   zoomTo: (next: number, anchor?: { x: number; y: number }) => void
-  /** 프리셋 계단을 밟는다. 스테이지 중앙을 앵커로 삼는다 (PLAN 6.4). */
+  /** 프리셋 계단을 밟는다. 스테이지 중앙을 앵커로 삼는다. */
   zoomStep: (direction: 1 | -1) => void
   /** Ctrl/Cmd + 휠, 트랙패드 pinch. 포인터 위치를 앵커로 한 연속 줌. */
   zoomByWheel: (deltaY: number, anchor: { x: number; y: number }) => void
@@ -126,7 +126,7 @@ export function createStage(options: StageOptions): Stage {
     el.scrollTop = contentY * ratio - offsetY
   }
 
-  // 페이지 크기가 변하면 다시 맞춘다 (PLAN 6.5). 스테이지 리사이즈는 호출자가 applyFit 을 부른다.
+  // 페이지 크기가 변하면 다시 맞춘다. 스테이지 리사이즈는 호출자가 applyFit 을 부른다.
   watch(() => pageSize.value, applyFit)
 
   return {
@@ -150,7 +150,7 @@ export function createStage(options: StageOptions): Stage {
 
     zoomTo(next, anchor) {
       // 직접 줌하면 맞춤 모드에서 빠진다. 그래야 창 크기 변경이 사용자의 선택을
-      // 덮어쓰지 않는다 (PLAN 6.5).
+      // 덮어쓰지 않는다.
       fitMode.value = 'none'
       applyScale(next, anchor)
     },

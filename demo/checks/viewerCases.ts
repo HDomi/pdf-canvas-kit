@@ -1,12 +1,12 @@
 /**
- * 뷰어 검증 (PLAN R11 · 20.20).
+ * 뷰어 검증.
  *
  * 뷰어의 핵심 로직은 **배율 파생**과 **슬롯 분기**다. 둘 다 레이아웃 없이 확인할 수 있다 —
  * 배율은 순수 산술이고, 슬롯은 어느 함수를 부르는가의 문제다.
  *
  * ⚠️ **확인되지 않는 것:** 375px 폭에서 가로 스크롤이 없는지(D15 DoD), `ResizeObserver` 가
  * 실제로 발화하는지, 연속 스크롤에서 `scrollIntoView` 가 맞는 위치로 가는지. happy-dom 에는
- * 레이아웃이 없어 `getBoundingClientRect()` 가 전부 0 이다 (PLAN 20.5).
+ * 레이아웃이 없어 `getBoundingClientRect()` 가 전부 0 이다.
  */
 import { createViewerController } from '../../src/controller/viewer'
 import { createPDFCanvasViewer } from '../../src/dom/createViewer'
@@ -273,7 +273,7 @@ export const VIEWER_GROUPS: CaseGroup[] = [
       {
         /*
          * 등록되지 않은 kind. 편집기는 물음표를 띄우지만 뷰어는 자리만 비운다 —
-         * 학생이 할 수 있는 일이 없다.
+         * 뷰어에서 할 수 있는 일이 없다.
          */
         name: '등록되지 않은 kind 는 자리만 남긴다 (객체를 버리지 않는다)',
         expected: [true, 100],
@@ -350,7 +350,7 @@ export const VIEWER_GROUPS: CaseGroup[] = [
       {
         /*
          * doc 이 없을 때 회색 판만 남으면 "깨진 것" 처럼 보인다 — 2026.08.21 에 소비자 앱에서
-         * 실제로 그렇게 보였다. 편집기의 emptyState 와 달리 버튼이 없다: 학생은 문서를
+         * 실제로 그렇게 보였다. 편집기의 emptyState 와 달리 버튼이 없다: 뷰어은 문서를
          * 불러올 수 없고 이 상태를 푸는 것은 호스트의 몫이다.
          */
         name: '★ doc 이 없으면 빈 상태를 보여준다 (회색 판만 남지 않는다)',

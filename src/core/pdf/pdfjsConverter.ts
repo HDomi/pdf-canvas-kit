@@ -1,7 +1,7 @@
 /**
- * 브라우저 측 PDF 컨버터 (PLAN 10.1).
+ * 브라우저 측 PDF 컨버터.
  *
- * 페이지 전환이 즉시 이뤄지도록 모든 페이지를 미리 래스터화하고(PLAN D12), 루프가 끝나는 즉시
+ * 페이지 전환이 즉시 이뤄지도록 모든 페이지를 미리 래스터화하고 (PDF 는 업로드 시점에 전체 페이지를 이미지로 변환한다), 루프가 끝나는 즉시
  * pdf.js 문서를 정리한다. 편집 세션 내내 붙들고 있으면 worker와 그 캐시를 이유 없이 살려 둔다.
  */
 import type { ConvertOptions, ConverterPort, RasterPage } from '../ports/ConverterPort'
@@ -29,9 +29,9 @@ export interface PdfjsConverterOptions extends RasterizeOptions, LoadPdfOptions 
  *
  * 실측 처리량은 A4 한 페이지당 약 17ms다(1654px, JPEG q.85, headless Chrome). 그래서 500페이지
  * 문서가 대략 9초에 변환된다. 이게 lazy가 아니라 전량 선변환을 택한 이유다. 페이지 전환이
- * 즉시가 되고, 관리할 부분 변환 상태가 없다 (PLAN D12, ARCHITECTURE §5).
+ * 즉시가 되고, 관리할 부분 변환 상태가 없다 (PDF 는 업로드 시점에 전체 페이지를 이미지로 변환한다).
  *
- * ⚠️ **메모리 (PLAN Q19)** — 전량 선변환이므로 배경 blob이 모두 살아 있다. 페이지당 약 400KB로
+ * ⚠️ **메모리** — 전량 선변환이므로 배경 blob이 모두 살아 있다. 페이지당 약 400KB로
  * **500페이지면 약 200MB**다. 브라우저가 디스크로 내리지만, 극단 케이스에서 문제가 되면
  * `targetPx` 를 낮추거나(가장 효과가 크다) 비활성 페이지의 blob을 해제하는 전략이 필요하다.
  * 후자는 페이지 전환 지연을 만들므로 D12의 전제와 상충한다 — 그래서 지금은 도입하지 않았다.

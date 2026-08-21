@@ -1,5 +1,5 @@
 /**
- * 뷰어의 객체 하나. 읽기 전용이거나 **응답을 받는 폼**이다 (PLAN D29).
+ * 뷰어의 객체 하나. 읽기 전용이거나 **응답을 받는 폼**이다 (뷰어는 응답을 갖지 않는다).
  *
  * ## 편집기와 갈리는 지점
  *
@@ -30,7 +30,7 @@ export interface ViewerObjectProps {
   object: ReadSignal<PDFCanvasObject>
   types: ObjectTypeRegistry
   /**
-   * 커스텀 객체의 데이터 변경 — **학생의 응답**이다.
+   * 커스텀 객체의 데이터 변경 — **뷰어의 응답**이다.
    *
    * 패키지는 이 값을 저장하지 않는다 (D29). 호스트가 받아서 자기 상태에 넣는다.
    */
@@ -47,7 +47,7 @@ export function viewerObject(props: ViewerObjectProps): HTMLElement {
    *
    * 뷰어의 문서는 **교체된다** (controlled — `viewer.ts` 의 `setProps`). 호스트가 다른 과제를
    * 열면 같은 위치의 리스트 항목이 다른 유형일 수 있다. `when` 은 값 변화를 못 보므로
-   * `keyed` 여야 한다 (PLAN 20.16 에서 같은 함정에 빠졌다).
+   * `keyed` 여야 한다.
    */
   const body = keyed(
     () => {
@@ -89,7 +89,7 @@ export function viewerObject(props: ViewerObjectProps): HTMLElement {
       class: 'pck-viewer-obj',
       attr: { 'data-object-id': () => props.object.value.id },
       style: {
-        // pt 를 px 로 그대로. 배율은 부모 페이지의 transform 한 곳에만 있다 (PLAN 5.3).
+        // pt 를 px 로 그대로. 배율은 부모 페이지의 transform 한 곳에만 있다.
         left: () => rect().x,
         top: () => rect().y,
         width: () => rect().w,
@@ -122,7 +122,7 @@ function viewerCustomObject(props: ViewerCustomProps): HTMLElement {
   /*
    * 등록되지 않은 `kind`.
    *
-   * 편집기와 같은 판단이다 — **객체를 버리지 않는다.** 자리만 그린다. 다만 뷰어에서는 학생에게
+   * 편집기와 같은 판단이다 — **객체를 버리지 않는다.** 자리만 그린다. 다만 뷰어에서는 뷰어에
    * 물음표를 보여 봐야 할 수 있는 것이 없으므로 안내를 띄우지 않고 조용히 자리만 남긴다.
    * 이 상태는 호스트가 편집기 쪽 검증(`validate`)에서 이미 잡을 수 있었다.
    */

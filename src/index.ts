@@ -7,7 +7,7 @@
  * ```
  *
  * 이 엔트리는 문서 모델, 좌표 헬퍼, PDF 파이프라인, 호스트가 주입하는 port들을 내보낸다.
- * 여기에는 Vue가 전혀 등장하지 않으므로, 나중에 다른 렌더러의 기반으로도 쓸 수 있다 (PLAN 2.1).
+ * 여기에는 Vue가 전혀 등장하지 않으므로, 나중에 다른 렌더러의 기반으로도 쓸 수 있다.
  *
  * 각 조각이 어떻게 맞물리고 어떤 값을 조정할 수 있는지는 ARCHITECTURE.md 참고.
  */
@@ -170,24 +170,6 @@ export {
   ISSUE_MESSAGE_KEYS,
 } from './core/validation/rules'
 export type { IssueCode, ValidationIssue, ValidationResult } from './core/validation/rules'
-
-/* ------------------------------------------------ 프로토타입 (임시) ⚠️ -- */
-
-/*
- * ⚠️ 실서버가 붙으면 이 블록과 `src/prototype/` 디렉토리를 함께 삭제한다.
- * 자세한 내용과 삭제 절차는 `src/prototype/README.md` 참고.
- */
-export {
-  savePrototype,
-  loadPrototype,
-  hasPrototypeSave,
-  clearPrototypeSave,
-  PrototypeQuotaError,
-  IMAGES_KEY,
-  SAVED_DOC_KEY,
-  LOCAL_REF_PREFIX,
-} from './prototype/localStorageStore'
-export type { ImageMap, SaveResult } from './prototype/localStorageStore'
 
 /* ---------------------------------------------------------------- i18n -- */
 

@@ -1,5 +1,5 @@
 /**
- * 문서를 콘솔에 출력하는 StoragePort (PLAN Q10 잠정).
+ * 문서를 콘솔에 출력하는 StoragePort.
  *
  * 실제 서버 저장이 아직 없는 동안의 자리다. 자동저장 파이프라인은 그대로 돌아가므로,
  * 저장 주기·상태 배지·재시도 동작을 실제와 같은 조건에서 확인할 수 있다.
@@ -7,7 +7,7 @@
  *
  * ## blob 배경 처리
  *
- * `serializeDoc` 은 blob 배경을 거부한다(PLAN 4.1). 여기서도 그 규칙을 우회하지 않는다 —
+ * `serializeDoc` 은 blob 배경을 거부한다. 여기서도 그 규칙을 우회하지 않는다 —
  * 대신 배경 URL을 요약한 **읽기용 사본**을 출력한다. 콘솔에 6.8MB base64가 찍히면 아무도 읽을 수
  * 없고, 그게 실제로 저장될 형태라고 오해할 여지도 생긴다.
  */
@@ -74,7 +74,7 @@ export function createConsoleStoragePort(options: ConsoleStorageOptions = {}): S
       if (!summary.serializable) {
         console.warn(
           `${label} ${findBlobBackgrounds(doc).length} page(s) still hold blob backgrounds — ` +
-            'promoteBackgrounds(doc, assetPort) is required before real persistence (PLAN 4.1)',
+            'promoteBackgrounds(doc, assetPort) is required before real persistence',
         )
       }
       // eslint-disable-next-line no-console

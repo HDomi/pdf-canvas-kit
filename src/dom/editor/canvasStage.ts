@@ -1,5 +1,5 @@
 /**
- * 스테이지. 정확히 한 페이지만 담는 스크롤 컨테이너다 (PLAN D8).
+ * 스테이지. 정확히 한 페이지만 담는 스크롤 컨테이너다 (스테이지는 한 번에 한 페이지만 렌더한다).
  *
  * 페이지 하나만 렌더하면 DOM 비용이 문서 길이와 무관해지고(500페이지 문서가 3페이지와 같은
  * 비용), "현재 페이지"가 스크롤 위치에서 파생되는 값이 아니라 명시적 상태가 된다.
@@ -31,7 +31,7 @@ export interface CanvasStageProps {
    * 줌 앵커링·팬·맞춤 계산이 모두 이 요소의 스크롤 오프셋과 client 크기를 대상으로 한다.
    */
   stageRef: (el: HTMLElement | null) => void
-  /** 좌표 변환의 기준이 되는 페이지 프레임 엘리먼트 (PLAN 5.4). */
+  /** 좌표 변환의 기준이 되는 페이지 프레임 엘리먼트. */
   frameRef: (el: HTMLElement | null) => void
   onWheelZoom: (deltaY: number, anchor: { x: number; y: number }) => void
   onPagePointerDown: (e: PointerEvent) => void

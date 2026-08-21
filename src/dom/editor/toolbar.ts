@@ -18,7 +18,7 @@ export interface ToolbarProps {
   enabled: ReadSignal<boolean>
   hasSelection: ReadSignal<boolean>
   /**
-   * 등록된 커스텀 타입. 각 타입마다 도구가 하나 생긴다 (PLAN D25).
+   * 등록된 커스텀 타입. 각 타입마다 도구가 하나 생긴다 (커스텀 객체는 소비자가 정의한다).
    *
    * 이전 판은 도구 6개가 하드코딩이었다. 레지스트리를 읽으면 소비자가 타입을 추가하는 것이
    * 곧 도구 추가가 된다 — 툴바가 데이터 주도가 된다.

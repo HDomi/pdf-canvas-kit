@@ -1,5 +1,5 @@
 /**
- * 데모 + 예제 앱 두 개를 함께 띄운다 (PLAN 20.22).
+ * 데모 + 예제 앱 두 개를 함께 띄운다.
  *
  *   :3100  demo/          레포 소스를 **별칭으로** 본다 — 고치면 즉시 반영
  *   :3101  examples/react node_modules 의 dist 를 **exports 맵으로** 해석
@@ -14,7 +14,7 @@
  * ## pdf.js 자산을 먼저 복사한다
  *
  * 예제 앱은 `/pdfjs/*` 를 URL 로 가져온다. 빠뜨리면 worker 가 404 이고, `cMapUrl` 이 없으면
- * **한국어 PDF 에서 글자가 조용히 사라진다** (2026.08.21 에 실제로 그랬다 — PLAN 20.19).
+ * **한국어 PDF 에서 글자가 조용히 사라진다** (2026.08.21 에 실제로 그랬다).
  * 실제 소비자 앱은 README 의 `postinstall` 로 같은 일을 한다.
  */
 import { spawn, spawnSync } from 'node:child_process'

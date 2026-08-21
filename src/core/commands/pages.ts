@@ -2,7 +2,7 @@
  * 페이지 단위 커맨드. 추가·삭제·순서 변경·복제.
  *
  * 모두 500페이지 상한(기획 2.2)을 지키고, 문서에 내용이 생긴 뒤에는 최소 1페이지를 남긴다
- * (PLAN Q4).
+ *.
  */
 import { createId } from '../util/id'
 import { LIMITS } from '../config/defaults'
@@ -25,7 +25,7 @@ export class PageLimitError extends Error {
  * 페이지를 뒤에 붙인다. 보통 파일 변환 결과다.
  *
  * @throws {PageLimitError} 결과가 페이지 상한을 넘기면. 조용히 잘라내지 않고 던지는 이유는,
- * 교사가 올린 문서에서 말없이 페이지를 버리는 것이 거부하는 것보다 나쁘기 때문이다.
+ * 편집기가 올린 문서에서 말없이 페이지를 버리는 것이 거부하는 것보다 나쁘기 때문이다.
  */
 export function appendPages(newPages: PDFCanvasPage[]): Command {
   return (doc) => {
@@ -55,7 +55,7 @@ export function insertBlankPage(index: number): Command {
  * 페이지와 그 위에 얹힌 모든 것을 삭제한다 (기획 9.2).
  *
  * 마지막 페이지는 삭제하지 않는다. 페이지가 0이 되면 편집기가 빈 상태로 떨어져 툴바까지
- * 사라지는데, 사용자가 "페이지 삭제"로 기대하는 결과가 아니다 (PLAN Q4).
+ * 사라지는데, 사용자가 "페이지 삭제"로 기대하는 결과가 아니다.
  */
 export function removePage(index: number): Command {
   return (doc) => {

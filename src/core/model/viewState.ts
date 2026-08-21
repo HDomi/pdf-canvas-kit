@@ -1,7 +1,7 @@
 /**
  * 편집기 뷰 상태 — 사용자에게는 보이지만 문서에는 저장하지 않는 값들.
  *
- * {@link ../model/types.PDFCanvasDoc} 와 분리한 것은 의도다 (PLAN 6.6). 배율이나 선택을
+ * {@link ../model/types.PDFCanvasDoc} 와 분리한 것은 의도다. 배율이나 선택을
  * 문서에 접어 넣으면 줌 클릭마다 dirty가 되어 자동저장이 돌고, undo가 뷰포트를 되돌린다.
  */
 import { EDITOR_DEFAULTS } from '../config/defaults'
@@ -12,7 +12,7 @@ export type FitMode = 'width' | 'page' | 'none'
 /**
  * 툴바의 도구들. `select` 가 기본 상태다.
  *
- * 커스텀 객체 도구는 `custom:<kind>` 다 (PLAN D25). 레지스트리에 등록된 타입마다 도구가
+ * 커스텀 객체 도구는 `custom:<kind>` 다 (커스텀 객체는 소비자가 정의한다). 레지스트리에 등록된 타입마다 도구가
  * 하나씩 생기므로, 도구 목록을 하드코딩하지 않고 레지스트리에서 만든다.
  */
 export type ToolId = 'select' | 'text' | 'shape' | 'eraser' | `custom:${string}`
@@ -27,7 +27,7 @@ export function toolForKind(kind: string): ToolId {
   return `custom:${kind}`
 }
 
-/** 저장 배지 상태. `disabled` 는 StoragePort가 연결되지 않았다는 뜻이다 (PLAN 12). */
+/** 저장 배지 상태. `disabled` 는 StoragePort가 연결되지 않았다는 뜻이다. */
 export type SaveState = 'saved' | 'saving' | 'error' | 'disabled'
 
 export interface EditorViewState {
@@ -38,12 +38,12 @@ export interface EditorViewState {
    * `doc.pages` 의 인덱스. 문서가 비어 있으면 -1.
    *
    * id가 아니라 인덱스인 이유: 페이지를 삭제해도 "같은 자리"를 유지하는 동작이 자연스럽고
-   * 범위 클램프가 단순하다 (PLAN 6.6).
+   * 범위 클램프가 단순하다.
    */
   currentPageIndex: number
   selectedObjectIds: string[]
   activeTool: ToolId
-  /** Space를 누르고 있는 동안 true. 스테이지가 그리기 대신 팬한다 (PLAN 6.3). */
+  /** Space를 누르고 있는 동안 true. 스테이지가 그리기 대신 팬한다. */
   panArmed: boolean
   gridSnap: boolean
   saveState: SaveState

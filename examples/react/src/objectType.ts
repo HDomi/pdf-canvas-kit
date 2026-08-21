@@ -1,15 +1,15 @@
 /**
- * 커스텀 객체 타입. **프레임워크와 무관하다** (PLAN D25).
+ * 커스텀 객체 타입. **프레임워크와 무관하다** (커스텀 객체는 소비자가 정의한다).
  *
  * `kind` 가 Editor↔Viewer 계약이므로 편집기와 뷰어에 같은 배열을 넘긴다.
  */
 import { defineObjectType } from 'pdf-canvas-kit'
 
 export interface Answer {
-  /** 정답. 학생에게 가면 안 된다. */
+  /** 정답. 뷰어에 나가면 안 된다. */
   answers: string[]
   points: number
-  /** 학생 응답. 편집 시점에는 없다. */
+  /** 뷰어 응답. 편집 시점에는 없다. */
   response?: string
 }
 

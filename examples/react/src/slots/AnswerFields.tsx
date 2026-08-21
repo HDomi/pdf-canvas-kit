@@ -1,10 +1,10 @@
 /**
- * 편집기 인스펙터의 커스텀 객체 패널 — 교사가 정답·배점을 넣는다.
+ * 편집기 인스펙터의 커스텀 객체 패널 — 정답·배점을 입력한다.
  *
  * portal 안이라 **포커스 가드가 필요 없다.** 배열을 늘리고 줄여도 React 가 노드를 유지한다.
  * vanilla 슬롯(`objectType.renderInspector`)은 `render` 가 객체당 한 번만 불려 DOM 을 직접
  * 다뤄야 하고, `document.activeElement` 를 확인해 포커스된 입력을 덮지 않아야 한다
- * (PLAN 20.14). 그 제약이 여기에는 없다.
+ *. 그 제약이 여기에는 없다.
  */
 import type { CustomSlotProps } from 'pdf-canvas-kit/react'
 import type { Answer } from '../objectType'

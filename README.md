@@ -1,14 +1,19 @@
 # pdf-canvas-kit
 
 PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **텍스트·도형·직접 만든 객체를 레이어**로
-올리는 문제지 편집기. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고
-Vue·React 래퍼가 같은 컴포넌트를 제공한다.
+올리는 편집기와 뷰어. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고
+React·Vue 래퍼가 같은 컴포넌트를 제공한다.
+
+```bash
+npm install pdf-canvas-kit
+```
 
 ```tsx
 // React
 import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
 import 'pdf-canvas-kit/styles.css'
-;<PDFCanvasEditor initialDoc={doc} ports={ports} onChange={setDoc} />
+
+<PDFCanvasEditor initialDoc={doc} onChange={setDoc} />
 ```
 
 ```vue
@@ -17,12 +22,13 @@ import 'pdf-canvas-kit/styles.css'
 import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
 import 'pdf-canvas-kit/styles.css'
 </script>
-<template><PDFCanvasEditor :initial-doc="doc" :ports="ports" @change="onChange" /></template>
+<template><PDFCanvasEditor :initial-doc="doc" @change="onChange" /></template>
 ```
 
 ```ts
 // 프레임워크 없이 — imperative facade
 import { createPDFCanvasEditor, createPDFCanvasViewer } from 'pdf-canvas-kit'
+
 const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 ```
@@ -30,19 +36,139 @@ const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 > `initialDoc` 은 **최초 1회만 읽는다.** 편집기가 문서를 소유하고 `onChange` 로 밀어낸다 —
 > controlled 가 아니다. 이름이 그 계약이다.
 
-런타임 의존성은 `pdfjs-dist` 하나다. `vue` · `react` 는 **optional peer** 라 쓰는 쪽만 설치한다.
+런타임 의존성은 `pdfjs-dist` 하나다. `react` · `vue` 는 **optional peer** 라 쓰는 쪽만 설치한다.
+번들 크기는 코어 11KB + React 래퍼 2.8KB / Vue 래퍼 4.5KB + CSS 20KB.
 
-| 문서 | 내용 |
+---
+
+## ⚠️ 시작 전에 두 가지
+
+이 둘을 빠뜨리면 **에러 없이 조용히** 잘못 동작한다.
+
+### 1. pdf.js 런타임 자산을 서빙한다
+
+pdf.js는 CMap·표준 폰트·wasm 을 런타임에 URL로 가져온다. 빠뜨리면 **한국어 PDF에서 글자가
+사라진다.**
+
+```jsonc
+// package.json
+"postinstall": "node -e \"const{cpSync}=require('fs');for(const d of ['cmaps','standard_fonts','wasm','iccs'])cpSync('node_modules/pdfjs-dist/'+d,'public/pdfjs/'+d,{recursive:true});cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','public/pdfjs/pdf.worker.mjs')\""
+```
+
+```ts
+configurePdfResources({
+  workerSrc: '/pdfjs/pdf.worker.mjs',
+  cMapUrl: '/pdfjs/cmaps/',              // ⚠️ 이것 없으면 한글이 사라진다
+  standardFontDataUrl: '/pdfjs/standard_fonts/',
+  wasmUrl: '/pdfjs/wasm/',
+  iccUrl: '/pdfjs/iccs/',
+})
+```
+
+### 2. 컨테이너에 높이를 준다
+
+`.pck-editor` 는 `height: 100%` 다. 확정 높이가 없으면 **편집기가 접힌다.**
+
+```css
+html, body, #app { height: 100%; margin: 0; }
+/* flex 안이면 min-height: 0 도 필요하다 */
+```
+
+자세한 것은 [시작하기](docs/01-getting-started.md).
+
+---
+
+## 문서
+
+전체 사용 설명서는 **[docs/](docs/)** 에 있다.
+
+| | |
 | --- | --- |
-| [PLAN.md](PLAN.md) | 설계 결정과 근거, 마일스톤, 미결정 사항 |
+| [시작하기](docs/01-getting-started.md) | 설치, pdf.js 자산, 높이·폭 함정, SSR |
+| [React](docs/02-react.md) · [Vue](docs/03-vue.md) · [프레임워크 없이](docs/04-vanilla.md) | 환경별 적용법 |
+| [커스텀 객체](docs/05-custom-objects.md) | PDF 위에 **내 컴포넌트**를 올린다 |
+| [뷰어](docs/06-viewer.md) | 읽기 전용 렌더 + 응답 받기 |
+| [저장 · 업로드](docs/07-storage.md) · [내보내기](docs/08-export.md) | 포트 주입, 검증 게이트 |
+| [스타일 오버라이드](docs/09-styling.md) | 토큰 75개 + **`@layer`** — 특이도 싸움이 없다 |
+| [문구 · 번역](docs/10-strings.md) · [아이콘](docs/11-icons.md) | 모든 텍스트·아이콘을 교체 |
+| [다이얼로그 위임](docs/12-dialogs.md) | 우리 팝업 대신 **내 모달** |
+| [API 레퍼런스](docs/13-api.md) · [함정 모음](docs/14-pitfalls.md) | prop·handle·타입 / 실제로 겪은 문제 |
+| [TODO](docs/TODO.md) | 남은 일 |
+
+내부 구조는 따로 있다.
+
+| | |
+| --- | --- |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | 코드 구조, **무엇을 어디서 바꾸는지**, 좌표계 규칙 |
 | [CLAUDE.md](CLAUDE.md) | 이 저장소의 작업 규칙 |
 
 ---
 
+## 커스터마이징 한눈에
+
+호스트 앱에 맞추는 길이 네 개다. 위에서부터 시도하면 대부분 첫 단계에서 끝난다.
+
+```css
+/* 1. 토큰 — 색·간격·폭·모달 모양 */
+.my-app .pck-editor {
+  --pck-accent: #3b82f6;
+  --pck-pagelist-width: 200px;
+}
+
+/* 2. CSS 규칙 — @layer 라서 단일 클래스가 이긴다. !important 불필요 */
+.pck-toolbar { justify-content: center; }
+```
+
+```tsx
+{/* 3. 문구·아이콘 — 번역이나 아이콘 라이브러리 */}
+<PDFCanvasEditor
+  strings={{ 'toolbar.text': 'Text' }}
+  renderIcon={{ undo: UndoIcon }}
+/>
+
+{/* 4. 다이얼로그 위임 — 내 모달을 쓴다 */}
+<PDFCanvasEditor
+  onRequestUpload={() => setMyUploadOpen(true)}
+  onRequestConfirm={(req) => setMyConfirm(req)}
+/>
+```
+
+[스타일](docs/09-styling.md) · [문구](docs/10-strings.md) · [아이콘](docs/11-icons.md) ·
+[다이얼로그](docs/12-dialogs.md) 에 각각 자세히 있다.
+
+---
+
+## 커스텀 객체 한눈에
+
+패키지는 **기본 틀**(사각형·리사이즈·색)만 그린다. 그 안을 내 컴포넌트가 채운다.
+
+```ts
+const shortAnswer = defineObjectType<Answer, Omit<Answer, 'answers'>>({
+  kind: 'answer.short',
+  label: '단답형',
+  defaultSize: { w: 160, h: 44 },
+  defaultData: () => ({ answers: [], points: 1 }),
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  toPublic: ({ answers: _a, ...rest }) => rest,   // 뷰어에 나가면 안 되는 것
+})
+```
+
+```tsx
+<PDFCanvasEditor
+  objectTypes={[shortAnswer]}
+  renderObject={{ 'answer.short': AnswerBadge }}       // 캔버스 — 미리보기
+  renderInspector={{ 'answer.short': AnswerFields }}   // 인스펙터 — 편집
+/>
+```
+
+핸들로 틀을 키우면 안쪽 컴포넌트가 **자기 CSS 대로 다시 흐른다.**
+[커스텀 객체](docs/05-custom-objects.md).
+
+---
+
 ## 현재 상태
 
-프로토타입, **미배포.** 기능은 M0~M7 완료 + M8 부분이고, 편집 기능은 전부 동작한다.
+**미배포.** 편집 기능은 전부 동작하고, 남은 일은 [docs/TODO.md](docs/TODO.md) 에 있다.
 
 **위 세 예제는 동작한다.** 편집기와 뷰어 모두 React·Vue·vanilla 에서 쓸 수 있다. 남은 것은 npm 배포뿐이다.
 
@@ -62,7 +188,6 @@ const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 | `PDFCanvasViewer` | 완료 (R11) — 연속 스크롤 · 페이지별 fit-to-width · `renderViewer` 슬롯 |
 | 크롬 UI 슬롯 교체 | **미구현** (R12) — 결정은 D27 |
 
-아래 기능 표는 **구 Vue 구현 기준**이다 — 새 렌더 층으로 옮겨진 항목은 R 트랙 표를 본다.
 
 | | 상태 |
 | --- | --- |
@@ -91,76 +216,31 @@ const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 | 페이지 드래그 순서 변경 | 동작 — 좌측 썸네일을 위아래로 끈다 |
 | 페이지 삭제·복제 | 동작 — 썸네일 우클릭 메뉴 또는 하단 버튼. 객체가 있으면 확인 모달 |
 | 자동저장 파이프라인 | 동작 — 저장 대상은 콘솔(`console.debug`). 실서버 미연결 |
-| 상단바 [저장] | ⚠️ **프로토타입** — localStorage에 문서+이미지 저장 (PLAN 18.5) |
+| 상단바 [JSON 출력] | 문서 JSON 을 콘솔로. 실서버 연결 전의 자리다 |
 | 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트는 `EditorHandle` 로 노출돼 있다 |
 
-`/editor/`(vanilla) · `/react/` · `/vue/` · `/viewer/` · `/spike/` · `/checks/` 를 확인할 수 있다.
+---
 
 ---
 
-## 시작하기
+## 개발
 
 ```bash
-npm install          # postinstall이 pdf.js 자산을 demo/public/pdfjs 로 복사한다
-npm run fixtures     # 테스트용 PDF 픽스처 생성 (선택)
-npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
+npm install
+npm run dev      # 3100 데모(레포 소스) · 3101 React 예제 · 3102 Vue 예제
 ```
 
-`npm run dev` 는 LAN에 노출된다. 다른 기기(태블릿 등)에서 출력된 `Network:` 주소로 열 수 있다.
+`examples/*` 는 **별칭 없이** 설치된 `dist` 를 쓴다 — `exports` 맵·진입점·`.d.ts` 를 검증하는
+유일한 자리다. 패키지 소스를 고치면 `npm run build` 후 반영된다.
 
-⚠️ **LAN 주소는 secure context가 아니다.** 두 가지가 달라진다.
-
-- `localStorage` 오리진이 `localhost:3100` 과 **별개다** — 프로토타입 저장 데이터와 패널 폭이
-  주소마다 따로 쌓인다
-- `crypto.randomUUID` · `navigator.clipboard` 가 없다. 라이브러리가 폴백하므로 동작은 하지만,
-  직접 코드를 추가할 때는 `createId()` · `copyText()` 를 써야 한다 (PLAN 18.9)
-
-같은 네트워크의 누구나 접근할 수 있다. 공용 Wi-Fi에서는 `npm run dev:local` 을 쓴다.
-
-| 경로 | 내용 |
+| 화면 | |
 | --- | --- |
-| [`/editor/`](http://localhost:3100/editor/) | `PDFCanvasEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
-| [`/spike/`](http://localhost:3100/spike/) | PDF를 페이지 이미지로 변환. 페이지별 pt 크기·해상도·소요시간·폰트 진단 |
-| [`/viewer/`](http://localhost:3100/viewer/) | 편집기와 뷰어를 나란히 — `toPublicDoc()` 이 정답을 지우는 것을 확인한다 |
-| **[React 예제](http://localhost:3101/)** | **별칭 없이 설치된 `dist` 를 쓴다.** 공개 API 를 바꿨으면 여기서 확인한다 |
-| **[Vue 예제](http://localhost:3102/)** | 같음. `demo/` 는 별칭이라 export 누락을 보지 못한다 |
-| [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **287 케이스 / 42 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
-
-`/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
-`/spike/` 는 PDF를 끌어다 놓아도 된다.
-
-### 편집기 조작
-
-| 조작 | 동작 |
-| --- | --- |
-| 좌측 썸네일 클릭 | 해당 페이지로 전환 |
-| `PageUp` / `PageDown` · `Home` / `End` | 페이지 이동 |
-| 우측 하단 `− 100% +` | 축소 / 배율 메뉴 / 확대 |
-| `Cmd/Ctrl` + 휠 · 트랙패드 pinch | 포인터 위치 기준 확대·축소 |
-| `Cmd/Ctrl` + `0` / `1` / `+` / `-` | 페이지 맞춤 / 100% / 확대 / 축소 |
-| **`Space` + 드래그** · 중간 버튼 드래그 | 화면 이동(팬). 확대 상태에서만 의미가 있다 |
-| `Cmd/Ctrl` + `Z` / `Shift`+`Cmd/Ctrl`+`Z` | undo / redo |
-| 도구 선택 후 캔버스 드래그 | 객체 생성. `Shift` 를 누른 채 그리면 도구 유지 |
-| 객체 클릭 · 빈 영역 드래그 | 선택 · 마퀴 다중 선택 |
-| 핸들 드래그 | 리사이즈 (`Shift` 종횡비, `Alt` 중심 기준) |
-| `Delete` / 방향키 (`Shift` 10pt) | 삭제 / 이동 |
-| `Cmd/Ctrl` + `D` | 선택 객체 복제 |
-| 텍스트 객체 더블클릭 | 인라인 편집 (`Esc` 로 종료) |
-| 회전 핸들 드래그 | 회전 (`Shift` 15° 스냅) |
-| 패널 사이 핸들 드래그 | 좌·우 패널 폭 조절 (더블클릭: 기본값) |
-| 좌측 썸네일 위아래 드래그 | 페이지 순서 변경 |
-| 좌측 썸네일 우클릭 | 복제 · 빈 페이지 추가 · 삭제 |
-
-### 진단 스위치 (`/spike/`)
-
-| 쿼리 | 효과 |
-| --- | --- |
-| `?run=mixed-size.pdf` | 로드하면서 바로 변환 |
-| `?resources=off` | pdf.js CMap·표준폰트 URL 없이 렌더 (글자 사라짐 재현) |
-| `?fontface=off` | FontFace API 대신 글리프 아웃라인으로 렌더 |
-| `?targetPx=1240&mime=image/png&quality=0.9` | 해상도·포맷 즉시 비교 |
-
----
+| [`/editor/`](http://localhost:3100/editor/) | 편집기 (vanilla facade) |
+| [`/viewer/`](http://localhost:3100/viewer/) | 편집기 ↔ 뷰어 왕복, 정답 제거 확인 |
+| [`/checks/`](http://localhost:3100/checks/) | 검증 케이스 **303건 / 45 그룹** |
+| [`/spike/`](http://localhost:3100/spike/) | PDF 변환 진단 (페이지 크기·폰트) |
+| [React 예제](http://localhost:3101/) | **테마 토글 · 호스트 모달 · 아이콘 3경로** |
+| [Vue 예제](http://localhost:3102/) | 같은 것의 SFC 판 |
 
 ## 스크립트
 
@@ -176,652 +256,20 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | `npm run checks` | **검증 케이스를 브라우저 없이 실행** (287 케이스. 실패 시 exit 1) |
 | `npm run fixtures` | 테스트 PDF 생성 (크기 혼합·회전·CropBox·100페이지·손상) |
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
+| `npm run check:docs` | 문서의 죽은 상대 링크 검사 (lint 게이트에 포함) |
+| `npm run examples:build` | 예제 앱 타입체크 + 빌드. **소비 경로를 검증하는 자리** |
+| `npm run verify:tarball` | 배포 산출물 검사 — 훅 · `exports` · 불필요 파일 · peer · `@layer` |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |
 | `npm run verify:tarball` | **배포 산출물 검사** — 라이프사이클 훅 · `exports` 대상 · 불필요 파일 · peer 설정 |
 | `npm run examples:build` | **예제 앱 타입체크 + 빌드** (`skipLibCheck: false`). 소비 경로를 검증하는 자리다 |
 
 자동 테스트 러너는 없다. 대신 `npm run checks` 가 커밋 전 게이트다 — 이유와 한계는
-[PLAN D17](PLAN.md) · [ARCHITECTURE §11](ARCHITECTURE.md).
+[ARCHITECTURE §11](ARCHITECTURE.md).
 줌·팬·스크롤·IME 는 실제 브라우저 레이아웃에 의존해 덮이지 않는다. 손으로 확인해야 한다.
 
----
-
-## 호스트 앱에서 쓰기
-
-### 1. pdf.js 런타임 자산을 서빙한다 — **필수**
-
-pdf.js는 CMap·표준 폰트·wasm 디코더를 **런타임에 URL로** 가져온다.
-빠뜨리면 한국어 PDF에서 **글자가 조용히 사라진다.**
-
-```jsonc
-// package.json
-"postinstall": "node -e \"const{cpSync}=require('fs');for(const d of ['cmaps','standard_fonts','wasm','iccs'])cpSync('node_modules/pdfjs-dist/'+d,'public/pdfjs/'+d,{recursive:true});cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','public/pdfjs/pdf.worker.mjs')\""
-```
-
-```ts
-// plugins/pdf-canvas-kit.client.ts
-import { configurePdfResources } from 'pdf-canvas-kit'
-
-export default defineNuxtPlugin(() => {
-  configurePdfResources({
-    // 필수. 라이브러리는 이 경로를 스스로 찾지 않는다 (ARCHITECTURE §4)
-    workerSrc: '/pdfjs/pdf.worker.mjs',
-    // 또는: import workerSrc from 'pdfjs-dist/build/pdf.worker.mjs?url'
-    cMapUrl: '/pdfjs/cmaps/',
-    standardFontDataUrl: '/pdfjs/standard_fonts/',
-    wasmUrl: '/pdfjs/wasm/',
-    iccUrl: '/pdfjs/iccs/',
-  })
-})
-```
-
-디렉토리 경로 끝 슬래시는 필수다. `workerSrc` 없이 변환하면
-`PdfWorkerNotConfiguredError` 가 난다. 자세한 내용은 [ARCHITECTURE §4](ARCHITECTURE.md).
-
-### ⚠️ 컨테이너에 높이를 줘야 한다 — 가장 흔한 함정
-
-`.pck-editor` 는 `height: 100%` 다. 컨테이너에 확정된 높이가 없으면 **편집기가 접히고
-EmptyState 아이콘이 편집기 밖으로 삐져나온다.**
-
-```css
-/* 화면 전체 */
-html, body, #app { height: 100%; margin: 0; }
-
-/* 다른 UI 와 나눠 쓰는 경우 */
-.my-layout { display: flex; flex-direction: column; height: 100vh; }
-.my-editor-host { flex: 1; min-height: 0; }   /* min-height: 0 이 반드시 필요하다 */
-```
-
-감싸는 요소를 한 겹 더 두면 **그 요소도 높이를 넘겨야 한다.** 규칙 없는 `<div>` 를 끼우면
-체인이 끊긴다. 자세한 증상표는 [ARCHITECTURE §15.4](ARCHITECTURE.md).
-
-### ⚠️ 편집기에 좁은 폭을 주지 않는다
-
-편집기는 3분할이고 페이지 목록 240px + 인스펙터 280px 를 **고정으로** 먹는다. 화면 절반이나
-사이드바 옆에 넣으면 캔버스에 남는 폭이 400px 대가 되어 못 쓴다.
-
-편집기와 뷰어를 한 화면에 두고 싶으면 **나란히가 아니라 탭으로 전환한다.** 이때 둘 다
-마운트해 두고 `visibility: hidden` 으로 숨긴다 — 걷어 내면 편집기의 undo 스택이 날아가고
-뷰어는 입력 중인 응답을 잃는다. `display: none` 은 뷰어의 폭 측정을 죽이므로 쓰지 않는다.
-예제는 [demo/viewer/](demo/viewer/).
-
-### 2. 클라이언트 전용으로 마운트한다 (Nuxt·Next)
-
-pdf.js·포인터 이벤트·`createObjectURL` 이 브라우저 전용이라 SSR을 지원하지 않는다.
-
-```vue
-<ClientOnly>
-  <PDFCanvasEditor :initial-doc="doc" :ports="ports" @change="onChange" />
-</ClientOnly>
-```
-
-### 3. 기본 배율 바꾸기 (선택)
-
-기본은 `fit-page` — 문서를 올리면 페이지 전체가 보인다. 폭 기준이 낫다면:
-
-```vue
-<PDFCanvasEditor :initial-doc="doc" initial-scale="fit-width" />
-<!-- 또는 고정 배율 -->
-<PDFCanvasEditor :initial-doc="doc" :initial-scale="1" />
-```
-
-### 4. Vite 설정
-
-```ts
-// nuxt.config.ts
-export default defineNuxtConfig({
-  css: ['pdf-canvas-kit/styles.css'],
-  vite: { optimizeDeps: { include: ['pdfjs-dist'] } },
-})
-```
-
----
-
-## 현재 쓸 수 있는 API (M1)
-
-컴포넌트는 아직 없지만 PDF 파이프라인은 단독으로 쓸 수 있다.
-
-```ts
-import {
-  configurePdfResources,
-  createPdfjsConverter,
-  createBlobAssetPort,
-  formatPaperLabel,
-  ConvertError,
-  type PDFCanvasPage,
-  type PageBackground,
-} from 'pdf-canvas-kit'
-
-configurePdfResources({
-  workerSrc: '/pdfjs/pdf.worker.mjs',
-  cMapUrl: '/pdfjs/cmaps/',
-  standardFontDataUrl: '/pdfjs/standard_fonts/',
-})
-
-const converter = createPdfjsConverter()
-const assets = createBlobAssetPort()
-
-try {
-  const raster = await converter.convert(file, {
-    onProgress: (p) => console.log(`${p.page}/${p.total}`),
-  })
-
-  const pages: PDFCanvasPage[] = []
-  for (const r of raster) {
-    const id = crypto.randomUUID()
-    const asset = await assets.persist(r.blob, { pageId: id, mime: r.blob.type })
-    const background: PageBackground = {
-      kind: 'image',
-      url: asset.url,
-      origin: asset.origin,
-      naturalWidth: r.naturalWidth,
-      naturalHeight: r.naturalHeight,
-      renderScale: r.renderScale,
-    }
-    pages.push({ id, size: r.size, background, objects: [] })
-    console.log(formatPaperLabel(r.size)) // "A4 세로"
-  }
-} catch (e) {
-  if (e instanceof ConvertError) {
-    // 'unsupported-format' | 'file-too-large' | 'page-limit'
-    // | 'encrypted' | 'corrupt' | 'aborted' | 'worker-unavailable'
-    console.error(e.code, e.message)
-  }
-}
-```
-
-전체 타입 목록은 [ARCHITECTURE §9](ARCHITECTURE.md).
-
-### 글자가 안 보일 때
-
-`/spike/` 의 **폰트 · 텍스트 진단** 패널을 본다.
-
-| 관측 | 의미 |
-| --- | --- |
-| 텍스트 0자 | PDF에 텍스트가 없다 (스캔 이미지). 정상 |
-| 문자 수 정상 + pdf.js 경고 | 폰트 로딩 실패 → 자산 복사 확인 |
-| 문자 수 정상 + 경고 없음 + 안 보임 | `?fontface=off` 로 비교 |
-
----
-
-## 저장 · 업로드 연동
-
-### 페이지 이미지 업로드
-
-```ts
-import { createS3AssetPort } from 'pdf-canvas-kit'
-
-const asset = createS3AssetPort({
-  async getUploadUrl({ pageId, mime }) {
-    const r = await fetch('/api/uploads', { method: 'POST', body: JSON.stringify({ pageId, mime }) })
-    return r.json() // { uploadUrl, publicUrl, assetId }
-  },
-})
-```
-
-`uploadUrl` 과 `publicUrl` 을 나눠 받는다 — presigned URL에는 만료되는 서명 쿼리가 붙으므로
-문서에 저장되는 값은 `publicUrl` 이다.
-
-업로드 경로가 완전히 다르면 함수만 넘겨도 된다.
-
-```vue
-<PDFCanvasEditor :upload-file="myUploader" />
-```
-
-### 문서 저장
-
-```vue
-<PDFCanvasEditor :ports="{ asset, storage }" @save-state-change="badge = $event" />
-```
-
-`ports.storage` 를 주면 자동저장이 켜진다 — 5초 디바운스, 최대 지연 30초, 실패 시 지수 백오프
-3회, `beforeunload`/`visibilitychange` 에 flush.
-
-**저장 전에 배경을 승격해야 한다.** 페이지 배경은 blob URL로 시작하고, 그대로 저장하면 다음
-세션에 죽은 링크가 된다 — `serializeDoc` 이 이를 거부한다.
-
-```ts
-const storage = {
-  async save(doc) {
-    // blob 배경을 업로드해 영속 URL로 바꾼다
-    const ready = await promoteBackgrounds(doc, asset)
-    await fetch('/api/documents', { method: 'PUT', body: serializeDoc(ready) })
-  },
-}
-```
-
-**실서버가 없는 동안**은 콘솔 출력으로 대체할 수 있다. 파이프라인은 그대로 돌아간다.
-
-```ts
-import { createConsoleStoragePort } from 'pdf-canvas-kit'
-const storage = createConsoleStoragePort({ label: '[myapp]' })
-```
-
----
-
-## ⚠️ 프로토타입 저장 (임시)
-
-실서버가 없는 동안 상단바 [내보내기] 가 [저장 (프로토타입)] 으로 대체돼 있다.
-누르면 localStorage에 문서와 이미지를 넣는다.
-
-| 키 | 내용 |
-| --- | --- |
-| `pdf-canvas-kit.images` | `{ [assetId]: base64 data URL }` |
-| `pdf-canvas-kit.doc` | 문서 JSON. 배경 `url` 은 `pck-local:<assetId>` 참조 |
-
-```ts
-import { savePrototype, loadPrototype } from 'pdf-canvas-kit'
-
-await savePrototype(doc)
-const restored = loadPrototype() // pck-pck-local: 참조를 base64로 복원한 문서
-```
-
-**localStorage는 오리진당 5~10MB다. 약 9~18페이지에서 한계에 닿고**, 초과하면
-`PrototypeQuotaError` 를 던진다. 실제 제품용이 아니다 — `src/prototype/` 은 실서버가 붙으면
-통째로 삭제한다(그 안의 `README.md` 에 절차가 있다).
-
-`/editor/` dev 바의 [불러오기] · [저장 삭제] 로 확인할 수 있다.
-
----
-
-## 학생용 뷰어
-
-편집기가 만든 문서를 읽기 전용으로 보여주고, 커스텀 객체 자리에서 **응답을 받는다.**
-
-```tsx
-// React
-const publicDoc = editor.current?.toPublicDoc()   // 정답이 제거된 스냅샷
-
-<PDFCanvasViewer
-  doc={publicDoc}
-  objectTypes={[shortAnswer]}              // 편집기와 같은 배열
-  renderObject={{ 'answer.short': AnswerInput }}
-  onChangeData={(id, next) => setResponses((r) => ({ ...r, [id]: next }))}
-/>
-```
-
-```vue
-<!-- Vue -->
-<PDFCanvasViewer
-  :doc="publicDoc"
-  :object-types="[shortAnswer]"
-  :render-object="{ 'answer.short': AnswerInput }"
-  @change-data="(id, next) => (responses[id] = next)"
-/>
-```
-
-### 편집기와 다른 점
-
-| | Editor | Viewer |
-| --- | --- | --- |
-| 문서 | `initialDoc` — 최초 1회 | **`doc` — 매번 반영** (controlled) |
-| 배율 | 줌·팬·맞춤 | **컨테이너 폭에 자동으로 맞춘다.** 조작 없음 |
-| 페이지 | 한 번에 하나 | **연속 세로 스크롤** |
-| 화면 | 데스크탑 | **375px 까지 반응형** |
-| 슬롯 | `renderObject` (미리보기) | `renderObject` (**응답 폼**) |
-
-### 타입이 정답 유출을 막는다
-
-뷰어는 `PublicPDFCanvasDoc` 만 받는다. 그래서 아래가 **컴파일 에러**다.
-
-```ts
-viewer.update({ doc: editor.getDoc() })         // ✗ 편집 문서. 정답이 들어 있다
-viewer.update({ doc: editor.toPublicDoc() })    // ✓
-```
-
-서버에서 JSON 으로 받은 문서에는 그 표시가 없다. 이미 학생용이라면 단언한다.
-
-```ts
-import { asPublicDoc } from 'pdf-canvas-kit'
-viewer.update({ doc: asPublicDoc(json) })
-```
-
-⚠️ **`asPublicDoc` 은 검사하지 않는다.** 이름 그대로 단언이고, 편집 문서를 통과시키면 정답이
-그대로 뷰어에 들어간다. 무엇이 비밀인지는 각 타입의 `toPublic` 만 알기 때문이다.
-
-### 응답은 호스트가 소유한다
-
-뷰어는 문서를 소유하지 않으므로 응답도 저장하지 않는다. `onChangeData` 로 올려 보내고,
-호스트가 자기 상태를 고쳐 새 `doc` 을 내려 준다. 채점·저장 시점·응답 스키마가 전부 호스트
-도메인에 남는다.
-
-### vanilla 슬롯을 쓸 때
-
-`renderViewer` 는 편집기의 `render` 와 **다른 슬롯**이다. 편집기의 객체는 배치 대상이라
-미리보기를 보여주고, 뷰어의 객체는 폼이라 입력을 받는다.
-
-```ts
-defineObjectType<Answer, Omit<Answer, 'answers'>>({
-  toPublic: ({ answers: _a, ...rest }) => rest,
-  render: ({ data }) => badge(`${data().points}점`),      // 편집기
-  renderViewer: ({ data, onChange }) => input(data(), onChange), // 뷰어
-})
-```
-
-제네릭이 둘인 이유: `toPublic` 이 필드를 지우면 `renderViewer` 가 보는 형태가 달라진다.
-두 번째를 명시하지 않으면 지워진 필드가 타입에는 남아 있어 거짓말이 된다.
-
-예제는 [demo/viewer/](demo/viewer/) — 편집기와 뷰어를 나란히 두고 정답이 지워지는 것을 확인한다.
-
----
-
-## 내보내기 연동
-
-편집기는 **검증만** 한다. 과제 생성·링크·QR·팝업 UI 는 전부 호스트 몫이다 — 그래야 도메인
-없는 패키지로 남는다.
-
-```
-호스트가 [내보내기] 버튼을 만든다
-   │
-   ├─ handle.checkBeforeExport()
-   │     실패 → false. 편집기가 문제 객체로 이동·선택·스크롤한다
-   │     통과 → true
-   │
-   └─ handle.toPublicDoc()   각 타입의 toPublic(data) 를 거친 학생용 스냅샷
-         │
-         └─ 호스트 API 로 보낸다
-```
-
-```tsx
-// React — ref 로 handle 을 받는다
-const editor = useRef<EditorHandle>(null)
-
-async function onExport() {
-  // 검증 실패 시 편집기가 스스로 문제 지점을 보여주므로 여기서 할 일이 없다
-  if (!editor.current?.checkBeforeExport()) return
-  await api.createAssignment({ doc: editor.current.toPublicDoc() })
-}
-
-;<PDFCanvasEditor ref={editor} initialDoc={doc} objectTypes={[shortAnswer]} />
-```
-
-```vue
-<!-- Vue — expose 된 handle 을 그대로 쓴다 -->
-<script setup lang="ts">
-import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
-
-// ⚠️ 타입을 명시한다. Vue 의 expose 는 런타임 API 라 자동 추론되지 않는다
-const editor = ref<PDFCanvasEditorRef | null>(null)
-
-async function onExport() {
-  if (!editor.value?.handle?.checkBeforeExport()) return
-  await api.createAssignment({ doc: editor.value.handle.toPublicDoc() })
-}
-</script>
-<template><PDFCanvasEditor ref="editor" :initial-doc="doc" /></template>
-```
-
-> Vue 에서는 `ref` 타입을 `PDFCanvasEditorRef`(뷰어는 `PDFCanvasViewerRef`)로 명시한다.
-> React 는 `useImperativeHandle` 로 자동이지만 Vue 의 `expose()` 는 `.d.ts` 에 타입을 남기지
-> 않는다. 명시하지 않으면 `handle` 이 `any` 로 잡혀 facade 의 오타가 조용히 통과한다.
-
-**`toPublicDoc()` 은 각 객체 타입의 `toPublic(data)` 를 거친다.** 구현하지 않은 타입은 데이터가
-그대로 나간다 — 정답처럼 학생에게 보이면 안 되는 값은 반드시 그 함수로 제거한다.
-
-게이트를 열지 않고 상태만 볼 때는 `handle.validate()` 를 쓴다. 인스펙터의 실시간 경고가
-**같은 규칙**을 쓰므로 결과가 어긋나지 않는다.
-
-QR 인코더는 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
-
-자세한 경계는 [ARCHITECTURE §7.3](ARCHITECTURE.md).
-
----
-
-## 직접 만든 객체 올리기
-
-패키지는 **기본 틀**(네모, 크기 변경, 색상)만 그린다. 그 안을 채우는 것은 소비자 코드다.
-타입을 선언하고 `kind` 별로 컴포넌트를 붙인다.
-
-```ts
-// 1. 타입 선언 — 프레임워크 무관
-import { defineObjectType } from 'pdf-canvas-kit'
-
-export const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
-  kind: 'answer.short',
-  label: '단답형',
-  defaultSize: { w: 160, h: 40 },
-  defaultData: () => ({ answers: [], points: 1 }),
-  // 인스펙터 경고와 내보내기 게이트가 같은 규칙을 쓴다
-  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
-  // 정답은 학생 번들에 실려 가면 안 된다
-  toPublic: ({ answers: _answers, ...rest }) => rest,
-})
-```
-
-```tsx
-// 2. React — 캔버스 안(renderObject)과 인스펙터(renderInspector)에 컴포넌트를 붙인다
-<PDFCanvasEditor
-  initialDoc={doc}
-  objectTypes={[shortAnswer]}
-  renderObject={{ 'answer.short': ({ data }) => <b>{data.points}점</b> }}
-  renderInspector={{
-    'answer.short': ({ data, onChange }) => (
-      <input
-        value={data.answers[0] ?? ''}
-        onChange={(e) => onChange({ ...data, answers: [e.target.value] })}
-      />
-    ),
-  }}
-  onChange={setDoc}
-/>
-```
-
-```vue
-<!-- 2. Vue — 같은 계약. 슬롯 컴포넌트가 objectId · data · onChange 를 prop 으로 받는다 -->
-<PDFCanvasEditor
-  :initial-doc="doc"
-  :object-types="[shortAnswer]"
-  :render-object="{ 'answer.short': AnswerBadge }"
-  :render-inspector="{ 'answer.short': AnswerFields }"
-  @change="onChange"
-/>
-```
-
-**크기 변경은 viewport 조작처럼 동작한다.** 핸들로 틀을 키우면 안쪽 컴포넌트가 자기 CSS 대로
-다시 흐른다 — flex 면 줄바꿈이 일어난다. 틀 안에 갇히므로 밖으로 삐져나오지 않는다.
-
-**편집 창구는 인스펙터 하나다.** 캔버스 안 객체는 배치·크기 조절만 받는다 — 캔버스에서
-직접 입력받게 하면 드래그와 포커스가 같은 포인터 이벤트를 다투게 된다.
-
-> ⚠️ **`position: fixed` 는 갇힌다.** 컨테이너가 `transform: scale()` 안에 있어 드롭다운·툴팁이
-> 페이지 프레임 기준으로 갇힌다. 그런 UI 는 `body` 로 따로 portal / Teleport 한다.
-
-프레임워크 없이 쓸 때는 `render` / `renderInspector` 슬롯을 타입 정의에 직접 넣는다.
-그 경로에는 규칙이 하나 더 있다 — 슬롯은 **객체당 한 번만** 불리므로 값은 `data()` 로 읽고
-갱신은 `onUpdate(fn)` 으로 받는다. 예제는 [demo/editor/objectTypes.ts](demo/editor/objectTypes.ts).
-
----
-
-## 커스터마이징
-
-세 단계다. 위에서부터 시도하면 대부분 첫 단계에서 끝난다.
-
-| 원하는 것 | 방법 |
-| --- | --- |
-| 색·폰트·간격·패널 폭 | **토큰** — `--pck-*` 를 덮어쓴다 |
-| 구조가 다른 스타일 (배치·정렬·모양) | **CSS 규칙을 그대로 쓴다.** 특이도 싸움이 없다 |
-| 우리 앱 모달을 쓰고 싶다 | **다이얼로그 위임** — 동작만 함수로 받는다 |
-
-### 1. 토큰 (75개)
-
-```css
-/* 감싸는 요소나 :root 어디든 */
-.my-app .pck-editor {
-  --pck-accent: #3b82f6;
-  --pck-topbar-bg: #101014;
-  --pck-pagelist-width: 200px;
-  --pck-modal-radius: 0;
-  --pck-btn-padding: 10px 24px;
-}
-```
-
-영역별 접두사: `topbar` · `pagelist` · `stage` · `inspector` · `toolbar` · `obj`(캔버스 객체) ·
-`modal` · `btn` · `input` · `menu` · `state`(피드백 색) · `viewer`.
-전체 목록은 [src/styles/tokens.css](src/styles/tokens.css).
-
-### 2. CSS 규칙 — `@layer` 라서 특이도 싸움이 없다 ★
-
-패키지 스타일 전체가 `@layer pdf-canvas-kit` 안에 있다. **레이어 규칙은 레이어 밖 규칙에게
-항상 진다 — 특이도와 무관하게.**
-
-```css
-/* 이 한 줄이 이긴다. !important 도, .my-app .pck-x 도 필요 없다 */
-.pck-modal {
-  border-radius: 0;
-  box-shadow: none;
-}
-.pck-toolbar {
-  justify-content: center;
-}
-```
-
-이게 없으면 호스트는 우리보다 특이도를 높여야 하고, 우리가 선택자를 하나 늘리는 순간 조용히
-깨진다. 레이어 순서를 직접 정하고 싶으면 `@layer` 로 선언하면 된다.
-
-```css
-/* 호스트 레이어를 패키지 뒤에 두면 그 안의 규칙도 이긴다 */
-@layer pdf-canvas-kit, my-app;
-```
-
-주요 클래스: `.pck-editor` `.pck-topbar` `.pck-toolbar` `.pck-pagelist` `.pck-thumb`
-`.pck-stage` `.pck-page-frame` `.pck-inspector` `.pck-modal` `.pck-viewer`.
-**클래스 이름은 공개 계약으로 취급한다** — 바뀌면 breaking change다.
-
-### 3. 다이얼로그 위임 — 우리 팝업을 아예 안 쓴다 ★
-
-패키지가 만드는 팝업(문서 불러오기, 삭제 확인)을 **끄고 동작만 함수로 받는다.** 호스트 앱에는
-이미 자기 디자인 시스템 모달이 있으니까.
-
-```tsx
-<PDFCanvasEditor
-  ref={editor}
-  // 콜백을 주면 내장 팝업을 띄우지 않는다
-  onRequestUpload={() => setMyUploadOpen(true)}
-  onRequestConfirm={(req) => setMyConfirm(req)}   // { message, danger }
-  onImportStateChange={(st) => setImporting(st)}  // { progress, error }
-/>
-```
-
-호스트 UI에서 결과를 알려준다.
-
-| 호스트가 부르는 것 | 언제 |
-| --- | --- |
-| `handle.importFile(file)` | 파일을 골랐을 때 |
-| `handle.cancelImport()` | 불러오는 중 취소 |
-| `handle.confirmPending()` | 확인 모달의 [확인] |
-| `handle.cancelPending()` | 확인 모달의 [취소]·닫기 |
-| `handle.requestUpload()` | 호스트가 만든 [파일 열기] 버튼 |
-| `handle.requestRemovePage(i)` | 호스트가 만든 [페이지 삭제] |
-
-> ⚠️ `onRequestConfirm` 을 주고 `confirmPending()`·`cancelPending()` 을 **부르지 않으면 그 동작은
-> 대기 상태로 남는다.** 조용히 취소하지 않는다 — 사용자가 [삭제]를 눌렀는데 아무 일도 없는
-> 것과, 확인 없이 지워지는 것 중 어느 쪽도 낫지 않으므로 결정을 호스트에 남긴다.
-
-Vue도 같다. 두 예제가 같은 구조로 이 셋을 다 보여준다.
-
-```
-examples/{react,vue}/src/
-  theme.css              ★ 패키지 스타일 오버라이드 — [테마] 토글로 켜고 끈다
-  host.css               예제 자신의 스타일 (패키지 클래스를 건드리지 않는다)
-  objectType.ts          커스텀 객체 타입 (프레임워크 무관)
-  components/
-    ConfirmDialog        호스트 확인 모달 — 편집기는 이 존재를 모른다
-    UploadDialog         호스트 업로드 모달 (드래그&드롭 포함)
-  slots/
-    AnswerBadge          편집기 캔버스 (미리보기)
-    AnswerFields         편집기 인스펙터 (편집)
-    AnswerInput          뷰어 (응답 폼)
-```
-
-**[테마 ON/OFF] 토글이 `@layer` 를 눈으로 확인하는 장치다.** `theme.css` 를 `?raw` 로 읽어
-`<style>` 로 붙였다 뗀다 — 스코프 클래스를 만들지 않으므로 **특이도가 올라가지 않고**,
-그래서 "단일 클래스 선택자가 패키지 규칙을 이긴다" 는 것이 그대로 증명된다.
-
-테마는 상단바·툴바·좌측 패널·스테이지·인스펙터·뷰어를 **전부** 덮는다.
-
-### 4. 문구 — 번역·표현 바꾸기
-
-UI 문구는 전부 `strings` 를 거친다. **하드코딩이 없다.** prop 으로 넘기는 것이 기본이다.
-
-```tsx
-<PDFCanvasEditor
-  strings={{
-    'confirm.deletePage': 'Delete this page?',
-    'toolbar.text': 'Text',
-    'inspector.empty': 'Nothing selected',
-  }}
-/>
-```
-
-키는 `StringKey` 로 타입이 잡혀 **오타가 컴파일 에러**가 된다. 전체 목록은 `DEFAULT_STRINGS`.
-앱 전체에 한 번만 설정하려면 `configureStrings()` 를 써도 된다.
-
-⚠️ **최초 1회만 읽는다.** 언어를 런타임에 바꾸려면 컴포넌트를 다시 마운트한다 (React 는
-`key` 변경). 전역 표에 병합되므로 **한 페이지에 언어가 다른 편집기 둘은 지원하지 않는다.**
-
-### 5. 아이콘 — 글리프 · SVG · 컴포넌트 ★
-
-세 경로가 있고 위에서부터 먼저 이긴다.
-
-| 방법 | 무엇을 주는가 | 언제 |
-| --- | --- | --- |
-| `icons` | `() => Node` | vanilla·SSR 없는 앱, SVG 를 직접 만들 때 |
-| `renderIcon` (래퍼) | 프레임워크 컴포넌트 | React·Vue 아이콘 라이브러리를 쓸 때 |
-| `strings` 의 `icon.*` | 글리프 문자열 | 다른 유니코드·이모지로 바꿀 때 (기본값) |
-
-```tsx
-<PDFCanvasEditor
-  // 1. 컴포넌트 — 가장 흔한 경로
-  renderIcon={{ undo: UndoIcon, redo: RedoIcon, zoomIn: ZoomInIcon }}
-  // 2. vanilla 노드 — renderIcon 보다 먼저 이긴다
-  icons={{ close: () => mySvgElement() }}
-  // 3. 글리프만 교체
-  strings={{ 'icon.caret': '⌄' }}
-/>
-```
-
-아이콘 이름: `back` `undo` `redo` `zoomOut` `zoomIn` `close` `remove` `unknown` `caret`
-(`IconName` 타입).
-
-⚠️ `icons` 의 함수는 **부를 때마다 새 노드**를 반환해야 한다. 같은 노드를 돌려주면 DOM 은 한
-곳에만 붙을 수 있어 두 번째 사용처에서 첫 번째 아이콘이 사라진다.
-
-CSS 로 바꾸는 길도 있다. 아이콘 버튼에 `data-icon` 이 붙어 있다.
-
-```css
-.pck-icon-btn[data-icon='undo'] {
-  font-size: 0; /* 글리프를 숨긴다 */
-  background: url(undo.svg) center / 16px no-repeat;
-}
-```
-
-### 6. 코드 상수
-
-| 대상 | 위치 |
-| --- | --- |
-| 새 객체 기본 크기, 줌 단계, 스냅 | [defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
-| 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |
-| 페이지·객체 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
-
-기준과 주의점은 [ARCHITECTURE §2~3](ARCHITECTURE.md).
-
----
-
-| --- |
-| 색·폰트·패널 기본 폭 | [src/styles/tokens.css](src/styles/tokens.css) — `--pck-*` CSS 변수 오버라이드 |
-| 새 객체 기본 크기, 줌 단계, 스냅 | [src/core/config/defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
-| 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |
-| 페이지·객체 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
-
-```css
-.my-app .pck-editor {
-  --pck-topbar-bg: #101014;
-  --pck-accent: #3b82f6;
-  --pck-pagelist-width: 200px;
-}
-```
-
-기준과 주의점은 [ARCHITECTURE §2~3](ARCHITECTURE.md).
+자동 테스트 러너는 없다. `npm run checks` 가 커밋 전 게이트다 — 이유와 한계는
+[ARCHITECTURE §11](ARCHITECTURE.md). 줌·팬·드래그·한글 IME 는 실제 브라우저 레이아웃에 의존해
+덮이지 않으므로 손으로 확인한다.
 
 ---
 

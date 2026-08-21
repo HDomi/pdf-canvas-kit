@@ -1,5 +1,5 @@
 /**
- * 이 코드베이스에 존재하는 좌표 변환의 전부 (PLAN 5.4).
+ * 이 코드베이스에 존재하는 좌표 변환의 전부.
  *
  * ## 규칙
  *
@@ -35,7 +35,7 @@ export interface Delta {
 /**
  * 한 페이지의 pt 공간과 화면 사이를 변환하는 데 필요한 값 전부.
  *
- * 문서 단위가 아니라 페이지 단위로 만든다. 페이지 크기가 서로 다를 수 있고(PLAN D7),
+ * 문서 단위가 아니라 페이지 단위로 만든다. 페이지 크기가 서로 다를 수 있고 (페이지가 각자 size 를 갖는다),
  * 뷰어에서는 페이지마다 자기 맞춤 배율을 갖는다.
  */
 export interface PageViewport {
@@ -51,7 +51,7 @@ export interface PageViewport {
   frameRect: { left: number; top: number }
 }
 
-/** 소수 2자리로 라운드. 커밋 시점에만 적용하고 드래그 중에는 쓰지 않는다 (PLAN 5.6). */
+/** 소수 2자리로 라운드. 커밋 시점에만 적용하고 드래그 중에는 쓰지 않는다. */
 export function round2(n: number): number {
   return Math.round(n * 100) / 100
 }
@@ -98,7 +98,7 @@ export function clientDeltaToPage(d: Delta, scale: number): { dx: Pt; dy: Pt } {
   return { dx: d.dx / scale, dy: d.dy / scale }
 }
 
-/** 프레임이 실제로 차지하는 CSS px 크기. 레이아웃이 확보해야 하는 값이다 (PLAN 5.3). */
+/** 프레임이 실제로 차지하는 CSS px 크기. 레이아웃이 확보해야 하는 값이다. */
 export function frameSize(size: Size, scale: number): { width: number; height: number } {
   return { width: size.width * scale, height: size.height * scale }
 }

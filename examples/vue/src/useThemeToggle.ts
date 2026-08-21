@@ -1,5 +1,5 @@
 /**
- * 패키지 스타일 오버라이드를 켜고 끈다 (PLAN D31 · ARCHITECTURE §19.1).
+ * 패키지 스타일 오버라이드를 켜고 끈다 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
  *
  * ## 왜 `<style>` 을 직접 넣는가
  *
@@ -22,7 +22,7 @@ export function useThemeToggle(initial = true) {
   }
 
   watchEffect(() => {
-    // ⚠️ on.value 를 먼저 읽는다. 조건 안에서만 읽으면 의존성이 등록되지 않는다 (PLAN 20.23).
+    // ⚠️ on.value 를 먼저 읽는다. 조건 안에서만 읽으면 의존성이 등록되지 않는다.
     const enabled = on.value
     remove()
     if (!enabled) return

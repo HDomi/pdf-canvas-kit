@@ -1,57 +1,57 @@
 # ARCHITECTURE
 
 이 문서는 **코드가 어떻게 구성돼 있고, 무엇을 어디서 바꾸면 되는지**를 설명한다.
-기능 범위·마일스톤·미결정 사항은 [PLAN.md](PLAN.md)에, 설치·실행은 [README.md](README.md)에 있다.
+기능 범위·마일스톤·미결정 사항은 ARCHITECTURE.md에, 설치·실행은 [README.md](README.md)에 있다.
 
 | 항목 | 내용 |
 | --- | --- |
 | 문서 버전 | arch-3.2 |
 | 최종 수정일 | 2026.08.21 |
-| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 완료** (R0~R12 — PLAN 20장) |
-| 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
+| 대응 코드 | M0~M7 + M8 부분 · **R 트랙 완료** (R0~R12) |
+| 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (렌더 층은 vanilla DOM 이다) |
 
 ---
 
 ## 1. 레이어
 
 ```
-┌──────────────────────────┐   ┌──────────────────────────┐
-│ 호스트 앱 (React)         │   │ 호스트 앱 (Vue / Nuxt)    │
-│  · 과제 생성 API · 인증 · S3 · Class 목록 · QR           │
-└────────────┬─────────────┘   └────────────┬─────────────┘
-             │                              │
-┌────────────▼─────────────┐   ┌────────────▼─────────────┐
-│ src/react/  ~120줄        │   │ src/vue/  ~60줄           │
-│  <PDFCanvasEditor />     │   │  <PDFCanvasEditor />     │
-└────────────┬─────────────┘   └────────────┬─────────────┘
-             └──────────────┬───────────────┘
-                            │ createPdfCanvasEditor(el, props) → EditorHandle
+┌──────────────────────────┐ ┌──────────────────────────┐
+│ 호스트 앱 (React) │ │ 호스트 앱 (Vue / Nuxt) │
+│ · 과제 생성 API · 인증 · S3 · Class 목록 · QR │
+└────────────┬─────────────┘ └────────────┬─────────────┘
+ │ │
+┌────────────▼─────────────┐ ┌────────────▼─────────────┐
+│ src/react/ ~120줄 │ │ src/vue/ ~60줄 │
+│ <PDFCanvasEditor /> │ │ <PDFCanvasEditor /> │
+└────────────┬─────────────┘ └────────────┬─────────────┘
+ └──────────────┬───────────────┘
+ │ createPdfCanvasEditor(el, props) → EditorHandle
 ┌───────────────────────────▼─────────────────────────────────┐
-│ src/dom/            프레임워크 무관 렌더 층                    │
-│  reactive.ts (§12) · h.ts (§13) · editor/** — DOM 을 바인딩   │
+│ src/dom/ 프레임워크 무관 렌더 층 │
+│ reactive.ts (§12) · h.ts (§13) · editor/** — DOM 을 바인딩 │
 └───────────────────────────┬─────────────────────────────────┘
-                            │ signal 을 읽고 액션을 부른다
+ │ signal 을 읽고 액션을 부른다
 ┌───────────────────────────▼─────────────────────────────────┐
-│ src/controller/     DOM 은 알고 프레임워크는 모른다 (§14)      │
-│  editor.ts · stage.ts · pageViewport.ts · pointerTool.ts …   │
+│ src/controller/ DOM 은 알고 프레임워크는 모른다 (§14) │
+│ editor.ts · stage.ts · pageViewport.ts · pointerTool.ts … │
 └───────────────────────────┬─────────────────────────────────┘
-                            │ 함수 호출만. 역방향 의존 없음
+ │ 함수 호출만. 역방향 의존 없음
 ┌───────────────────────────▼─────────────────────────────────┐
-│ src/core/           순수 TypeScript (프레임워크 import 금지)   │
-│  model · config · geometry · interaction · pdf · validation  │
-│  assets · ports · validation                                │
+│ src/core/ 순수 TypeScript (프레임워크 import 금지) │
+│ model · config · geometry · interaction · pdf · validation │
+│ assets · ports · validation │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 **`src/core/`는 프레임워크를 import 하지 않는다.** ESLint `no-restricted-imports`로 강제한다
 ([eslint.config.js](eslint.config.js)).
 
-이 규칙을 문서가 아니라 린트로 잡아 둔 값이 회수됐다 — 프레임워크 무관 재구조화(PLAN 20장)에서
+이 규칙을 문서가 아니라 린트로 잡아 둔 값이 회수됐다 — 프레임워크 무관 재구조화에서
 `src/core/` 4,957줄은 **손댈 필요가 없었다.** 바꿀 대상은 UI 층뿐이다.
 
 **래퍼는 `EditorHandle` 계약 하나만 안다.** 그래서 세 번째 프레임워크가 와도 비용이 같다.
 
-> ⚠️ **R 트랙 진행 중이다** (PLAN 20.4). `src/vue/**` 는 2026.08.20 에 **삭제됐다** —
+> ⚠️ **R 트랙 진행 중이다**. `src/vue/**` 는 2026.08.20 에 **삭제됐다** —
 > 원본은 `_LumiTeach/lumiteach-worksheet-system` 에 git 으로 보존돼 있다.
 > `src/react/` · `src/vue/` 의 얇은 래퍼와 `EditorHandle` facade 는 **R8 에서 만들어진다.**
 > 현재 소비 경로는 `createEditorController()` + `stageWrap()` 직접 마운트뿐이고,
@@ -74,7 +74,7 @@
 | 패널 폭 기본값 | `LAYOUT_DEFAULTS` + `tokens.css` | 사용자가 조정하면 localStorage가 우선(§7.6) |
 | 문항 번호 규칙 | `core/model/numbering.ts` → `Y_TOLERANCE_PT` | 문서에 저장되지 않는 파생값 |
 | 박스 기본 색 | `tokens.css` → `--pck-answerbox-*` | 객체가 색을 지정하지 않았을 때만 적용(§3.3) |
-| UI 문구 | [src/core/config/strings.ts](src/core/config/strings.ts) | **§15.** `configureStrings()` 로 키별 교체. i18n 시스템은 제거했다(PLAN D24) |
+| UI 문구 | [src/core/config/strings.ts](src/core/config/strings.ts) | **§15.** `configureStrings()` 로 키별 교체. i18n 시스템은 제거했다 (i18n 없이 문구 표 하나만 둔다) |
 | 반응성 동작 (signal·effect) | [src/dom/reactive.ts](src/dom/reactive.ts) | **§12.** 깊은 반응성이 없다는 함정을 먼저 읽는다 |
 | 편집기 동작·단축키·액션 | [src/controller/editor.ts](src/controller/editor.ts) | **§14.** UI 가 아니라 여기가 동작을 정한다 |
 
@@ -87,10 +87,10 @@
 
 ```css
 .my-app .pck-editor {
-  --pck-topbar-bg: #101014;
-  --pck-topbar-ink: #f5f5f5;
-  --pck-accent: #3b82f6;
-  --pck-pagelist-width: 200px;
+ --pck-topbar-bg: #101014;
+ --pck-topbar-ink: #f5f5f5;
+ --pck-accent: #3b82f6;
+ --pck-pagelist-width: 200px;
 }
 ```
 
@@ -117,7 +117,7 @@
 
 ### 3.3 객체 색과 토큰의 관계
 
-텍스트·Answer Box는 `BoxStyle` 로 배경·테두리·글자색을 가질 수 있다(PLAN 18.8).
+텍스트·Answer Box는 `BoxStyle` 로 배경·테두리·글자색을 가질 수 있다.
 **지정하지 않은 필드는 인라인 스타일로 내보내지 않는다** — 그래야 `--pck-*` 토큰이 살아 있다.
 
 | 상태 | 뜻 | 렌더 |
@@ -152,12 +152,12 @@ pdf.js는 자기 완결적이지 않다. 워커 외에 **런타임에 URL로 가
 **두 가지 제약이 겹쳐서 자산은 반드시 호스트가 공급해야 한다.**
 
 1. **번들러는 *디렉토리* URL을 재작성하지 못한다.** 파일 URL은 되지만 디렉토리는 안 된다(실측).
-   그래서 `cmaps/` 같은 폴더는 서빙 폴더로 복사하고 base URL을 주입하는 방법만 동작한다.
+ 그래서 `cmaps/` 같은 폴더는 서빙 폴더로 복사하고 base URL을 주입하는 방법만 동작한다.
 2. **라이브러리 빌드에서 `new URL(..., import.meta.url)` 은 자산을 base64로 인라인한다.**
-   worker를 이렇게 자동 해석했더니 번들이 **3MB**로 불었고(`assetsInlineLimit: 0`·`external` 둘 다
-   막지 못했다), 호스트의 pdfjs-dist와 다른 worker 빌드가 박히는 문제도 있었다.
-   그래서 worker 자동 해석을 **제거**하고 `workerSrc` 를 필수 설정으로 바꿨다.
-   (수정 후 번들 3MB → **10.5KB**)
+ worker를 이렇게 자동 해석했더니 번들이 **3MB**로 불었고(`assetsInlineLimit: 0`·`external` 둘 다
+ 막지 못했다), 호스트의 pdfjs-dist와 다른 worker 빌드가 박히는 문제도 있었다.
+ 그래서 worker 자동 해석을 **제거**하고 `workerSrc` 를 필수 설정으로 바꿨다.
+ (수정 후 번들 3MB → **10.5KB**)
 
 앱에서는 두 방법 중 하나를 쓴다.
 
@@ -171,7 +171,7 @@ const workerSrc = '/pdfjs/pdf.worker.mjs'
 
 ### 4.1 이 저장소(데모)
 ```bash
-npm run copy:pdfjs   # {cmaps,standard_fonts,wasm,iccs}/ + build/pdf.worker.mjs → demo/public/pdfjs/
+npm run copy:pdfjs # {cmaps,standard_fonts,wasm,iccs}/ + build/pdf.worker.mjs → demo/public/pdfjs/
 ```
 `npm run dev` 와 `postinstall` 이 자동 실행한다.
 
@@ -185,13 +185,13 @@ npm run copy:pdfjs   # {cmaps,standard_fonts,wasm,iccs}/ + build/pdf.worker.mjs 
 import { configurePdfResources } from 'pdf-canvas-kit'
 
 export default defineNuxtPlugin(() => {
-  configurePdfResources({
-    workerSrc: '/pdfjs/pdf.worker.mjs', // 필수
-    cMapUrl: '/pdfjs/cmaps/',
-    standardFontDataUrl: '/pdfjs/standard_fonts/',
-    wasmUrl: '/pdfjs/wasm/',
-    iccUrl: '/pdfjs/iccs/',
-  })
+ configurePdfResources({
+ workerSrc: '/pdfjs/pdf.worker.mjs', // 필수
+ cMapUrl: '/pdfjs/cmaps/',
+ standardFontDataUrl: '/pdfjs/standard_fonts/',
+ wasmUrl: '/pdfjs/wasm/',
+ iccUrl: '/pdfjs/iccs/',
+ })
 })
 ```
 **경로 끝의 슬래시는 필수다.** pdf.js가 파일명을 그대로 이어 붙인다.
@@ -263,11 +263,11 @@ CMap 파일이 필요 없다. **그래서 합성 픽스처로는 이 문제가 �
 | jpeg q.85 · 1240px | 0.92초 | 9.2ms | 268KB |
 
 **WebP를 쓰지 않는다**: 용량은 44% 작지만 인코딩이 6.7배 느리다.
-100페이지에서 11.5초는 교사가 업로드하고 기다리는 시간이다.
+100페이지에서 11.5초는 편집기가 업로드하고 기다리는 시간이다.
 
 **측정 편향**: 픽스처가 벡터 텍스트라 무손실 PNG에 유리하게 나온 값이다.
 스캔 PDF·사진 문서에서는 PNG가 크게 불리해지고 JPEG의 우위가 더 벌어진다.
-반대로 얇은 선 도면에서는 JPEG 링잉이 생길 수 있다(PLAN Q18).
+반대로 얇은 선 도면에서는 JPEG 링잉이 생길 수 있다.
 
 **해상도를 바꿔도 객체 좌표는 움직이지 않는다.** 좌표는 pt이고 배경 픽셀 크기는
 품질 판단에만 쓰인다(§6.4). `targetPx`를 낮추는 건 안전한 조정이다.
@@ -276,7 +276,7 @@ CMap 파일이 필요 없다. **그래서 합성 픽스처로는 이 문제가 �
 
 ## 6. 좌표계 ★
 
-버그가 가장 많이 나는 지점이므로 규칙이 엄격하다. 상세는 PLAN 5장.
+버그가 가장 많이 나는 지점이므로 규칙이 엄격하다. 상세는.
 
 ### 6.1 단위
 저장되는 좌표는 **pt(1/72인치), 페이지 로컬, 좌상단 원점, y-down**뿐이다.
@@ -287,13 +287,13 @@ PDF 어노테이션 도메인의 표준이며(PDF `/Rect`, pdf-lib, Acrobat),
 
 ### 6.2 배율은 한 곳에만
 ```html
-<div class="pck-page-frame" style="width:476px; height:674px">   <!-- size × scale -->
-  <div class="pck-page" style="width:595px; height:842px;         /* pt를 px로 그대로 */
-                               transform: scale(0.8);
-                               transform-origin: top left">
-    <div class="pck-obj" style="left:120px; top:300px">…</div>    <!-- 곱셈 없음 -->
-  </div>
-  <svg class="pck-overlay">…</svg>                                <!-- scale 밖 -->
+<div class="pck-page-frame" style="width:476px; height:674px"> <!-- size × scale -->
+ <div class="pck-page" style="width:595px; height:842px; /* pt를 px로 그대로 */
+ transform: scale(0.8);
+ transform-origin: top left">
+ <div class="pck-obj" style="left:120px; top:300px">…</div> <!-- 곱셈 없음 -->
+ </div>
+ <svg class="pck-overlay">…</svg> <!-- scale 밖 -->
 </div>
 ```
 
@@ -301,16 +301,16 @@ PDF 어노테이션 도메인의 표준이며(PDF `/Rect`, pdf-lib, Acrobat),
 - 그래서 곱셈 누락·이중 적용이 구조적으로 불가능하다
 - **선택 핸들은 `scale` 밖 오버레이**에 그린다. 그래야 어느 배율에서도 8px을 유지한다
 - `pck-page-frame`이 `size × scale`을 실제 크기로 잡는다. `transform`은 레이아웃 크기에
-  영향을 주지 않으므로, 이 래퍼가 없으면 스크롤 범위가 틀어진다
+ 영향을 주지 않으므로, 이 래퍼가 없으면 스크롤 범위가 틀어진다
 
 ### 6.3 변환 함수는 4개뿐
 [src/core/geometry/units.ts](src/core/geometry/units.ts) (M2에서 구현)
 
 ```ts
-clientToPage(p, viewport)        // 마우스 이벤트 → pt
-pageToFrame(p, viewport)         // pt → CSS px (오버레이 전용)
-rectToFrame(r, viewport)         // 같음, rect 단위
-clientDeltaToPage(d, scale)      // 드래그 델타
+clientToPage(p, viewport) // 마우스 이벤트 → pt
+pageToFrame(p, viewport) // pt → CSS px (오버레이 전용)
+rectToFrame(r, viewport) // 같음, rect 단위
+clientDeltaToPage(d, scale) // 드래그 델타
 ```
 
 변환은 `getBoundingClientRect()` 기준이다. **`scrollLeft`·`offsetTop`을 더하지 않는다** —
@@ -383,14 +383,14 @@ blob URL을 저장하면 다음 세션에 죽은 링크가 되므로, 저장 전
 import { createS3AssetPort } from 'pdf-canvas-kit'
 
 const asset = createS3AssetPort({
-  async getUploadUrl({ pageId, mime }) {
-    const r = await fetch('/api/uploads', {
-      method: 'POST',
-      body: JSON.stringify({ pageId, mime }),
-    })
-    return r.json() // { uploadUrl, publicUrl, assetId }
-  },
-  deleteAsset: (id) => fetch(`/api/uploads/${id}`, { method: 'DELETE' }).then(() => undefined),
+ async getUploadUrl({ pageId, mime }) {
+ const r = await fetch('/api/uploads', {
+ method: 'POST',
+ body: JSON.stringify({ pageId, mime }),
+ })
+ return r.json() // { uploadUrl, publicUrl, assetId }
+ },
+ deleteAsset: (id) => fetch(`/api/uploads/${id}`, { method: 'DELETE' }).then(() => undefined),
 })
 ```
 
@@ -408,12 +408,12 @@ const asset = createS3AssetPort({
 
 ```
 문서 변경 → engine.doc.subscribe → saver.schedule(doc)
-                                       │ 5초 디바운스 (최대 지연 30초)
-                                       ▼
-                                  storage.save(doc)
-                                       │ 실패 → 지수 백오프 3회 → error 배지
-                                       ▼
-                                  savedSnapshot 갱신
+ │ 5초 디바운스 (최대 지연 30초)
+ ▼
+ storage.save(doc)
+ │ 실패 → 지수 백오프 3회 → error 배지
+ ▼
+ savedSnapshot 갱신
 ```
 
 `beforeunload` 와 `visibilitychange` 에서 `flushSave()` 를 부른다. 모바일 브라우저는 탭을 닫을 때
@@ -422,40 +422,21 @@ const asset = createS3AssetPort({
 **최대 지연이 필요한 이유**: 디바운스만 두면 사용자가 계속 타이핑하는 동안 저장이 무한히 밀린다.
 첫 변경으로부터 30초가 지나면 타이핑 중이라도 한 번 저장한다.
 
-**현재는 `createConsoleStoragePort()` 가 기본이다** (PLAN 18.2). 파이프라인은 실제와 같은 조건으로
+**현재는 `createConsoleStoragePort()` 가 기본이다**. 파이프라인은 실제와 같은 조건으로
 돌고 저장 대상만 콘솔이 된다. 실서버가 준비되면 이 port만 교체된다.
 
 **blob 배경 가드는 우회하지 않는다.** 저장 전에 `promoteBackgrounds(doc, assetPort)` 로
 승격해야 한다(§7.1). 승격은 사용자 편집이 아니므로 히스토리에 남기지 않는다.
 
-### 7.7 프로토타입 저장 ⚠️ (임시)
+### 7.7 실서버 연결 전 — [JSON 출력] 버튼
 
-**`src/prototype/` 은 실서버가 붙으면 통째로 삭제한다.** 자세한 절차는 그 안의 `README.md`.
+상단바 [내보내기] 자리에 **문서 JSON 을 콘솔로 출력하는** 버튼이 있다. 과제 생성 API 가 없어
+내보내기를 누르면 할 일이 없기 때문이다.
 
-상단바 [내보내기] 버튼이 [저장 (프로토타입)] 으로 대체돼 있다 — 과제 생성 API가 없어 내보내기를
-누르면 빈 팝업만 뜨기 때문이다. 검증 게이트는 `EditorHandle.checkBeforeExport()` 로 그대로
-노출돼 있으므로(§17.1) 호스트가 자기 버튼에서 직접 부를 수 있다 (PLAN 18.5).
+검증 게이트는 `EditorHandle.checkBeforeExport()` 로 노출돼 있으므로(§17.1) 호스트가 자기
+버튼에서 부를 수 있다. 실서버가 붙으면 이 버튼을 되돌린다.
 
-```ts
-// localStorage 에 문서 + 이미지(base64) 저장
-await savePrototype(doc) // pdf-canvas-kit.images / pdf-canvas-kit.doc 두 키
-// 되읽기 — pck-local: 참조를 base64로 복원해 렌더 가능한 문서를 준다
-const doc = loadPrototype()
-```
-
-⚠️ localStorage는 오리진당 5~10MB다. **약 9~18페이지에서 한계에 닿고** 초과하면
-`PrototypeQuotaError` 를 던진다. 실제 제품이 이 방식으로 갈 수는 없다(PLAN Q11에서 S3를 택한 이유).
-
-### 7.6 패널 폭 (Q17)
-
-고정 폭으로 시작하고, 패널 사이 핸들을 드래그하면 조정된다.
-**한 번이라도 조정하면** `localStorage['pck.panelSizes.v1']` 에 남아 같은 브라우저에서 복원된다.
-핸들 더블클릭으로 기본값 복귀.
-
-조정한 적이 없으면 저장하지 않는다 — 제품 기본값을 나중에 바꿨을 때, 손대지 않은 사용자는
-새 기본값을 받고 직접 맞춘 사용자는 자기 값을 유지해야 한다.
-
-폭은 CSS 변수로 내려보내므로 레이아웃 규칙을 CSS와 JS 두 곳에서 정의하지 않는다.
+`serializeDoc` 을 거치므로 blob 배경이 남아 있으면 막힌다 — 그게 §7.1 의 가드다.
 
 ## 7.3 내보내기 경계
 
@@ -463,13 +444,13 @@ const doc = loadPrototype()
 
 ```
 호스트: [내보내기] 버튼 (편집기 안에 없다)
-   │
+ │
 편집기: handle.checkBeforeExport()
-   ├─ 실패 → false. 문제 객체로 이동·선택·스크롤한다
-   └─ 통과 → true
-   │
-편집기: handle.toPublicDoc()   타입별 toPublic(data) 로 비밀 제거
-   │
+ ├─ 실패 → false. 문제 객체로 이동·선택·스크롤한다
+ └─ 통과 → true
+ │
+편집기: handle.toPublicDoc() 타입별 toPublic(data) 로 비밀 제거
+ │
 호스트: 과제 생성 API · 링크·QR 발급 · 팝업 UI
 ```
 
@@ -481,7 +462,7 @@ D25(커스텀 객체 레지스트리)로 얻은 것을 잃는다.
 | --- | --- |
 | 검증 게이트 | `EditorHandle.checkBeforeExport()` (§17.1) |
 | 검증 결과만 읽기 | `EditorHandle.validate()` — 인스펙터 경고와 **같은 규칙** |
-| 학생용 스냅샷 | `EditorHandle.toPublicDoc()` |
+| 뷰어용 스냅샷 | `EditorHandle.toPublicDoc()` |
 | 규칙 정의 | `core/validation/rules.ts` + 각 타입의 `validate` / `toPublic` (§16) |
 
 QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 준다.
@@ -498,8 +479,7 @@ QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 
 | `prepublishOnly` | — | 실행 | — |
 
 **레포 안의 파일을 건드리는 스크립트는 `postinstall` 에 두지 않는다.** tarball 에 그 파일이
-없으므로 소비자 설치가 `MODULE_NOT_FOUND` 로 죽는다. `copy:pdfjs` 가 정확히 그 사고를 냈다
-(PLAN 20.19) — 데모 폴더로 pdf.js 자산을 복사하는 스크립트인데 소비자에게도 실행됐다.
+없으므로 소비자 설치가 `MODULE_NOT_FOUND` 로 죽는다. `copy:pdfjs` 가 정확히 그 사고를 냈다 — 데모 폴더로 pdf.js 자산을 복사하는 스크립트인데 소비자에게도 실행됐다.
 
 ```jsonc
 // ✗ 소비자 설치가 죽는다 — scripts/ 가 tarball 에 없다
@@ -520,8 +500,7 @@ QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 
 | 잡는 것 | 동작 | **`exports` 맵 · 진입점 · `.d.ts` · peer** |
 
 `npm run dev` 가 셋을 함께 띄운다(`scripts/dev-examples.mjs`). 공개 API 를 바꿨으면
-**`examples/` 를 열어 확인한다** — `demo/` 는 별칭 때문에 export 누락을 보지 못한다
-(PLAN 20.22 에 그렇게 새어 나간 버그 네 개가 있다).
+**`examples/` 를 열어 확인한다** — `demo/` 는 별칭 때문에 export 누락을 보지 못한다.
 
 `npm run verify:tarball` 은 정적 검사이고, `npm run examples:build` 는 두 예제의
 타입체크(`skipLibCheck: false`)와 빌드를 돌린다.
@@ -530,89 +509,87 @@ QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 
 
 ```
 src/
-├─ index.ts                  공개 API (프레임워크 무관)
-├─ core/                     ★ Vue import 금지
-│  ├─ model/types.ts         문서·객체 타입
-│  ├─ config/defaults.ts     ★ 모든 튜너블 상수
-│  ├─ geometry/
-│  │   paperSize.ts           pt → "A4 세로"
-│  │   units.ts              ★ 좌표 변환 4함수
-│  │   constrain.ts            클램프·최소 크기·드래그 rect
-│  │   handles.ts              9방향 리사이즈 수학
-│  │   hitTest.ts              회전 고려 히트 테스트·마퀴
-│  ├─ store/
-│  │   createStore.ts         옵저버블 (40줄)
-│  │   history.ts             undo/redo 역연산 스택
-│  ├─ commands/               doc.ts pages.ts objects.ts — 모든 문서 변경의 단일 창구
-│  ├─ engine.ts              ★ 문서·히스토리·import 파이프라인 (프레임워크 무관)
-│  ├─ interaction/
-│  │   tools.ts                도구 정의·도구별 객체 생성
-│  │   pointerMachine.ts      ★ 드래그 상태 머신 (DOM 비의존)
-│  ├─ pdf/
-│  │   resources.ts          ★ worker·CMap·wasm 설정
-│  │   loadPdf.ts            문서 열기 + 실패 분류
-│  │   rasterize.ts          페이지 → 이미지 blob
-│  │   pdfjsConverter.ts     ConverterPort 구현
-│  │   diagnose.ts           텍스트·폰트 진단
-│  ├─ assets/
-│  │   blobAsset.ts          세션 한정 AssetPort (기본값)
-│  │   s3Asset.ts           ★ presigned URL PUT
-│  │   promoteBackgrounds.ts blob → 영속 배경 승격
-│  ├─ autosave/
-│  │   debouncedSaver.ts     5초 디바운스 + 최대 지연 + 재시도
-│  ├─ model/numbering.ts     문항 번호 (위치에서 파생)
-│  ├─ ports/                 호스트 주입 인터페이스
-│  ├─ validation/
-│  │   rules.ts             ★ 검증 규칙 — 인스펙터와 내보내기가 공유
-│  │   exportGuard.ts        내보내기 게이트 + publicDoc 생성
-├─ dom/                    ★ 프레임워크 무관 렌더 층 (PLAN 20.2)
-│  createEditor.ts          ★ 편집기 facade (§17)
-│  createViewer.ts          ★ 뷰어 facade (§18)
-│  page/                     편집기·뷰어 **공용** — 좌표 규칙을 중복하지 않는다
-│    pageFrame.ts           ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
-│    pageBackground.ts        배경 이미지 또는 빈 종이
-│  viewer/                    읽기 전용 화면 (§18)
-│    viewerShell.ts         ★ 연속 스크롤 + ResizeObserver (피드백 루프 주의)
-│    viewerObject.ts        ★ renderViewer 슬롯 · 콘텐츠가 포인터를 먹는다
-│  reactive.ts               ★ signal · computed · effect · watch · batch · scope (§12)
-│  h.ts                      ★ el · svg · when · keyed · list — DOM 바인딩 (§13)
-│  editor/                    재작성된 UI (구 src/vue/editor/**)
-│    canvasStage.ts            스크롤 컨테이너 — 한 페이지만 (D8)
-│    stageArea.ts             ★ 컨트롤러 ↔ 렌더 층이 만나는 유일한 지점
-│    selectionOverlay.ts      ★ 스케일 밖 — 선택 테두리·마퀴
-│    resizeHandles.ts         ★ 9방향 + 회전. 래퍼 회전 · 핸들 역회전
-│    editorShell.ts         ★ 3분할 레이아웃 조립 — 컨트롤러를 받아 화면 전체를 만든다
-│    topBar.ts titleInput.ts saveBadge.ts toolbar.ts pageMeta.ts
-│    pageThumbList.ts stageControls.ts pageContextMenu.ts emptyState.ts
-│    dialogs/{confirmDialog,uploadDialog}.ts
-│    inspector/inspector.ts   ★ 유형별 분기 — when 조건을 **유형**으로 둔다 (§13.2)
-│    inspector/fields.ts       공용 폼 위젯 — 패널 6개가 공유
-│    inspector/{objectPanels,boxStylePanel}.ts
-│    objects/customObjectView.ts ★ 기본 틀 + 콘텐츠 컨테이너 (§16)
-│    objects/renderSlot.ts   ★ vanilla 슬롯 마운트 — render 1회 + onUpdate (§16.2)
-│    objects/*.ts            ★ pt를 px로 그대로. units import 금지
-├─ controller/             ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
-│  editor.ts                 ★ 루트 — 조립·단축키·액션·검증
-│  viewer.ts                 ★ 뷰어 — 배율 파생만. 엔진을 쓰지 않는다 (§18)
-│  stage.ts                   배율·맞춤·앵커 줌
-│  pageViewport.ts           ★ frameRect 캐시·무효화 (defer 필수)
-│  pointerTool.ts             포인터 → 상태 머신
-│  pageNav.ts pan.ts panelSizes.ts pageReorder.ts
-│  engineState.ts editorState.ts textEntry.ts
-├─ react/index.tsx          얇은 래퍼 — createPortal + useSyncExternalStore (§17.2)
-├─ vue/index.ts             얇은 래퍼 — Teleport + defineComponent (SFC 아님, §17.2)
-├─ styles.ts                CSS 전용 엔트리 (`pdf-canvas-kit/styles.css`)
-├─ prototype/               ⚠️ 임시 — 실서버 연결 시 삭제
-│  localStorageStore.ts       images / doc 두 키 저장·복원
+├─ index.ts 공개 API (프레임워크 무관)
+├─ core/ ★ Vue import 금지
+│ ├─ model/types.ts 문서·객체 타입
+│ ├─ config/defaults.ts ★ 모든 튜너블 상수
+│ ├─ geometry/
+│ │ paperSize.ts pt → "A4 세로"
+│ │ units.ts ★ 좌표 변환 4함수
+│ │ constrain.ts 클램프·최소 크기·드래그 rect
+│ │ handles.ts 9방향 리사이즈 수학
+│ │ hitTest.ts 회전 고려 히트 테스트·마퀴
+│ ├─ store/
+│ │ createStore.ts 옵저버블 (40줄)
+│ │ history.ts undo/redo 역연산 스택
+│ ├─ commands/ doc.ts pages.ts objects.ts — 모든 문서 변경의 단일 창구
+│ ├─ engine.ts ★ 문서·히스토리·import 파이프라인 (프레임워크 무관)
+│ ├─ interaction/
+│ │ tools.ts 도구 정의·도구별 객체 생성
+│ │ pointerMachine.ts ★ 드래그 상태 머신 (DOM 비의존)
+│ ├─ pdf/
+│ │ resources.ts ★ worker·CMap·wasm 설정
+│ │ loadPdf.ts 문서 열기 + 실패 분류
+│ │ rasterize.ts 페이지 → 이미지 blob
+│ │ pdfjsConverter.ts ConverterPort 구현
+│ │ diagnose.ts 텍스트·폰트 진단
+│ ├─ assets/
+│ │ blobAsset.ts 세션 한정 AssetPort (기본값)
+│ │ s3Asset.ts ★ presigned URL PUT
+│ │ promoteBackgrounds.ts blob → 영속 배경 승격
+│ ├─ autosave/
+│ │ debouncedSaver.ts 5초 디바운스 + 최대 지연 + 재시도
+│ ├─ model/numbering.ts 문항 번호 (위치에서 파생)
+│ ├─ ports/ 호스트 주입 인터페이스
+│ ├─ validation/
+│ │ rules.ts ★ 검증 규칙 — 인스펙터와 내보내기가 공유
+│ │ exportGuard.ts 내보내기 게이트 + publicDoc 생성
+├─ dom/ ★ 프레임워크 무관 렌더 층
+│ createEditor.ts ★ 편집기 facade (§17)
+│ createViewer.ts ★ 뷰어 facade (§18)
+│ page/ 편집기·뷰어 **공용** — 좌표 규칙을 중복하지 않는다
+│ pageFrame.ts ★ 두 겹 구조 — 프레임(size×scale) + 페이지(pt+scale)
+│ pageBackground.ts 배경 이미지 또는 빈 종이
+│ viewer/ 읽기 전용 화면 (§18)
+│ viewerShell.ts ★ 연속 스크롤 + ResizeObserver (피드백 루프 주의)
+│ viewerObject.ts ★ renderViewer 슬롯 · 콘텐츠가 포인터를 먹는다
+│ reactive.ts ★ signal · computed · effect · watch · batch · scope (§12)
+│ h.ts ★ el · svg · when · keyed · list — DOM 바인딩 (§13)
+│ editor/ 재작성된 UI (구 src/vue/editor/**)
+│ canvasStage.ts 스크롤 컨테이너 — 한 페이지만 (D8)
+│ stageArea.ts ★ 컨트롤러 ↔ 렌더 층이 만나는 유일한 지점
+│ selectionOverlay.ts ★ 스케일 밖 — 선택 테두리·마퀴
+│ resizeHandles.ts ★ 9방향 + 회전. 래퍼 회전 · 핸들 역회전
+│ editorShell.ts ★ 3분할 레이아웃 조립 — 컨트롤러를 받아 화면 전체를 만든다
+│ topBar.ts titleInput.ts saveBadge.ts toolbar.ts pageMeta.ts
+│ pageThumbList.ts stageControls.ts pageContextMenu.ts emptyState.ts
+│ dialogs/{confirmDialog,uploadDialog}.ts
+│ inspector/inspector.ts ★ 유형별 분기 — when 조건을 **유형**으로 둔다 (§13.2)
+│ inspector/fields.ts 공용 폼 위젯 — 패널 6개가 공유
+│ inspector/{objectPanels,boxStylePanel}.ts
+│ objects/customObjectView.ts ★ 기본 틀 + 콘텐츠 컨테이너 (§16)
+│ objects/renderSlot.ts ★ vanilla 슬롯 마운트 — render 1회 + onUpdate (§16.2)
+│ objects/*.ts ★ pt를 px로 그대로. units import 금지
+├─ controller/ ★ 프레임워크 무관 컨트롤러 (§14). README.md 에 이식 대응표
+│ editor.ts ★ 루트 — 조립·단축키·액션·검증
+│ viewer.ts ★ 뷰어 — 배율 파생만. 엔진을 쓰지 않는다 (§18)
+│ stage.ts 배율·맞춤·앵커 줌
+│ pageViewport.ts ★ frameRect 캐시·무효화 (defer 필수)
+│ pointerTool.ts 포인터 → 상태 머신
+│ pageNav.ts pan.ts panelSizes.ts pageReorder.ts
+│ engineState.ts editorState.ts textEntry.ts
+├─ react/index.tsx 얇은 래퍼 — createPortal + useSyncExternalStore (§17.2)
+├─ vue/index.ts 얇은 래퍼 — Teleport + defineComponent (SFC 아님, §17.2)
+├─ styles.ts CSS 전용 엔트리 (`pdf-canvas-kit/styles.css`)
 └─ styles/
-   tokens.css                ★ CSS 변수
-   editor.css                 레이아웃·크롬
+ tokens.css ★ CSS 변수
+ editor.css 레이아웃·크롬
 
-demo/          :3100 개발 서버 — **별칭으로 소스를 본다** (spike / editor / react / vue / viewer / checks)
-examples/      :3101 :3102 소비자 예제 — **exports 맵으로 dist 를 본다** (§7.8)
-   react/      단일 index.tsx
-   vue/        App.vue + 슬롯 SFC
-scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-checks.mjs)
+demo/ :3100 개발 서버 — **별칭으로 소스를 본다** (spike / editor / react / vue / viewer / checks)
+examples/ :3101 :3102 소비자 예제 — **exports 맵으로 dist 를 본다** (§7.8)
+ react/ 단일 index.tsx
+ vue/ App.vue + 슬롯 SFC
+scripts/ 픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-checks.mjs)
 ```
 
 ---
@@ -623,25 +600,25 @@ scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(r
 
 ```ts
 import type {
-  PDFCanvasDoc, PDFCanvasPage, PDFCanvasObject,
-  ShortAnswerBox, DropboxAnswerBox, EssayAnswerBox,
-  PageBackground, Rect, Size, Pt,
-  AssetPort, ConverterPort, StoragePort, I18nPort,
-  RasterPage, ConvertProgress,
+ PDFCanvasDoc, PDFCanvasPage, PDFCanvasObject,
+ ShortAnswerBox, DropboxAnswerBox, EssayAnswerBox,
+ PageBackground, Rect, Size, Pt,
+ AssetPort, ConverterPort, StoragePort, I18nPort,
+ RasterPage, ConvertProgress,
 } from 'pdf-canvas-kit'
 
 import {
-  createPdfjsConverter, createBlobAssetPort, configurePdfResources,
-  LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS,
-  formatPaperLabel, ConvertError,
+ createPdfjsConverter, createBlobAssetPort, configurePdfResources,
+ LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS,
+ formatPaperLabel, ConvertError,
 } from 'pdf-canvas-kit'
 ```
 
 - 객체는 `type` 필드로 판별하는 **discriminated union**이다.
-  `if (o.type === 'answer.dropbox')` 후에는 `o.choices`가 좁혀진다
+ `if (o.type === 'answer.dropbox')` 후에는 `o.choices`가 좁혀진다
 - `LIMITS` 등은 `as const`라 리터럴 타입이 유지된다
 - 오류는 `ConvertError` 인스턴스이며 `code`로 분기한다
-  (`unsupported-format` · `file-too-large` · `page-limit` · `encrypted` · `corrupt` · `aborted`)
+ (`unsupported-format` · `file-too-large` · `page-limit` · `encrypted` · `corrupt` · `aborted`)
 
 ---
 
@@ -649,7 +626,7 @@ import {
 
 | 규칙 | 대상 | 왜 |
 | --- | --- | --- |
-| `vue`·`@vueuse/*`·`*.vue` import 금지 | `src/core/**` | 코어를 프레임워크 무관하게 유지(PLAN 2.1) |
+| `vue`·`@vueuse/*`·`*.vue` import 금지 | `src/core/**` | 코어를 프레임워크 무관하게 유지 |
 | `geometry/units` import 금지 | `src/vue/editor/objects/**` | 객체 렌더는 pt를 px로 그대로 쓴다(§6.2) |
 | `no-floating-promises` | 전체 | PDF 변환 비동기 누락 방지 |
 | `consistent-type-imports` | 전체 | 타입 전용 import를 런타임에서 제거 |
@@ -669,15 +646,14 @@ import {
 | `customObjectView` | 슬롯의 `ctx.rect()` 로 전달 | **필수** |
 | `textObjectView` · `maskView` | CSS `100%` — 부모를 채운다 | 불필요 |
 
-빠뜨리면 **핸들만 움직이고 객체는 제자리에 남는다.** 2026.08.21 에 도형에서 실제로 그랬다
-(PLAN 20.20). 새 객체 뷰를 추가할 때 이 표에 한 줄을 더한다고 생각하면 된다.
+빠뜨리면 **핸들만 움직이고 객체는 제자리에 남는다.** 2026.08.21 에 도형에서 실제로 그랬다. 새 객체 뷰를 추가할 때 이 표에 한 줄을 더한다고 생각하면 된다.
 
 ## 10.1 드래그 반응성 — rAF를 쓰지 않는다
 
 `pointermove` 를 `requestAnimationFrame` 으로 묶지 않는다.
 
 rAF 콜백에서 반응형 값을 바꾸면 **그 프레임의 페인트에 반영되지 않고 다음 프레임에 들어간다.**
-실제로 리사이즈·이동이 포인터를 한 박자 늦게 따라오는 것이 눈에 보였다(PLAN 18.6).
+실제로 리사이즈·이동이 포인터를 한 박자 늦게 따라오는 것이 눈에 보였다.
 
 브라우저가 이미 `pointermove` 를 프레임당 한 번 정도로 합쳐 보내고, 객체 상한이 페이지당 30개·
 문서 200개라 즉시 처리해도 계산량이 문제되지 않는다.
@@ -694,14 +670,13 @@ rAF 콜백에서 반응형 값을 바꾸면 **그 프레임의 페인트에 반�
 `anchoredRect` 는 축이 아니라 **중심과 앵커**로 계산한다.
 
 ```
-1. 시작 중심 → 앵커 오프셋을 회전 적용  → 앵커의 절대 위치
+1. 시작 중심 → 앵커 오프셋을 회전 적용 → 앵커의 절대 위치
 2. 새 크기의 같은 오프셋도 회전 적용
 3. 새 중심 = 앵커 − 새 오프셋
 4. 새 좌상단 = 새 중심 − 새 크기/2
 ```
 
-같은 저장소 `frontend-service` 의 `useDraggableResize.anchorResizeRect` 와 같은 접근이다
-(PLAN 18.7).
+같은 저장소 `frontend-service` 의 `useDraggableResize.anchorResizeRect` 와 같은 접근이다.
 
 **회전된 객체는 페이지 경계 클램프를 건너뛴다.** `constrainRect` 는 축 정렬 rect를 가정하는데
 회전된 객체의 실제 점유 영역은 그보다 크다. 클램프하면 앵커가 어긋나 리사이즈가 튄다.
@@ -732,22 +707,22 @@ dev 서버를 다른 기기에서 열거나 사내 HTTP 환경에 배포하면 �
 `TypeError` 가 나고, id를 만드는 모든 동작(페이지 추가·객체 생성·보기 추가)이 죽는다.
 
 localStorage는 오리진별로 분리된다 — `localhost:3100` 과 `10.1.0.112:3100` 의 저장 데이터는
-서로 보이지 않는다. 프로토타입 저장과 패널 폭이 주소마다 따로 쌓이는 것은 정상이다.
+서로 보이지 않는다. 패널 폭이 주소마다 따로 쌓이는 것은 정상이다.
 
 ## 11. 자동 테스트가 없다는 것 (의도)
 
-테스트 러너를 도입하지 않았다(PLAN D17). 대신:
+테스트 러너를 도입하지 않았다 (테스트 러너가 없다 — 검증 화면으로 대체한다). 대신:
 
 1. **TS strict + `noUncheckedIndexedAccess`** — `pages[i]`·`objects[i]` 접근이 많아 실효가 크다
 2. **ESLint 아키텍처 규칙** — §10
 3. **`/checks/` 검증 화면** — 순수 함수·반응성 결과를 표로 렌더, 불일치 행을 빨갛게.
-   **251 케이스 / 36 그룹** (`PCK_BREAKDOWN=1 npm run checks` 로 내역 확인)
+ **251 케이스 / 36 그룹** (`PCK_BREAKDOWN=1 npm run checks` 로 내역 확인)
 
 **커밋 전에 이걸 돌린다.** 브라우저를 열지 않아도 된다.
 
 ```bash
-npm run checks                    # 251 / 251 passed · 36 groups · ok  (실패 시 exit 1)
-PCK_BREAKDOWN=1 npm run checks    # 파일별 내역까지 출력
+npm run checks # 251 / 251 passed · 36 groups · ok (실패 시 exit 1)
+PCK_BREAKDOWN=1 npm run checks # 파일별 내역까지 출력
 ```
 
 **케이스 수를 문서에 적을 때는 위 명령으로 확인한다.** 이 문서에 오래 적혀 있던 "79 케이스" 는
@@ -785,7 +760,7 @@ esbuild 는 이 저장소의 의존성이 아니며 — vite 8 은 esbuild 를 �
 
 ## 12. 반응성 프리미티브 ★ (UI 층의 바닥)
 
-`src/dom/reactive.ts` (PLAN D20). UI 가 프레임워크 없이 DOM 을 직접 바인딩하므로, 그 바닥에
+`src/dom/reactive.ts` (미세 반응성으로 DOM 을 직접 바인딩한다. VDOM 이 없다). UI 가 프레임워크 없이 DOM 을 직접 바인딩하므로, 그 바닥에
 signal 이 있다. API 모양은 Vue 의 `ref`·`computed`·`watch` 와 일부러 같다.
 
 | 함수 | 역할 |
@@ -804,14 +779,14 @@ signal 이 있다. API 모양은 Vue 의 `ref`·`computed`·`watch` 와 일부�
 
 ```ts
 const view = signal(createViewState())
-view.value.activeTool = 'select'     // ✗ 조용히 실패
+view.value.activeTool = 'select' // ✗ 조용히 실패
 ```
 
 필드마다 signal 을 둔다. `Map`·`Set`·배열도 같다 — 내용을 변형하지 말고 **새 값을 대입**한다.
 
 ```ts
-const activeTool = signal<ToolId>('select')   // ✓
-previewRects.value = new Map(next)            // ✓ .set() 이 아니라 대입
+const activeTool = signal<ToolId>('select') // ✓
+previewRects.value = new Map(next) // ✓ .set() 이 아니라 대입
 ```
 
 프록시를 두지 않은 이유: 프록시는 "왜 이건 반응하고 저건 안 하나" 를 런타임에만 알 수 있게 만든다.
@@ -827,7 +802,7 @@ previewRects.value = new Map(next)            // ✓ .set() 이 아니라 대입
 
 바뀐 노드만 건드리므로 `contenteditable` 의 IME 조합·캐럿을 깨뜨릴 표면이 **애초에 없다**(§6.5).
 상태 변경마다 페이지 전체를 다시 그리는 방식은 객체 상한이 30개라 성능은 되지만,
-편집 중인 텍스트 노드를 매번 덮어써 한글 입력이 깨진다. 상세는 PLAN D20.
+편집 중인 텍스트 노드를 매번 덮어써 한글 입력이 깨진다. 상세는 미세 반응성으로 DOM 을 직접 바인딩한다. VDOM 이 없다.
 
 `reactive.ts` 는 `src/index.ts` 에 내보내지 않는다 — 라이브러리 소비자가 아니라 UI 층이 쓰는 것이다.
 `/checks/` 는 내부 모듈을 직접 import 한다.
@@ -840,7 +815,7 @@ previewRects.value = new Map(next)            // ✓ .set() 이 아니라 대입
 ```ts
 const [root, dispose] = scope(() => buildEditor(props))
 container.append(root)
-dispose()   // buildEditor 안에서 만든 effect·리스너 전부 정리
+dispose() // buildEditor 안에서 만든 effect·리스너 전부 정리
 ```
 
 중첩된다 — 리스트 항목 하나를 지우면 그 항목의 effect 만 끊긴다.
@@ -870,7 +845,7 @@ Vue 템플릿을 대체한다. 템플릿 컴파일러도 VDOM 도 없다 — **�
 
 ```ts
 function saveBadge(state: ReadSignal<SaveState>): HTMLElement {
-  return el('span', { class: () => `pck-badge is-${state.value}` }, [() => label(state.value)])
+ return el('span', { class: () => `pck-badge is-${state.value}` }, [() => label(state.value)])
 }
 ```
 
@@ -888,8 +863,8 @@ function saveBadge(state: ReadSignal<SaveState>): HTMLElement {
 
 ```ts
 el('input', {
-  attr: { type: 'text', 'aria-label': t('title'), placeholder: () => hint.value },
-  prop: { value: () => title.value, disabled: () => readOnly.value },
+ attr: { type: 'text', 'aria-label': t('title'), placeholder: () => hint.value },
+ prop: { value: () => title.value, disabled: () => readOnly.value },
 })
 ```
 
@@ -917,7 +892,7 @@ Vue 는 이름을 보고 어느 쪽인지 추측한다. 그 추측이 어긋나�
 이라는 다른 뜻이 되어 스크린리더가 토글 버튼을 일반 버튼으로 읽는다.
 
 `applyAttr` 이 `aria-` 접두사를 보고 알아서 처리한다. 호출부에서 `String(x)` 을 하게 두면
-네 곳 중 한 곳을 빠뜨린다 — 2026.08.20 에 실제로 그랬다(PLAN 20.11).
+네 곳 중 한 곳을 빠뜨린다 — 2026.08.20 에 실제로 그랬다.
 
 ### 13.2 `when` 은 조건이 바뀔 때만 다시 그린다
 
@@ -938,7 +913,7 @@ keyed(() => obj.value?.kind ?? null, (kind) => panelFor(kind))
 ```
 
 2026.08.20 에 커스텀 객체 인스펙터가 정확히 이 함정에 빠졌다 — 단답형을 편집하다 선택형을
-고르면 단답형 패널이 남았다 (PLAN 20.16).
+고르면 단답형 패널이 남았다.
 
 `Object.is` 로 비교하므로 **원시값**을 키로 쓴다(id · kind · 유형 이름). 객체를 키로 쓰면
 참조가 바뀔 때마다 다시 그려진다. 키가 `null`·`undefined` 면 아무것도 그리지 않아 조건
@@ -955,9 +930,9 @@ keyed(() => obj.value?.kind ?? null, (kind) => panelFor(kind))
 
 ```ts
 list(
-  () => pages.value,
-  (p) => p.id,
-  (page, index) => pageThumb(page, index),   // 둘 다 signal 이다
+ () => pages.value,
+ (p) => p.id,
+ (page, index) => pageThumb(page, index), // 둘 다 signal 이다
 )
 ```
 
@@ -1022,7 +997,7 @@ DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어�
 
 ⚠️ `<PDFCanvasEditor doc={doc} onChange={setDoc} />` 는 controlled 처럼 보이지만 아니다.
 편집기가 문서를 소유하고 변경을 밖으로 밀어낼 뿐이다. 문서를 교체해야 하면 컴포넌트를 다시
-마운트한다(React 는 `key` 변경). 이 계약을 바꿀지는 PLAN 20.8 에서 R8 로 미뤄 두었다.
+마운트한다(React 는 `key` 변경). 이 계약을 바꿀지는 에서 R8 로 미뤄 두었다.
 
 ### 14.3 이식 함정 (Vue → 여기)
 
@@ -1036,13 +1011,13 @@ DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어�
 
 ## 15. UI 문구 (`core/config/strings.ts`)
 
-**i18n 시스템은 제거됐다** (PLAN D24, 2026.08.20). `I18nPort` · `createI18n` · ko/en 두 표 ·
+**i18n 시스템은 제거됐다** (i18n 없이 문구 표 하나만 둔다). `I18nPort` · `createI18n` · ko/en 두 표 ·
 locale 전환이 모두 없어지고, 문구 표 하나와 조회 함수만 남았다.
 
 ```ts
-import { text } from 'pdf-canvas-kit'   // 내부에서는 core/config/strings
+import { text } from 'pdf-canvas-kit' // 내부에서는 core/config/strings
 text('error.pageLimit')
-text('error.exportBlocked', { count: 3 })   // {count} 자리를 채운다
+text('error.exportBlocked', { count: 3 }) // {count} 자리를 채운다
 ```
 
 `t` 가 컴포넌트·컨트롤러 시그니처에서 전부 사라졌다. 모듈 수준 조회이므로 배선이 없다.
@@ -1077,19 +1052,19 @@ configureStrings({ 'topbar.export': '과제로 내보내기' })
 ## 16. 커스텀 객체 (`core/objectTypes.ts`) ★
 
 이 패키지가 그리는 것은 **기본 틀**뿐이다 — pt 사각형, 리사이즈 핸들, 배경·테두리(`BoxStyle`),
-회전. 그 안에 무엇을 그릴지는 소비자가 정한다 (PLAN D25).
+회전. 그 안에 무엇을 그릴지는 소비자가 정한다 (커스텀 객체는 소비자가 정의한다).
 
 ```ts
 const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
-  kind: 'answer.short',            // 문서에 저장. Editor↔Viewer 계약이다
-  label: '단답형',                 // 툴바가 읽는다
-  defaultSize: { w: 160, h: 40 },
-  minSize: { w: 80, h: 32 },
-  defaultData: () => ({ answers: [], points: 1 }),
-  interactive: false,              // §16.2
-  rotatable: false,
-  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
-  toPublic: ({ answers: _a, ...rest }) => rest,
+ kind: 'answer.short', // 문서에 저장. Editor↔Viewer 계약이다
+ label: '단답형', // 툴바가 읽는다
+ defaultSize: { w: 160, h: 40 },
+ minSize: { w: 80, h: 32 },
+ defaultData: () => ({ answers: [], points: 1 }),
+ interactive: false, // §16.2
+ rotatable: false,
+ validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+ toPublic: ({ answers: _a, ...rest }) => rest,
 })
 
 <PDFCanvasEditor objectTypes={[shortAnswer]} />
@@ -1107,21 +1082,21 @@ const shortAnswer = defineObjectType<{ answers: string[]; points: number }>({
 ### 16.1 ★ `render` 는 객체당 **한 번만** 불린다
 
 데이터가 바뀔 때마다 다시 부르면 **입력 중 노드가 파괴되어 포커스가 날아간다.** 한글 IME 는
-조합까지 끊겨 한 글자마다 입력이 멈춘다 (PLAN 20.14).
+조합까지 끊겨 한 글자마다 입력이 멈춘다.
 
 그래서 값은 스냅샷이 아니라 **함수**로 주고, 갱신은 `onUpdate` 로 등록한다.
 
 ```ts
 render: ({ data, onChange, onUpdate }) => {
-  const input = document.createElement('input')
-  input.addEventListener('input', () => onChange({ ...data(), answers: [input.value] }))
-  const sync = () => {
-    // ⚠️ 포커스가 있으면 덮지 않는다 — onUpdate 는 자기가 만든 변경으로도 불린다.
-    if (document.activeElement !== input) input.value = data().answers[0] ?? ''
-  }
-  sync()
-  onUpdate(sync)
-  return input
+ const input = document.createElement('input')
+ input.addEventListener('input', () => onChange({ ...data(), answers: [input.value] }))
+ const sync = () => {
+ // ⚠️ 포커스가 있으면 덮지 않는다 — onUpdate 는 자기가 만든 변경으로도 불린다.
+ if (document.activeElement !== input) input.value = data().answers[0] ?? ''
+ }
+ sync()
+ onUpdate(sync)
+ return input
 }
 ```
 
@@ -1140,7 +1115,7 @@ render: ({ data, onChange, onUpdate }) => {
 렌더 층이 내용을 만들면 안 된다. 마운트 통지는 `onMountCustom(objectId, el)` 이고,
 객체가 사라지면 `el: null` 로 한 번 더 불린다.
 
-### 16.2 ★ 편집 창구는 **인스펙터 하나** (PLAN D26)
+### 16.2 ★ 편집 창구는 **인스펙터 하나** (커스텀 객체의 편집 창구는 인스펙터 하나다)
 
 콘텐츠는 포인터 이벤트를 받지 않는다(`pointer-events: none`). 캔버스는 **배치와 크기 조절**만
 하고 편집은 인스펙터에서 한다 — 텍스트·도형과 같은 규칙이다.
@@ -1177,7 +1152,7 @@ render: ({ data, onChange, onUpdate }) => {
 
 ```css
 @container pck-object (max-width: 120px) {
-  .my-fields { flex-direction: column; }
+ .my-fields { flex-direction: column; }
 }
 ```
 
@@ -1228,7 +1203,7 @@ html, body, #app { height: 100%; margin: 0; }
 스테이지 스크롤이 컨테이너를 밀어낸다.
 
 **감싸는 요소를 한 겹 더 두면 그 요소도 높이를 넘겨야 한다.** 아무 규칙 없는 `<div>` 를
-끼우면 체인이 끊긴다 — 2026.08.20 에 데모에서 실제로 이 실수를 했다(PLAN 20.11).
+끼우면 체인이 끊긴다 — 2026.08.20 에 데모에서 실제로 이 실수를 했다.
 
 ### 15.3 스타일 배포
 
@@ -1245,7 +1220,7 @@ import 'pdf-canvas-kit/styles.css'
 
 ## 17. facade 와 프레임워크 래퍼 ★
 
-편집기 본체는 vanilla DOM 이다(PLAN D19). 프레임워크는 **세 파일**에만 닿는다.
+편집기 본체는 vanilla DOM 이다 (렌더 층은 vanilla DOM 이다). 프레임워크는 **세 파일**에만 닿는다.
 
 | 파일 | 역할 |
 | --- | --- |
@@ -1280,8 +1255,8 @@ editor.destroy()
 렌더 층이 커스텀 객체의 **빈 컨테이너**만 만들고, 그 엘리먼트를 콜백으로 알린다.
 
 ```
-onMountCustom(objectId, el)      캔버스 안 객체
-onMountInspector(objectId, el)   우측 인스펙터 (편집 창구 — PLAN D26)
+onMountCustom(objectId, el) 캔버스 안 객체
+onMountInspector(objectId, el) 우측 인스펙터 (편집 창구 — 커스텀 객체의 편집 창구는 인스펙터 하나다)
 ```
 
 정리할 때 같은 `objectId` 로 **`null`** 을 보낸다. 그게 래퍼가 portal 을 걷는 신호다.
@@ -1312,7 +1287,7 @@ handleRef.current = handle
 assignRef(refProp, handle)
 ```
 
-`?.` 때문에 던지지 않아 **버튼이 죽은 것처럼** 보인다 (PLAN 20.21). Vue 는
+`?.` 때문에 던지지 않아 **버튼이 죽은 것처럼** 보인다. Vue 는
 `expose({ get handle() {…} })` 게터라 접근 시점에 평가되어 같은 문제가 없다.
 
 `wrapperCases.ts` 가 이 불변식을 지킨다 — React 런타임을 실제로 띄우는 유일한 케이스다.
@@ -1322,19 +1297,18 @@ assignRef(refProp, handle)
 ```ts
 // ✗ optional chaining 이 짧은 순환하면 인자 표현식도 평가되지 않는다
 watchEffect(() => {
-  handle?.update({ doc: props.doc })
+ handle?.update({ doc: props.doc })
 })
 
 // ✓ 객체를 먼저 만들어 prop 을 확실히 읽는다
 watchEffect(() => {
-  const next = { doc: props.doc }
-  handle?.update(next)
+ const next = { doc: props.doc }
+ handle?.update(next)
 })
 ```
 
 `watchEffect` 의 첫 실행은 `setup` 시점이고 그때 `handle` 은 `null` 이다(생성은 `onMounted`).
-prop 이 한 번도 읽히지 않으면 **의존성이 등록되지 않아 이후 갱신이 전부 무시된다**
-(PLAN 20.23). React 는 `useEffect` 가 매 렌더 후 돌아 같은 문제가 없다.
+prop 이 한 번도 읽히지 않으면 **의존성이 등록되지 않아 이후 갱신이 전부 무시된다**. React 는 `useEffect` 가 매 렌더 후 돌아 같은 문제가 없다.
 
 ### ⚠️ Vue 의 `expose` 는 타입을 남기지 않는다
 
@@ -1361,8 +1335,7 @@ export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 (**반공변**)가 소비자 컴포넌트를 거절하고, `unknown` 으로 넓히면 `data`(공변)가 거절한다.
 양쪽을 통과하는 것은 `any` 뿐이다 — `AnyObjectTypeDef` 가 `validate` 때문에 같은 선택을 했다.
 
-**소비자가 캐스트를 써야 하면 그건 API 버그다.** R10 에서 실제 앱에 설치해 보고서야 잡혔다
-(PLAN 20.19). 데모에서 `as never` 로 우회하지 않는다 — 우회하면 같은 회귀를 다시 못 잡는다.
+**소비자가 캐스트를 써야 하면 그건 API 버그다.** R10 에서 실제 앱에 설치해 보고서야 잡혔다. 데모에서 `as never` 로 우회하지 않는다 — 우회하면 같은 회귀를 다시 못 잡는다.
 
 ### ⚠️ `position: fixed` 는 갇힌다
 
@@ -1374,7 +1347,7 @@ export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 
 ## 18. 뷰어 (`PDFCanvasViewer`) ★
 
-편집기와 **정반대의 화면**이다 (PLAN D15 · D29). 바꿀 자리를 찾을 때 이 표가 기준이다.
+편집기와 **정반대의 화면**이다 (편집기는 데스크탑 전용, 뷰어만 반응형이다 / 뷰어는 응답을 갖지 않는다). 바꿀 자리를 찾을 때 이 표가 기준이다.
 
 | | Editor | Viewer |
 | --- | --- | --- |
@@ -1400,12 +1373,12 @@ export type PublicPDFCanvasDoc = PDFCanvasDoc & { readonly [PUBLIC_BRAND]: true 
 구조는 `PDFCanvasDoc` 과 같다. 다른 것은 **어떻게 얻었는지**뿐이고 타입이 그 출처를 기억한다.
 
 ```ts
-viewer.update({ doc: editor.getDoc() })        // ✗ 컴파일 에러. 정답이 들어 있다
-viewer.update({ doc: editor.toPublicDoc() })   // ✓
+viewer.update({ doc: editor.getDoc() }) // ✗ 컴파일 에러. 정답이 들어 있다
+viewer.update({ doc: editor.toPublicDoc() }) // ✓
 viewer.update({ doc: asPublicDoc(serverJson) }) // ✓ 호스트가 책임진다
 ```
 
-`asPublicDoc()` 은 **단언이고 검사하지 않는다.** 서버가 학생용으로 내려준 문서를 위한
+`asPublicDoc()` 은 **단언이고 검사하지 않는다.** 서버가 뷰어용으로 내려준 문서를 위한
 탈출구다 — 편집 문서를 통과시키면 타입은 아무 말도 하지 않는다.
 
 D25 이후 이 패키지는 `data` 안에서 무엇이 비밀인지 모르므로(각 타입의 `toPublic` 만 안다)
@@ -1414,10 +1387,10 @@ D25 이후 이 패키지는 `data` 안에서 무엇이 비밀인지 모르므로
 ## 18.2 응답은 패키지 것이 아니다 (D29)
 
 ```
-학생이 입력  →  renderViewer 의 onChange
-                     │
-              onChangeData(objectId, next)   ← 뷰어가 하는 일은 여기까지
-                     │
+입력 → renderViewer 의 onChange
+ │
+ onChangeData(objectId, next) ← 뷰어가 하는 일은 여기까지
+ │
 호스트: 자기 상태를 고치고 새 doc 을 update() 로 내려 준다
 ```
 
@@ -1434,8 +1407,8 @@ D25 이후 이 패키지는 `data` 안에서 무엇이 비밀인지 모르므로
 
 ```css
 .pane[hidden] {
-  display: block;      /* display: none 이면 뷰어의 폭 측정이 죽는다 */
-  visibility: hidden;
+ display: block; /* display: none 이면 뷰어의 폭 측정이 죽는다 */
+ visibility: hidden;
 }
 ```
 
@@ -1466,8 +1439,8 @@ defineObjectType<Memo>({ … })
 
 // answers 를 지운다 — 뷰어가 보는 형태를 명시한다
 defineObjectType<Answer, Omit<Answer, 'answers'>>({
-  toPublic: ({ answers: _a, ...rest }) => rest,
-  renderViewer: ({ data }) => input(data().response),  // answers 가 타입에도 없다
+ toPublic: ({ answers: _a, ...rest }) => rest,
+ renderViewer: ({ data }) => input(data().response), // answers 가 타입에도 없다
 })
 ```
 
@@ -1508,12 +1481,12 @@ defineObjectType<Answer, Omit<Answer, 'answers'>>({
 ## 19.2 다이얼로그를 만들지 않는다 (D31)
 
 ```
-호스트: onRequestUpload   →  내장 업로드 팝업을 그리지 않는다
-        onRequestConfirm  →  내장 확인 팝업을 그리지 않는다
-              │
-        호스트 모달에서 결정
-              │
-        handle.importFile(file) / confirmPending() / cancelPending()
+호스트: onRequestUpload → 내장 업로드 팝업을 그리지 않는다
+ onRequestConfirm → 내장 확인 팝업을 그리지 않는다
+ │
+ 호스트 모달에서 결정
+ │
+ handle.importFile(file) / confirmPending() / cancelPending()
 ```
 
 셸이 `controller.dialogsDelegated` 를 보고 렌더를 건너뛴다. 컨트롤러가 그 판단을 내려 주는
@@ -1548,7 +1521,7 @@ defineObjectType<Answer, Omit<Answer, 'answers'>>({
 ### 아이콘 — 세 경로
 
 ```
-icons (vanilla Node)  →  onMountIcon (portal)  →  strings 의 icon.* (글리프)
+icons (vanilla Node) → onMountIcon (portal) → strings 의 icon.* (글리프)
 ```
 
 `src/dom/editor/icon.ts` 의 `icon(name)` 이 이 순서를 **한 곳에서** 결정한다. 사용처마다

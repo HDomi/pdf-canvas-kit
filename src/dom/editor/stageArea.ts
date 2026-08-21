@@ -1,5 +1,5 @@
 /**
- * 스테이지 영역 — 컨트롤러와 렌더 층을 잇는 유일한 지점 (PLAN 20.2).
+ * 스테이지 영역 — 컨트롤러와 렌더 층을 잇는 유일한 지점.
  *
  * 컨트롤러가 내놓는 signal 을 읽어 `canvasStage` · `objectView` · `selectionOverlay` 를 조립한다.
  * 컴포넌트들은 서로를 모르고, 여기서만 만난다.
@@ -76,7 +76,7 @@ export function stageArea(c: EditorController): HTMLElement {
  * 스테이지를 감싸는 래퍼 + 오류 문구.
  *
  * `position: relative` 래퍼가 필요하다 — 줌 컨트롤이 페이지와 함께 스크롤돼 사라지면 안 되므로
- * 스크롤 컨테이너 **밖**에 있어야 한다 (PLAN 6.1).
+ * 스크롤 컨테이너 **밖**에 있어야 한다.
  *
  * 줌 컨트롤·툴바·페이지 메타는 R6 에서 붙인다.
  */

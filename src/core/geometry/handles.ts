@@ -1,7 +1,7 @@
 /**
- * 9방향 핸들의 리사이즈 수학 (PLAN 11.3).
+ * 9방향 핸들의 리사이즈 수학.
  *
- * 8개 방향 핸들 + 본체 이동으로 9방향이다. 핸들은 배율 밖 오버레이에 그리므로(PLAN D5) 이
+ * 8개 방향 핸들 + 본체 이동으로 9방향이다. 핸들은 배율 밖 오버레이에 그리므로 (핸들·마퀴는 scale 밖 오버레이다) 이
  * 모듈은 pt 공간만 다루고 화면 좌표를 모른다.
  */
 import type { Pt, Rect, Size, PDFCanvasObjectType } from '../model/types'
@@ -50,7 +50,7 @@ export interface ResizeOptions {
    */
   rotation?: number
   /**
-   * 최소 크기 override(pt). 커스텀 객체 타입이 요구하는 값 (PLAN D25).
+   * 최소 크기 override(pt). 커스텀 객체 타입이 요구하는 값 (커스텀 객체는 소비자가 정의한다).
    *
    * 주지 않으면 `EDITOR_DEFAULTS.minObjectSize` 를 쓴다.
    */

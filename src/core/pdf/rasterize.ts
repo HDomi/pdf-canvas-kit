@@ -1,5 +1,5 @@
 /**
- * PDF 페이지 → 이미지 blob (PLAN 10.1, 10.2).
+ * PDF 페이지 → 이미지 blob.
  *
  * 캔버스 하나를 페이지마다 재사용하는 것은 의도다. 페이지를 동시에 렌더하면 큰 문서에서
  * 메모리가 크게 튀는데, 500페이지 상한 때문에 이건 이론이 아니라 실제 위험이다.
@@ -7,7 +7,7 @@
 import type { PDFPageProxy } from 'pdfjs-dist'
 import type { Size } from '../model/types'
 
-/** 약 200dpi에서의 A4 폭. 이보다 낮으면 교사가 확대했을 때 글자가 뭉개진다. */
+/** 약 200dpi에서의 A4 폭. 이보다 낮으면 편집기가 확대했을 때 글자가 뭉개진다. */
 export const TARGET_PX = 1654
 
 /** 지나치게 큰 페이지(A0 포스터, 플로터 출력)에서 캔버스가 폭주하는 것을 막는다. */
@@ -16,7 +16,7 @@ export const MAX_SCALE = 3
 /**
  * WebP가 아니라 JPEG를 쓴다. A4 100페이지 픽스처 실측에서 Chrome은 비슷한 용량 기준으로
  * JPEG를 WebP보다 약 6배 빠르게 인코딩했고, 페이지 배경에는 보존할 투명도도 없다.
- * 수치는 PLAN 10.2 참고.
+ * 수치는 참고.
  */
 export const DEFAULT_MIME = 'image/jpeg'
 
@@ -51,7 +51,7 @@ export interface RasterizeResult {
   /** 인코딩된 페이지 이미지. */
   blob: Blob
   /**
-   * scale 1 뷰포트에서 얻은 **pt** 단위 페이지 크기. 객체가 사는 좌표 공간이다 (PLAN D3).
+   * scale 1 뷰포트에서 얻은 **pt** 단위 페이지 크기. 객체가 사는 좌표 공간이다 (좌표는 페이지 로컬 pt 절대값이다).
    * 페이지의 `/Rotate` 가 반영돼 있어, 회전된 가로 페이지는 가로 크기를 보고한다.
    */
   size: Size
@@ -62,10 +62,10 @@ export interface RasterizeResult {
   /**
    * `naturalWidth / size.width`.
    *
-   * **고배율 재래스터화는 구현하지 않는다** (PLAN Q16 결정). 이 값은 그 판단에 필요한 정보를
+   * **고배율 재래스터화는 구현하지 않는다**. 이 값은 그 판단에 필요한 정보를
    * 미리 갖춰 두기 위해 보관한다 — 400% 확대에서 배경이 흐릿한 것은 알려진 한계이며,
    * 필요해지면 이 값과 현재 배율을 비교해 해당 페이지만 다시 래스터화하면 된다.
-   * 좌표가 pt라 재래스터화가 객체 위치에 영향을 주지 않는다 (PLAN 5.7).
+   * 좌표가 pt라 재래스터화가 객체 위치에 영향을 주지 않는다.
    */
   renderScale: number
   /**
@@ -142,7 +142,7 @@ function toBlob(canvas: HTMLCanvasElement, mime: string, quality: number): Promi
  * 정확성에 관계되는 두 가지가 있다.
  *
  * - `size` 는 **scale 1** 뷰포트에서 얻는다. 그래서 `/Rotate` 를 포함한 페이지의 진짜 pt
- *   크기다. 객체 좌표는 래스터 픽셀이 아니라 이 값을 기준으로 한다 (PLAN 5.7).
+ *   크기다. 객체 좌표는 래스터 픽셀이 아니라 이 값을 기준으로 한다.
  * - 렌더 전에 캔버스를 흰색으로 채운다. width/height 설정만으로도 비워지지만, 투명 영역이 있는
  *   페이지는 그대로 두면 이전 페이지가 남긴 것 위에 합성된다 — 눈에 잘 안 띄는 페이지 간 번짐이다.
  *

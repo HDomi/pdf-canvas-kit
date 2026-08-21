@@ -1,5 +1,5 @@
 /**
- * 우측 인스펙터 패널 (기획 1.6, PLAN D25).
+ * 우측 인스펙터 패널 (기획 1.6, 커스텀 객체는 소비자가 정의한다).
  *
  * 선택 상태에 따라 유형별 패널로 분기한다. 내장 유형은 텍스트·도형뿐이고, 커스텀 객체는
  * `objectType.renderInspector` 나 프레임워크 portal 이 채운다.
@@ -148,7 +148,7 @@ export function inspector(props: InspectorProps): HTMLElement {
     if (def?.renderInspector) {
       /*
        * **한 번만** 부른다. 매 변경마다 다시 부르면 입력 중 노드가 파괴되어 한 글자마다
-       * 포커스가 날아간다 (PLAN 20.14).
+       * 포커스가 날아간다.
        */
       mountRenderSlot({
         objectId: obj.id,
@@ -170,7 +170,7 @@ export function inspector(props: InspectorProps): HTMLElement {
        * 이 타입은 편집할 것을 주지 않았다.
        *
        * 빈 패널을 두면 "왜 편집이 안 되나" 를 알 수 없다. 커스텀 객체의 편집 창구는 인스펙터
-       * 하나이므로(PLAN D26), 슬롯이 없다는 사실을 드러내는 편이 낫다.
+       * 하나이므로 (커스텀 객체의 편집 창구는 인스펙터 하나다), 슬롯이 없다는 사실을 드러내는 편이 낫다.
        */
       container.append(el('p', { class: 'pck-panel-empty' }, [text('inspector.noCustomEditor')]))
     }
@@ -195,7 +195,7 @@ export function inspector(props: InspectorProps): HTMLElement {
      * 커스텀은 `kind` 로 **키잉**한다.
      *
      * `when` 은 조건을 `!!cond()` 로 보므로 `'demo.shortAnswer'` → `'demo.choice'` 처럼
-     * 둘 다 truthy 인 변화를 감지하지 못한다 — 단답형 패널이 그대로 남는다 (PLAN 20.16).
+     * 둘 다 truthy 인 변화를 감지하지 못한다 — 단답형 패널이 그대로 남는다.
      */
     keyed(
       () => (single.value?.type === 'custom' ? single.value.kind : null),

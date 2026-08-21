@@ -48,8 +48,6 @@ export default defineConfig({
         landing: r('demo/index.html'),
         spike: r('demo/spike/index.html'),
         editor: r('demo/editor/index.html'),
-        react: r('demo/react/index.html'),
-        vue: r('demo/vue/index.html'),
         viewer: r('demo/viewer/index.html'),
         checks: r('demo/checks/index.html'),
       },

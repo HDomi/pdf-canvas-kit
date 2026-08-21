@@ -1,5 +1,5 @@
 /**
- * 편집기 뷰 상태 (PLAN 6.6).
+ * 편집기 뷰 상태.
  *
  * 문서와 히스토리는 엔진이 갖고, **DOM 측정에 묶인 것들** — 배율·스크롤·현재 페이지·선택 — 은
  * 여기 있다. 이 분리는 의도적이다. 뷰 상태를 문서에 넣으면 배율만 바꿔도 자동저장이 돌고
@@ -22,7 +22,7 @@ export interface EditorViewSignals {
   selectedObjectIds: Signal<string[]>
   activeTool: Signal<ToolId>
   gridSnap: Signal<boolean>
-  /** Space 를 누르고 있는 동안 세워진다 (PLAN D10). */
+  /** Space 를 누르고 있는 동안 세워진다 (드래그 팬은 Space·중간버튼만. 좌클릭은 객체 생성·마퀴에 예약). */
   panArmed: Signal<boolean>
   /** 인라인 텍스트 편집 중인 객체. null 이면 편집 중이 아니다. */
   editingObjectId: Signal<string | null>

@@ -1,5 +1,5 @@
 /**
- * 컨트롤러 검증 케이스 (PLAN 20.1, R3).
+ * 컨트롤러 검증 케이스.
  *
  * `src/controller/**` 는 순수 함수가 아니라 **조립체**다. 엔진·뷰 상태·좌표계를 엮으므로
  * 케이스가 확인할 수 있는 것은 "signal 이 올바르게 연결됐는가" 다.
@@ -10,7 +10,7 @@
  *
  * ⚠️ **덮이지 않는 것**: happy-dom 은 `getBoundingClientRect()` 가 전부 0 이고 레이아웃이 없다.
  * 그래서 맞춤 배율·줌 앵커링·좌표 변환은 여기서 검증되지 않는다. 브라우저에서 손으로 확인해야
- * 한다 (PLAN 20.5).
+ * 한다.
  */
 import { createEditorController } from '../../src/controller/editor'
 import { createEditorViewSignals } from '../../src/controller/editorState'
@@ -372,7 +372,7 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: '⚠️ setProps 의 initialDoc 은 무시된다 (controlled 아님 — PLAN 20.8)',
+        name: '⚠️ setProps 의 initialDoc 은 무시된다 (controlled 아님)',
         expected: 1,
         actual: () =>
           withController(docWithPages(1), (c) => {
@@ -390,7 +390,7 @@ export const CONTROLLER_GROUPS: CaseGroup[] = [
           }),
       },
       {
-        name: '마지막 1페이지는 삭제되지 않고 안내 문구가 뜬다 (PLAN Q4)',
+        name: '마지막 1페이지는 삭제되지 않고 안내 문구가 뜬다',
         expected: [1, true],
         actual: () =>
           withController(docWithPages(1), (c) => {

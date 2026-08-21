@@ -2,10 +2,10 @@
  * 상단 바. 뒤로 가기, 인라인 타이틀, 저장 배지, undo/redo, 수동 저장 (기획 1.3).
  *
  * ⚠️ **[내보내기] 버튼을 임시로 제거했다.** 과제 생성 API 가 아직 없어 누르면 빈 팝업만 뜨고,
- * 그게 프로토타입 확인을 방해한다. 대신 프로토타입 저장 버튼을 둔다.
+ * 대신 문서 JSON 을 콘솔로 출력하는 버튼을 둔다 — 디버깅에 실제로 그게 필요하다.
  *
  * 서버가 준비되면 `onManualSave` 를 `requestExport` 로 되돌린다. `guardExport` 검증 게이트는
- * 그대로 남아 있고 컨트롤러가 `requestExport()` 를 노출하므로 버튼만 바꾸면 된다 (PLAN 18.5).
+ * 그대로 남아 있고 컨트롤러가 `requestExport()` 를 노출하므로 버튼만 바꾸면 된다.
  *
  * 구 `src/vue/editor/TopBar.vue` 의 이식.
  */
@@ -80,7 +80,7 @@ export function topBar(props: TopBarProps): HTMLElement {
 
     el('span', { class: 'pck-topbar-divider' }),
 
-    // 프로토타입 저장 버튼. 실서버가 붙으면 [내보내기] 로 되돌린다 (PLAN 18.5).
+    // JSON 출력 버튼. 실서버가 붙으면 [내보내기] 로 되돌린다.
     el(
       'button',
       {

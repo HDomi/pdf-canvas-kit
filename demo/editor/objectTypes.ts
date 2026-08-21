@@ -1,5 +1,5 @@
 /**
- * 데모용 커스텀 객체 타입 (PLAN D25, D26).
+ * 데모용 커스텀 객체 타입 (커스텀 객체는 소비자가 정의한다 / 커스텀 객체의 편집 창구는 인스펙터 하나다).
  *
  * 소비자 앱이 타입을 정의하는 방식의 예제다. 구 `ShortAnswerBox` · `DropboxAnswerBox` 가
  * 하던 일을 **소비자 코드로** 하는 모습이며, 코어에 그 도메인이 없어도 같은 UX 가 나온다.
@@ -9,9 +9,9 @@
  *
  * ## 두 가지 규칙이 이 파일 전체를 지배한다
  *
- * 1. **`render` 는 객체당 한 번만 불린다** (PLAN 20.14). 값은 `data()` 로 읽고 갱신은
+ * 1. **`render` 는 객체당 한 번만 불린다**. 값은 `data()` 로 읽고 갱신은
  *    `onUpdate` 로 받는다. 매번 다시 그리면 입력 중 노드가 파괴돼 포커스가 날아간다.
- * 2. **편집 창구는 인스펙터 하나다** (PLAN D26). 캔버스는 배치와 크기 조절만 한다.
+ * 2. **편집 창구는 인스펙터 하나다** (커스텀 객체의 편집 창구는 인스펙터 하나다). 캔버스는 배치와 크기 조절만 한다.
  *
  * 이 데모는 프레임워크가 없으므로 vanilla 슬롯을 쓴다. React·Vue 래퍼는 이 슬롯을 주지 않고
  * 컨테이너에 portal 한다 (R9).
@@ -31,10 +31,10 @@ export const shortAnswer = defineObjectType<AnswerData>({
   defaultSize: { w: 160, h: 40 },
   minSize: { w: 80, h: 32 },
   defaultData: () => ({ answers: [], points: 1 }),
-  // 기울어진 입력은 쓰기 어렵다. 구 PLAN Q8 이 이 자리로 옮겨졌다.
+  // 기울어진 입력은 쓰기 어렵다. 이 이 자리로 옮겨졌다.
   rotatable: false,
   validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
-  // 정답은 학생 번들에 실려 가면 안 된다 (구 PLAN D14).
+  // 정답은 뷰어 번들에 실려 가면 안 된다 (정답은 편집 문서에만 있다).
   toPublic: ({ answers: _answers, ...rest }) => rest,
 
   render: ({ data, onUpdate }) => {
@@ -145,7 +145,7 @@ export const choice = defineObjectType<ChoiceData>({
     /*
      * 보기 칸을 고정 개수로 둔다.
      *
-     * 개수를 동적으로 늘리려면 `render` 가 한 번만 불리는 계약(PLAN 20.14) 아래서 DOM 을
+     * 개수를 동적으로 늘리려면 `render` 가 한 번만 불리는 계약 아래서 DOM 을
      * 직접 추가·제거해야 한다. 그건 소비자가 자기 프레임워크로 하는 편이 낫다 — R9 의
      * portal 경로가 정확히 그 용도다. 여기서는 vanilla 슬롯의 최소 예제만 보여준다.
      */

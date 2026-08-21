@@ -34,10 +34,9 @@ export const DEFAULT_STRINGS = {
   'topbar.undo': '되돌리기',
   'topbar.redo': '다시 실행',
   'topbar.export': '내보내기',
-  'topbar.save': '저장 (프로토타입)',
+  'topbar.save': 'JSON 출력',
   'topbar.saving': '저장 중…',
-  'topbar.saveHint':
-    '프로토타입 저장 — localStorage 에 문서와 이미지를 넣는다. 실서버 연결 전 임시 동작이다.',
+  'topbar.saveHint': '문서 JSON 을 콘솔에 출력한다. 실서버 연결 전의 자리다.',
 
   'save.saved': '저장됨',
   'save.saving': '저장 중…',
@@ -55,7 +54,7 @@ export const DEFAULT_STRINGS = {
   'empty.description': 'PDF나 문서를 불러오면 문서 편집을 시작할 수 있습니다.',
   'empty.action': '문서 불러오기',
   /*
-   * 뷰어의 빈 상태. 편집기와 문구가 다르다 — 학생은 문서를 불러올 수 없고, 여기 온 것은
+   * 뷰어의 빈 상태. 편집기와 문구가 다르다 — 뷰어는 문서를 불러올 수 없고, 여기 온 것은
    * 호스트가 아직 `doc` 을 주지 않았다는 뜻이다.
    */
   'viewer.empty': '표시할 문서가 없습니다',
@@ -80,7 +79,7 @@ export const DEFAULT_STRINGS = {
   'inspector.textColor': '글자색',
   'inspector.transparent': '투명',
   'inspector.transparentHint': '배경을 투명하게 둔다. 아래 문서 내용이 그대로 보인다.',
-  'inspector.boxStyleNote': '체크를 끄면 기본 테마 색을 따른다. 학생 화면에도 같은 색이 적용된다.',
+  'inspector.boxStyleNote': '체크를 끄면 기본 테마 색을 따른다. 뷰어 화면에도 같은 색이 적용된다.',
   'inspector.delete': '삭제',
 
   'inspector.text': '내용',

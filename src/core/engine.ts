@@ -1,11 +1,11 @@
 /**
- * 편집기 엔진. 문서 상태·히스토리·변환 파이프라인을 담고, 렌더링과 프레임워크는 없다 (PLAN 2.1).
+ * 편집기 엔진. 문서 상태·히스토리·변환 파이프라인을 담고, 렌더링과 프레임워크는 없다.
  *
  * Vue 층이 이걸 하나 만들어 스토어를 reactivity에 브릿지하고 커맨드를 호출한다. 분리해 두면
  * 편집 규칙을 검증할 수 있고, 다른 렌더러가 추가돼도 재사용된다.
  *
  * 뷰 상태(배율·선택·현재 페이지)는 **여기 없다**. DOM 측정에 묶여 있으므로 렌더러 몫이다
- * (PLAN 6.6, 8.1).
+ *.
  */
 import { createId } from './util/id'
 import { createBlobAssetPort } from './assets/blobAsset'
@@ -41,7 +41,7 @@ export interface EngineOptions {
   doc?: PDFCanvasDoc | null
   ports?: EnginePorts
   /**
-   * 커스텀 객체 타입 레지스트리 (PLAN D25).
+   * 커스텀 객체 타입 레지스트리 (커스텀 객체는 소비자가 정의한다).
    *
    * `toPublicDoc()` 이 이걸 통해 비밀을 제거한다. 주지 않으면 데이터가 그대로 나간다.
    */
@@ -84,11 +84,11 @@ export interface PDFCanvasEngine {
   /**
    * 대기 중인 저장을 즉시 실행한다.
    *
-   * `beforeunload` 와 페이지 숨김에서 호출한다 (PLAN 12).
+   * `beforeunload` 와 페이지 숨김에서 호출한다.
    */
   flushSave(): Promise<void>
   /**
-   * blob 배경을 업로드해 저장 가능한 문서로 만든다 (PLAN 4.1).
+   * blob 배경을 업로드해 저장 가능한 문서로 만든다.
    *
    * AssetPort가 `remote`/`inline` 을 돌려주는 구현일 때만 의미가 있다. 기본 blob port에서는
    * 아무것도 바뀌지 않는다.
@@ -115,7 +115,7 @@ export interface PDFCanvasEngine {
    * 커스텀 객체의 비밀을 제거한 문서. 뷰어에 넘기는 스냅샷이다.
    *
    * 각 타입의 `toPublic(data)` 를 거친다. 구현하지 않은 타입은 데이터가 그대로 나간다 —
-   * 이 패키지는 `data` 안에 무엇이 비밀인지 모른다 (PLAN D25).
+   * 이 패키지는 `data` 안에 무엇이 비밀인지 모른다 (커스텀 객체는 소비자가 정의한다).
    */
   toPublicDoc(): PublicPDFCanvasDoc
 
@@ -132,7 +132,7 @@ export function createPDFCanvasEngine(options: EngineOptions = {}): PDFCanvasEng
   )
 
   // 기본값 덕분에 설정 없이도 편집기가 동작한다. 이미지는 메모리에 있고 아무것도 저장되지 않는다
-  // (PLAN 9).
+  //.
   const asset = options.ports?.asset ?? createBlobAssetPort()
   const converter = options.ports?.converter ?? createPdfjsConverter()
   const storage = options.ports?.storage ?? noopStoragePort()

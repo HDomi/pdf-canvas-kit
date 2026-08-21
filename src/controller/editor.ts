@@ -1,5 +1,5 @@
 /**
- * 편집기 루트 컨트롤러 (PLAN 6.1, 20.2).
+ * 편집기 루트 컨트롤러.
  *
  * 엔진·뷰 상태·좌표계·포인터·검증을 조립하고, 렌더 층이 구독할 signal 과 호출할 액션을 내놓는다.
  * **DOM 을 만들지 않는다** — 렌더 층(`src/dom/editor/**`)이 이걸 읽어 그린다.
@@ -23,13 +23,14 @@
  * | **`initialScale`** · **`objectTypes`** | **최초 1회만.** 이름 그대로다 |
  *
  * `initialDoc` 이라는 이름이 그 계약을 드러낸다 — 편집기가 문서를 소유하고 `onChange` 로
- * 변경을 밀어낸다. React 의 `defaultValue` 와 같은 성격이다 (PLAN 20.8 결정).
+ * 변경을 밀어낸다. React 의 `defaultValue` 와 같은 성격이다.
  */
 import { batch, computed, onCleanup, signal, watch, type ReadSignal } from '../dom/reactive'
 import { EDITOR_DEFAULTS } from '../core/config/defaults'
 import { configureStrings, text, type StringKey } from '../core/config/strings'
 import { configureIcons, type IconName } from '../core/config/icons'
 import { setTitle } from '../core/commands/doc'
+import { serializeDoc } from '../core/model/serialize'
 import {
   addObject,
   ObjectLimitError,
@@ -64,8 +65,6 @@ import {
   type AnyObjectTypeDef,
   type ObjectTypeRegistry,
 } from '../core/objectTypes'
-// ⚠️ 프로토타입 저장. 실서버가 붙으면 이 import 와 아래 `savePrototypeDoc` 을 함께 지운다 (PLAN 18.5).
-import { PrototypeQuotaError, savePrototype } from '../prototype/localStorageStore'
 
 import { createEditorViewSignals } from './editorState'
 import { createEngineState } from './engineState'
@@ -89,7 +88,7 @@ export interface EditorProps {
   /**
    * 초기 문서. `null` 이면 빈 상태로 시작해 문서 불러오기 안내를 띄운다.
    *
-   * **이름이 계약이다** (PLAN 20.8 결정). 편집기가 문서를 소유하고 변경을 `onChange` 로 밀어낸다 —
+   * **이름이 계약이다**. 편집기가 문서를 소유하고 변경을 `onChange` 로 밀어낸다 —
    * controlled prop 이 아니다. `doc` 이라고 부르면 React 소비자가 controlled 로 착각하는데,
    * 그건 API 이름이 거짓말을 하는 것이다.
    *
@@ -99,7 +98,7 @@ export interface EditorProps {
   ports?: EnginePorts
   readOnly?: boolean
   /**
-   * 커스텀 객체 타입 (PLAN D25). **최초 1회만 읽는다.**
+   * 커스텀 객체 타입 (커스텀 객체는 소비자가 정의한다). **최초 1회만 읽는다.**
    *
    * 툴바 도구·인스펙터 패널·검증이 모두 이 목록에서 나온다. 런타임에 바꾸려면 컴포넌트를
    * 다시 마운트한다 — 도구가 도중에 생기고 사라지면 사용자가 방향을 잃는다.
@@ -108,10 +107,10 @@ export interface EditorProps {
   /** 시작 배율. 기본값 `'fit-page'` — 불러오는 즉시 페이지 전체가 보인다. **최초 1회만 읽는다.** */
   initialScale?: number | 'fit-width' | 'fit-page'
   /**
-   * 페이지 이미지를 업로드하는 함수 (PLAN Q11 결정: S3).
+   * 페이지 이미지를 업로드하는 함수.
    *
    * 주면 `AssetPort` 로 감싸 배경을 영속 URL 로 저장한다. 주지 않으면 세션 한정 blob URL 을 쓰고,
-   * 그 문서는 저장할 수 없다 — `serializeDoc` 이 거부한다 (PLAN 4.1).
+   * 그 문서는 저장할 수 없다 — `serializeDoc` 이 거부한다.
    *
    * presigned URL 방식이면 `createS3AssetPort` 를 `ports.asset` 에 주는 편이 간단하다.
    * 이 prop 은 업로드 경로가 완전히 다른 제품을 위한 것이다.
@@ -128,7 +127,7 @@ export interface EditorProps {
   onSaveStateChange?: (state: SaveState) => void
   onBack?: () => void
   /**
-   * 커스텀 객체의 콘텐츠 컨테이너가 생기거나 사라질 때 (PLAN D25).
+   * 커스텀 객체의 콘텐츠 컨테이너가 생기거나 사라질 때 (커스텀 객체는 소비자가 정의한다).
    *
    * 프레임워크 래퍼가 여기로 받은 엘리먼트에 `createPortal` · `Teleport` 한다.
    * vanilla 로 쓰는 경우 `objectType.render` 를 주면 이 콜백이 불리지 않는다.
@@ -137,7 +136,7 @@ export interface EditorProps {
   /** 커스텀 객체의 인스펙터 컨테이너. 위와 같은 규칙. */
   onMountInspector?: (objectId: string, el: HTMLElement | null) => void
 
-  /* --------------------------------------------- 문구 · 아이콘 (PLAN D32) -- */
+  /* --------------------------------------------- 문구 · 아이콘 (문구·아이콘은 prop 으로 받는다) -- */
 
   /**
    * UI 문구 오버라이드. **최초 1회만 읽는다.**
@@ -173,7 +172,7 @@ export interface EditorProps {
    */
   onMountIcon?: (name: IconName, el: HTMLElement | null) => void
 
-  /* ------------------------------------------- 다이얼로그 위임 (PLAN D31) -- */
+  /* ------------------------------------------- 다이얼로그 위임 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다) -- */
 
   /**
    * 문서 불러오기가 필요할 때 (R12).
@@ -321,7 +320,7 @@ export interface EditorController {
    */
   checkBeforeExport: () => boolean
 
-  /* 커스텀 객체 (PLAN D25) */
+  /* 커스텀 객체 (커스텀 객체는 소비자가 정의한다) */
   objectTypes: ObjectTypeRegistry | undefined
   onMountCustom: ((objectId: string, el: HTMLElement | null) => void) | undefined
   onMountInspector: ((objectId: string, el: HTMLElement | null) => void) | undefined
@@ -356,9 +355,9 @@ export interface EditorController {
   toolError: ReadSignal<string | null>
   exportError: ReadSignal<string | null>
 
-  /* ⚠️ 프로토타입 저장 (PLAN 18.5) */
+  /** 상단바 저장 버튼. 문서 JSON 을 콘솔에 출력한다 (실서버 연결 전의 자리). */
   manualSaving: ReadSignal<boolean>
-  manualSave: () => Promise<void>
+  manualSave: () => void
 
   /**
    * 상단바 뒤로 가기. `onBack` prop 을 부른다.
@@ -434,7 +433,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   }
 
   /**
-   * 커스텀 객체 타입 레지스트리 (PLAN D25). **최초 1회만 만든다.**
+   * 커스텀 객체 타입 레지스트리 (커스텀 객체는 소비자가 정의한다). **최초 1회만 만든다.**
    *
    * 툴바 도구·인스펙터 패널·검증이 이 목록에서 나오므로 런타임에 바뀌면 화면이 흔들린다.
    */
@@ -521,7 +520,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     () => readOnly.value || modalOpen.value || panArmed.value || panning.value,
   )
 
-  /** Shift 를 누른 상태로 생성하면 도구를 유지한다. 연속 배치를 위한 관례다 (PLAN Q3). */
+  /** Shift 를 누른 상태로 생성하면 도구를 유지한다. 연속 배치를 위한 관례다. */
   let keepToolArmed = false
 
   const pointer = createPointerTool({
@@ -538,7 +537,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /**
    * 드래그 결과를 문서에 반영한다.
    *
-   * 생성·변형은 커맨드 한 번으로 커밋되므로 사용자 제스처 하나가 undo 한 항목이 된다 (PLAN 11.2).
+   * 생성·변형은 커맨드 한 번으로 커밋되므로 사용자 제스처 하나가 undo 한 항목이 된다.
    */
   function handlePointerCommit(commit: PointerCommit) {
     const pageIndex = currentPageIndex.value
@@ -572,7 +571,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
             err instanceof ObjectLimitError ? text('error.objectLimit') : String(err)
           return
         }
-        // 도구는 한 번 쓰면 select 로 돌아간다. Shift 를 누르고 있으면 유지한다 (PLAN Q3).
+        // 도구는 한 번 쓰면 select 로 돌아간다. Shift 를 누르고 있으면 유지한다.
         if (!keepToolArmed) activeTool.value = 'select'
         break
       }
@@ -599,7 +598,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   }
 
   /**
-   * 지우개 (PLAN Q1).
+   * 지우개.
    *
    * 기획은 툴바에 지우개를 두었지만 동작을 정의하지 않았다. 클릭한 객체를 삭제하는 쪽으로 구현한다 —
    * "배경 가리기" 해석은 `MaskObject` 타입으로 열어 두었고, 지금은 더 흔한 해석을 택했다.
@@ -685,7 +684,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     currentObjects.value.filter((o) => selectedObjectIds.value.includes(o.id)),
   )
 
-  /** Answer Box 는 회전하지 않는다 (PLAN Q8). 학생 폼 요소가 기울면 입력이 깨진다. */
+  /** Answer Box 는 회전하지 않는다. 뷰어 폼 요소가 기울면 입력이 깨진다. */
   const rotatable = computed(() => {
     if (selectedObjectIds.value.length !== 1) return false
     const obj = selectedObjects.value[0]
@@ -720,7 +719,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    *
    * 데모는 항상 `doc: null` 로 시작해 파일을 import 하므로 `0 → N` 전이가 생겨 이 경로를
    * 밟지 않았다. 그래서 발견되지 않았다 — README 가 첫 줄에 적어 둔
-   * `<PDFCanvasEditor :doc="doc" />` 가 정확히 이 경로다 (PLAN 20.8).
+   * `<PDFCanvasEditor :doc="doc" />` 가 정확히 이 경로다.
    *
    * `immediate: true` 면 첫 호출의 `prev` 가 `undefined` 이므로, 아래 조건이 "처음 관측" 과
    * "0 에서 늘어남" 을 함께 덮는다.
@@ -770,7 +769,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   })
 
   /**
-   * 대기 중인 저장을 내보낸다 (기획 3.2, PLAN 12).
+   * 대기 중인 저장을 내보낸다 (기획 3.2,).
    *
    * `visibilitychange` 도 듣는다. 모바일 브라우저는 탭을 닫을 때 `beforeunload` 를 부르지 않는
    * 경우가 있다.
@@ -793,7 +792,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /* -------------------------------------------------------------- keyboard -- */
 
   /**
-   * 편집기 단축키 (PLAN 11.4).
+   * 편집기 단축키.
    *
    * 텍스트 입력에 포커스가 있으면 전부 건너뛴다. 그 상황에서 Delete 나 Space 를 가로채면
    * 타이핑이 깨진다.
@@ -1093,7 +1092,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /* ----------------------------------------------------------- 검증·내보내기 -- */
 
   /**
-   * 문서 전체 검증. 인스펙터 경고와 같은 규칙을 쓴다 (PLAN 12).
+   * 문서 전체 검증. 인스펙터 경고와 같은 규칙을 쓴다.
    *
    * 문서가 바뀔 때마다 다시 계산한다. 500페이지 문서에서도 객체 상한이 200개라 비용이 작다.
    */
@@ -1105,7 +1104,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /**
    * 회전 허용 판단. 커맨드에 넘겨 문서 불변식을 커맨드가 지키게 한다.
    *
-   * 커스텀 객체는 소비자가 `rotatable` 로 정한다 (PLAN D25). 기본은 허용이다.
+   * 커스텀 객체는 소비자가 `rotatable` 로 정한다 (커스텀 객체는 소비자가 정의한다). 기본은 허용이다.
    */
   function canRotate(obj: PDFCanvasObject): boolean {
     if (obj.type !== 'custom') return true
@@ -1115,8 +1114,8 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /**
    * 검증 게이트. 실패하면 문제가 있는 첫 객체로 데려간다 (기획 3.5).
    *
-   * 이전 판은 `guardExport` 가 정답 미지정을 막고 학생용 문서를 만들었다. 그 규칙은 문제지
-   * 도메인이므로 소비자의 `objectType.validate` 로 옮겼다 (PLAN D25). 여기 남은 것은
+   * 이전 판은 `guardExport` 가 정답 미지정을 막고 뷰어용 문서를 만들었다. 그 규칙은 문제지
+   * 도메인이므로 소비자의 `objectType.validate` 로 옮겼다 (커스텀 객체는 소비자가 정의한다). 여기 남은 것은
    * **문제 지점으로 데려가는 UX** 다.
    */
   function checkBeforeExport(): boolean {
@@ -1141,36 +1140,41 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   /** 페이지가 있으면 버튼을 활성화한다. 검증 실패는 클릭 후 안내한다 — 왜 막혔는지 알려야 한다. */
   const canExport = computed(() => pageCount.value > 0)
 
-  /* --------------------------------------------------- 프로토타입 저장 ⚠️ -- */
+  /* --------------------------------------------------------- 수동 저장 -- */
 
   /**
-   * ⚠️ **프로토타입 저장.** 실서버가 붙으면 이 블록과 `src/prototype/` 을 함께 삭제한다.
+   * 상단바 저장 버튼. **문서 JSON 을 콘솔에 출력한다.**
    *
-   * localStorage 에 문서와 이미지(base64)를 넣어, 아직 없는 뷰어가 나중에 조합해 띄울 수 있게 한다.
-   * 상단바 버튼이 [내보내기] 대신 이걸 부른다 — 과제 생성 API 가 없어 내보내기는 빈 팝업만 뜬다.
+   * 실서버가 없는 동안의 자리다. 저장 파이프라인 자체는 `ports.storage` 가 담당하고
+   * (자동저장·디바운스·재시도), 이 버튼은 **지금 문서 상태를 눈으로 확인하는 수단**이다 —
+   * 디버깅할 때 실제로 그게 필요하다.
    *
-   * 되돌리는 방법은 `src/prototype/README.md` 참고.
+   * `serializeDoc` 을 거치므로 blob 배경이 남아 있으면 던진다. 그게 맞는 동작이다 — 그 문서는
+   * 저장할 수 없고, 버튼을 눌러 알게 되는 편이 낫다. 배경을 먼저 승격한다
+   * (`handle.promoteBackgrounds()`).
    */
   const manualSaving = signal(false)
 
-  async function manualSave() {
+  function manualSave() {
     if (manualSaving.value || pageCount.value === 0) return
     manualSaving.value = true
     toolError.value = null
     try {
-      const result = await savePrototype(doc.value)
-      // 저장 결과는 콘솔로만 알린다. 프로토타입 동작이라 UI 를 늘리지 않는다.
+      const json = serializeDoc(doc.value)
+      /*
+       * `console.log` 를 쓴다. `debug` 는 기본 로그 레벨에서 접혀 있어 붙여넣으려는 사람이
+       * 찾지 못한다 — 이 출력의 목적이 복사다.
+       */
       // eslint-disable-next-line no-console
-      console.debug(
-        `[pdf-canvas-kit:prototype] saved · ${pageCount.value} pages · ${result.images} images · ` +
-          `~${(result.approxBytes / 1024 / 1024).toFixed(2)}MB`,
+      console.log(
+        `[pdf-canvas-kit] document JSON · ${pageCount.value} pages · ${(json.length / 1024).toFixed(1)}KB`,
       )
+      // eslint-disable-next-line no-console
+      console.log(json)
       engine.markSaved()
     } catch (err) {
-      toolError.value =
-        err instanceof PrototypeQuotaError
-          ? err.message
-          : `[prototype] save failed: ${err instanceof Error ? err.message : String(err)}`
+      // 직렬화 거부(blob 배경)가 여기로 온다. 문구를 그대로 보여준다.
+      toolError.value = err instanceof Error ? err.message : String(err)
       console.error(err)
     } finally {
       manualSaving.value = false

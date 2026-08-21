@@ -4,11 +4,11 @@
  * ## 좌표를 계산하지 않는다 ★
  *
  * pt 값을 px 에 **그대로** 쓴다. 배율은 부모 페이지 엘리먼트의 `transform: scale()` 이 처리하므로
- * 여기에 곱셈이 없다 (PLAN 5.3). 그래서 이 디렉토리에서는 `geometry/units` import 를 ESLint 가
+ * 여기에 곱셈이 없다. 그래서 이 디렉토리에서는 `geometry/units` import 를 ESLint 가
  * 막는다 — 좌표 변환을 하려는 시도 자체가 설계 위반이다.
  *
  * 드래그 중에는 `previewRect` 가 들어온다. 문서를 아직 바꾸지 않은 상태에서 위치만 미리 보여주기
- * 위한 것으로, 커밋은 `pointerup` 에서 한 번 일어난다 (PLAN 11.2).
+ * 위한 것으로, 커밋은 `pointerup` 에서 한 번 일어난다.
  *
  * 구 `src/vue/editor/objects/ObjectView.vue` 의 이식.
  */
@@ -34,7 +34,7 @@ export interface ObjectViewProps {
   /** 이 객체가 인라인 텍스트 편집 중인지. */
   editing: () => boolean
   onEditText: (value: string) => void
-  /** 커스텀 객체 타입 레지스트리 (PLAN D25). */
+  /** 커스텀 객체 타입 레지스트리 (커스텀 객체는 소비자가 정의한다). */
   types?: ObjectTypeRegistry
   /** 커스텀 객체의 데이터 변경. */
   onChangeData?: (next: unknown) => void

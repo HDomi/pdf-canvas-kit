@@ -1,5 +1,5 @@
 /**
- * Vue 래퍼 — `pdf-canvas-kit/vue` (PLAN 20.2, D25).
+ * Vue 래퍼 — `pdf-canvas-kit/vue` (커스텀 객체는 소비자가 정의한다).
  *
  * ```vue
  * <script setup>
@@ -17,7 +17,7 @@
  * ```
  *
  * SFC 가 아니다. `defineComponent` + `h()` 로 쓰므로 `@vitejs/plugin-vue` 도 `vue-tsc` 도
- * 필요하지 않고, `.d.ts` 생성이 평범한 `tsc` 다 (PLAN 20.3).
+ * 필요하지 않고, `.d.ts` 생성이 평범한 `tsc` 다.
  *
  * ## `Teleport` 로 슬롯을 채운다
  *
@@ -25,7 +25,7 @@
  * 이 그 노드에 컴포넌트를 꽂는다 — React 의 `createPortal` 과 같은 역할이다.
  *
  * 그래서 **vanilla 경로의 제약이 여기서는 사라진다.** `objectType.render` 는 객체당 한 번만
- * 불려야 하고 갱신을 `onUpdate` 로 받아야 하지만(PLAN 20.14), Teleport 안에서는 평범한
+ * 불려야 하고 갱신을 `onUpdate` 로 받아야 하지만, Teleport 안에서는 평범한
  * 컴포넌트를 쓰면 된다 — `v-for`, `v-if`, `ref` 전부.
  *
  * ⚠️ **`position: fixed` 는 갇힌다.** 컨테이너가 `transform: scale()` 안에 있어 드롭다운·툴팁이
@@ -59,7 +59,7 @@ export type { EditorHandle, ViewerHandle }
  * Vue 의 `expose()` 는 **런타임 API 라 생성된 `.d.ts` 에 타입이 남지 않는다.** React 는
  * `useImperativeHandle` 로 `ref` 타입이 자동으로 잡히지만 Vue 는 소비자가 명시해야 한다.
  * 그 비대칭을 여기서 메운다 — 없으면 소비자가 캐스트를 발명하게 되고, 공개 API 가 캐스트를
- * 요구하면 그건 API 버그다 (PLAN 20.19).
+ * 요구하면 그건 API 버그다.
  *
  * ```vue
  * <script setup lang="ts">
@@ -85,7 +85,7 @@ export interface PDFCanvasViewerRef {
 export type SlotMap = Record<string, Component>
 
 /**
- * 아이콘 이름 → 컴포넌트 (PLAN D32).
+ * 아이콘 이름 → 컴포넌트 (문구·아이콘은 prop 으로 받는다).
  *
  * 글리프만 바꾸려면 `strings` 의 `icon.*` 을, vanilla SVG 는 `icons` 를 쓴다 — 셋 중
  * `icons` 가 가장 먼저 이긴다.
@@ -129,7 +129,7 @@ export const PDFCanvasEditor = defineComponent({
   props: {
     /**
      * 초기 문서. **최초 1회만 읽는다** — 편집기가 문서를 소유하고 `change` 로 밀어낸다.
-     * 이름이 그 계약이다 (PLAN 20.8).
+     * 이름이 그 계약이다.
      */
     initialDoc: { type: Object as PropType<PDFCanvasDoc | null>, default: null },
     ports: { type: Object as PropType<EditorProps['ports']>, default: undefined },
@@ -141,7 +141,7 @@ export const PDFCanvasEditor = defineComponent({
     },
     uploadFile: { type: Function as PropType<EditorProps['uploadFile']>, default: undefined },
     /**
-     * 문서 불러오기 UI 를 호스트가 맡는다 (PLAN D31).
+     * 문서 불러오기 UI 를 호스트가 맡는다 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
      *
      * 주면 내장 업로드 팝업을 띄우지 않는다. 파일은 `handle.importFile(file)` 로 넘긴다.
      */
@@ -159,11 +159,11 @@ export const PDFCanvasEditor = defineComponent({
       type: Function as PropType<EditorProps['onImportStateChange']>,
       default: undefined,
     },
-    /** 커스텀 객체 타입 (PLAN D25). **최초 1회만 읽는다.** */
+    /** 커스텀 객체 타입 (커스텀 객체는 소비자가 정의한다). **최초 1회만 읽는다.** */
     objectTypes: { type: Array as PropType<AnyObjectTypeDef[]>, default: undefined },
     /** 캔버스 안 커스텀 객체. */
     renderObject: { type: Object as PropType<SlotMap>, default: undefined },
-    /** 우측 인스펙터. 커스텀 객체의 **편집 창구는 여기 하나**다 (PLAN D26). */
+    /** 우측 인스펙터. 커스텀 객체의 **편집 창구는 여기 하나**다 (커스텀 객체의 편집 창구는 인스펙터 하나다). */
     renderInspector: { type: Object as PropType<SlotMap>, default: undefined },
     /** 아이콘을 컴포넌트로 교체한다 (D32). **최초 1회만 읽는다.** */
     renderIcon: { type: Object as PropType<IconMap>, default: undefined },
@@ -284,7 +284,7 @@ export const PDFCanvasEditor = defineComponent({
         /*
          * 다이얼로그 위임도 흘린다 (D31). React 래퍼는 prop 을 통째로 넘기므로 자동으로
          * 갱신되는데, Vue 는 나열식이라 여기 없으면 마운트 값에 고정된다 — 같은 계약이
-         * 프레임워크마다 다르게 동작하면 그게 버그의 형태다 (PLAN 20.21 · 20.23).
+         * 프레임워크마다 다르게 동작하면 그게 버그의 형태다.
          */
         ...(props.onRequestUpload ? { onRequestUpload: props.onRequestUpload } : {}),
         ...(props.onRequestConfirm ? { onRequestConfirm: props.onRequestConfirm } : {}),
@@ -354,7 +354,7 @@ export const PDFCanvasEditor = defineComponent({
 /* ------------------------------------------------------ PDFCanvasViewer -- */
 
 /**
- * 읽기 전용 뷰어 (PLAN D15 · R11).
+ * 읽기 전용 뷰어 (편집기는 데스크탑 전용, 뷰어만 반응형이다).
  *
  * ```vue
  * <PDFCanvasViewer
@@ -366,7 +366,7 @@ export const PDFCanvasEditor = defineComponent({
  * ```
  *
  * 편집기와 달리 **`doc` 이 controlled 다.** 뷰어는 문서를 소유하지 않으므로 응답도 저장하지
- * 않는다 — `change-data` 로 올려 보내고 호스트가 새 `doc` 을 내려 준다 (PLAN D29).
+ * 않는다 — `change-data` 로 올려 보내고 호스트가 새 `doc` 을 내려 준다 (뷰어는 응답을 갖지 않는다).
  */
 export const PDFCanvasViewer = defineComponent({
   name: 'PDFCanvasViewer',

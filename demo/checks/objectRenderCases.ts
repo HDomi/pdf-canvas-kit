@@ -1,12 +1,12 @@
 /**
- * 객체·페이지 렌더 검증 케이스 (PLAN 20.9, R4).
+ * 객체·페이지 렌더 검증 케이스.
  *
  * 확인하는 것은 하나로 요약된다 — **pt 가 px 로 그대로 나가는가.** 배율은 페이지 컨테이너의
- * `transform: scale()` 한 곳에만 적용되므로(PLAN 5.3), 객체 스타일에 배율이 섞이면 이중 적용이다.
+ * `transform: scale()` 한 곳에만 적용되므로, 객체 스타일에 배율이 섞이면 이중 적용이다.
  * 그 버그는 "확대하면 객체가 점점 멀어진다" 로 나타나고 원인을 찾기 어렵다.
  *
  * ⚠️ **덮이지 않는 것**: happy-dom 은 레이아웃이 없다. 실제 겹침·핸들 크기·IME 조합은
- * 브라우저에서 손으로 확인해야 한다 (PLAN 20.5).
+ * 브라우저에서 손으로 확인해야 한다.
  */
 import { objectView } from '../../src/dom/editor/objects/objectView'
 import { pageFrame } from '../../src/dom/page/pageFrame'
@@ -137,7 +137,7 @@ const px = (node: HTMLElement) => [
 
 export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
   {
-    title: 'render — 객체 좌표는 pt 를 px 로 그대로 (PLAN 5.3) ★',
+    title: 'render — 객체 좌표는 pt 를 px 로 그대로 ★',
     note: '배율은 페이지 컨테이너 transform 한 곳에만. 객체 스타일에 배율이 섞이면 이중 적용이고, 증상은 "확대하면 객체가 멀어진다" 다.',
     cases: [
       {
@@ -268,7 +268,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'render — 커스텀 객체 (PLAN D25) ★',
+    title: 'render — 커스텀 객체 (커스텀 객체는 소비자가 정의한다) ★',
     note: '이 패키지가 그리는 것은 기본 틀뿐이다. 콘텐츠는 objectType.render 가 그리거나(vanilla) 프레임워크 래퍼가 portal 한다. 포인터 이벤트는 기본적으로 프레임이 먹는다.',
     cases: [
       {
@@ -316,7 +316,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
       },
       {
         /*
-         * ★ 2026.08.20 결정 (PLAN D26). 이전에는 `interactive: true` 로 캔버스에서 직접
+         * ★ 2026.08.20 결정 (커스텀 객체의 편집 창구는 인스펙터 하나다). 이전에는 `interactive: true` 로 캔버스에서 직접
          * 입력받는 길을 열어 뒀는데 **원리적으로 동작하지 않았다** — 콘텐츠가 이벤트를 받아도
          * 페이지 프레임까지 버블링되고 거기서 포인터 도구가 `preventDefault()` 를 부른다.
          * `pointerdown` 의 `preventDefault()` 는 포커스 이동을 취소한다.
@@ -375,7 +375,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         /*
          * ★ 2026.08.20 버그. 데이터가 바뀔 때마다 `render` 를 다시 부르면 입력 중 노드가
          * 파괴되어 한 글자마다 포커스가 날아간다. 노드는 한 번만 만들고 `onUpdate` 로
-         * 갱신한다 (PLAN 20.14).
+         * 갱신한다.
          */
         name: '★ render 는 객체당 한 번만 불린다 (포커스 손실 방지)',
         expected: 1,
@@ -617,7 +617,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
   },
 
   {
-    title: 'render — 페이지 프레임 두 겹 구조 (PLAN 5.3) ★',
+    title: 'render — 페이지 프레임 두 겹 구조 ★',
     note: 'transform 은 레이아웃 크기에 영향을 주지 않는다. 바깥 프레임이 size*scale 을 실제 크기로 갖지 않으면 스크롤 범위가 틀어진다.',
     cases: [
       {
@@ -678,7 +678,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: '오버레이는 스케일된 엘리먼트 밖에 있다 (핸들 크기 고정 — PLAN D5)',
+        name: '오버레이는 스케일된 엘리먼트 밖에 있다 (핸들 크기 고정 — 핸들·마퀴는 scale 밖 오버레이다)',
         expected: true,
         actual: () => {
           const page = signal<PDFCanvasPage>(createPage({ size: A4_PT }))
@@ -722,7 +722,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: 'ref 로 프레임 엘리먼트를 넘긴다 (좌표 변환의 기준 — PLAN 5.4)',
+        name: 'ref 로 프레임 엘리먼트를 넘긴다 (좌표 변환의 기준)',
         expected: true,
         actual: () => {
           const page = signal<PDFCanvasPage>(createPage({ size: A4_PT }))
@@ -840,7 +840,7 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         },
       },
       {
-        name: 'rotatable 이 false 면 회전 핸들이 없다 (Answer Box — PLAN Q8)',
+        name: 'rotatable 이 false 면 회전 핸들이 없다 (Answer Box)',
         expected: 0,
         actual: () => {
           const vp: PageViewport = {

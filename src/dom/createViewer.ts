@@ -1,5 +1,5 @@
 /**
- * 뷰어 facade — 프레임워크 래퍼의 유일한 접점 (PLAN R11).
+ * 뷰어 facade — 프레임워크 래퍼의 유일한 접점.
  *
  * ```ts
  * const viewer = createPDFCanvasViewer(container, { doc: editor.toPublicDoc(), objectTypes })
@@ -16,7 +16,7 @@
  * | 타입 | `PDFCanvasDoc` | **`PublicPDFCanvasDoc`** (D14 · D28) |
  *
  * 이름이 다시 계약이다. 편집기는 문서를 바꾸므로 `initialDoc` 이고, 뷰어는 보여주기만 하므로
- * `doc` 이다 (PLAN 20.8 과 같은 규칙, 결론만 반대).
+ * `doc` 이다.
  *
  * ## 컨테이너에 높이가 필요하다
  *

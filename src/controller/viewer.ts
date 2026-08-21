@@ -1,5 +1,5 @@
 /**
- * 뷰어 컨트롤러 — 프레임워크 무관 (PLAN D15 · D29 · R11).
+ * 뷰어 컨트롤러 — 프레임워크 무관 (편집기는 데스크탑 전용, 뷰어만 반응형이다 / 뷰어는 응답을 갖지 않는다).
  *
  * ## 편집기와 공유하지 않는다
  *
@@ -18,8 +18,8 @@
  *
  * ## 응답을 갖지 않는다 (D29)
  *
- * 학생 응답은 소비자 도메인이다. 이 컨트롤러는 `objectId` 를 알려 주고 슬롯을 열어 줄 뿐,
- * 값을 저장하지도 채점하지도 않는다. 구 PLAN 4.4 의 `AttemptDraft` 는 D25 로 무효가 됐다 —
+ * 뷰어 응답은 소비자 도메인이다. 이 컨트롤러는 `objectId` 를 알려 주고 슬롯을 열어 줄 뿐,
+ * 값을 저장하지도 채점하지도 않는다. 의 `AttemptDraft` 는 D25 로 무효가 됐다 —
  * 객체 타입을 소비자가 정의하는데 응답 스키마만 패키지가 쥐고 있을 이유가 없다.
  */
 import { computed, signal, type ReadSignal, type Signal } from '../dom/reactive'
@@ -49,7 +49,7 @@ export interface ViewerProps {
    */
   maxScale?: number
   /**
-   * 커스텀 객체의 데이터가 바뀌었다 — **학생의 응답**이다 (D29).
+   * 커스텀 객체의 데이터가 바뀌었다 — **뷰어의 응답**이다 (D29).
    *
    * 뷰어는 문서를 소유하지 않으므로 이 값을 저장할 곳이 없다. 호스트가 받아서 자기 상태를
    * 고치고, 새 `doc` 을 `update()` 로 돌려주는 것이 유일한 경로다. 그래야 응답 스키마·저장
@@ -100,7 +100,7 @@ export function createViewerController(props: ViewerProps): ViewerController {
    * 콜백은 signal 이 아니라 변수다.
    *
    * 렌더 층은 `emitChangeData` 를 한 번 잡아 두고 계속 쓴다. signal 로 두면 prop 이 바뀔 때마다
-   * 슬롯을 다시 그려야 하고, 그러면 입력 중 포커스가 날아간다 (PLAN 20.14 와 같은 이유).
+   * 슬롯을 다시 그려야 하고, 그러면 입력 중 포커스가 날아간다.
    */
   let onChangeData = props.onChangeData
 

@@ -1,5 +1,5 @@
 /**
- * PDF 문서 로딩. 기획 2.4가 요구하는 실패 케이스들을 다룬다 (PLAN 10.3).
+ * PDF 문서 로딩. 기획 2.4가 요구하는 실패 케이스들을 다룬다.
  */
 import { getDocument, PasswordResponses } from 'pdfjs-dist'
 import type { PDFDocumentLoadingTask, PDFDocumentProxy } from 'pdfjs-dist'

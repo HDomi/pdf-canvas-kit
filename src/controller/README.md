@@ -1,6 +1,6 @@
 # src/controller — 프레임워크 무관 컨트롤러
 
-`src/vue/composables/**` 를 이식한 것이다 (PLAN 20.1, R3).
+`src/vue/composables/**` 를 이식한 것이다.
 
 `src/core/` 와 다른 점: **여기는 DOM 을 안다.** 스크롤 컨테이너를 잡고, `getBoundingClientRect()`
 를 읽고, `window` 리스너를 붙인다. 대신 **프레임워크는 모른다** — ESLint 가 `vue` · `react`
@@ -56,7 +56,7 @@ previewRects.value.set(id, rect)     // ✗ 조용히 실패
 동기 코드로 그대로 성립한다.
 
 ⚠️ **이건 브라우저에서 확인해야 한다.** happy-dom 은 `getBoundingClientRect()` 가 전부 0 이라
-헤드리스 검증으로 덮이지 않는다 (PLAN 20.5).
+헤드리스 검증으로 덮이지 않는다.
 
 ### 3. 레이아웃을 읽는 `watch` 는 `defer: true`
 
@@ -69,7 +69,7 @@ effect 실행 순서는 **등록 순서**다. "스타일을 쓰는 effect" 보�
 
 ## `src/vue/composables/**` 와 중복인 이유
 
-리라이트가 끝날 때까지 **Vue 층을 살려 둔다** (PLAN D23). 자동 테스트가 없으므로(D17), 새
+리라이트가 끝날 때까지 **Vue 층을 살려 둔다**. 자동 테스트가 없으므로(D17), 새
 렌더러를 만드는 동안 동작하는 기준 구현이 같은 저장소에 있어야 회귀를 눈으로 대조할 수 있다.
 
 **R9 에서 `src/vue/composables/**` 와 `src/vue/editor/**` 를 삭제한다.** 그때까지 두 곳을

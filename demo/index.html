@@ -82,6 +82,32 @@
           <p class="go">진단 화면 열기 →</p>
         </a>
 
+        <!--
+          예제 앱은 별도 서버다. demo/ 는 별칭으로 소스를 보고, examples/ 는 설치된 dist 를
+          exports 맵으로 해석한다 — 그쪽만 패키징 경로를 검증한다.
+        -->
+        <a class="card card-link" href="http://localhost:3101/">
+          <div class="card-head">
+            <strong>:3101</strong>
+            <span>React 예제</span>
+            <span class="tag ready">설치된 dist</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">
+            테마 토글 · 호스트 모달 · 아이콘 3경로 · 별칭 없이 exports 맵으로 해석
+          </p>
+          <p class="go">React 예제 열기 →</p>
+        </a>
+
+        <a class="card card-link" href="http://localhost:3102/">
+          <div class="card-head">
+            <strong>:3102</strong>
+            <span>Vue 예제</span>
+            <span class="tag ready">설치된 dist</span>
+          </div>
+          <p class="muted" style="margin: 6px 0 0">같은 것의 SFC 판</p>
+          <p class="go">Vue 예제 열기 →</p>
+        </a>
+
         <a class="card card-link" href="/viewer/">
           <div class="card-head">
             <strong>/viewer/</strong>

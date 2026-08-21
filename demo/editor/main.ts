@@ -1,29 +1,26 @@
 /**
- * 개발용 편집기 화면 (PLAN 14.1).
+ * 개발용 편집기 화면.
  *
  * 호스트 앱 역할을 대신한다. pdf.js 자산을 설정하고 데모 port 를 주입하며, 매번 업로드 팝업을
  * 클릭하지 않고 픽스처를 불러올 수 있는 dev 바를 붙인다.
  *
- * **Vue 없이 새 렌더 층을 직접 마운트한다** (PLAN D19). 이전 판은 `pdf-canvas-kit/vue` 의 SFC
+ * **Vue 없이 새 렌더 층을 직접 마운트한다** (렌더 층은 vanilla DOM 이다). 이전 판은 `pdf-canvas-kit/vue` 의 SFC
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
- * **커스텀 객체 레지스트리** (PLAN D25). 타입 정의는 `objectTypes.ts` 에 있다 — 그쪽이
+ * **커스텀 객체 레지스트리** (커스텀 객체는 소비자가 정의한다). 타입 정의는 `objectTypes.ts` 에 있다 — 그쪽이
  * "소비자가 라이브러리를 쓰는 법" 이고 이 파일은 마운트·dev 바를 다룬다.
  */
 import {
-  clearPrototypeSave,
   configurePdfResources,
   createConsoleStoragePort,
-  hasPrototypeSave,
-  loadPrototype,
   type PDFCanvasDoc,
   type SaveState,
 } from 'pdf-canvas-kit'
 import { DEMO_OBJECT_TYPES } from './objectTypes'
 import { createEditorController } from '../../src/controller/editor'
 import { editorShell } from '../../src/dom/editor/editorShell'
-import { el, when } from '../../src/dom/h'
+import { el } from '../../src/dom/h'
 import { onCleanup, scope, signal } from '../../src/dom/reactive'
 import '../../src/styles/tokens.css'
 import '../../src/styles/editor.css'
@@ -42,7 +39,7 @@ configurePdfResources({
 })
 
 /**
- * 저장 대체 구현 (PLAN 18.2).
+ * 저장 대체 구현.
  *
  * 실제 서버가 아직 없어 콘솔에 문서를 출력한다. 자동저장 파이프라인(5초 디바운스, 최대 지연 30초,
  * 실패 재시도)은 그대로 동작하므로 저장 주기와 배지 상태를 실제와 같은 조건에서 확인할 수 있다.
@@ -62,12 +59,11 @@ if (!host) throw new Error('[demo] #app not found')
 
 const status = signal('픽스처를 눌러 불러온다.')
 const saveState = signal<SaveState>('disabled')
-const hasSave = signal(hasPrototypeSave())
 
 /**
  * 편집기를 만든다.
  *
- * `doc` 은 최초 1회만 읽히므로(ARCHITECTURE §14.2) 프로토타입 저장을 불러올 때는 컨트롤러를
+ * `initialDoc` 은 최초 1회만 읽히므로(ARCHITECTURE §14.2) 다른 문서를 열 때는 컨트롤러를
  * 통째로 다시 만든다. React 에서 `key` 를 바꾸는 것과 같은 처리다.
  */
 let dispose: (() => void) | null = null
@@ -86,7 +82,6 @@ function mountEditor(doc: PDFCanvasDoc | null) {
       onSaveStateChange: (s) => (saveState.value = s),
       onChange: (next) => {
         status.value = `${next.pages.length} 페이지 · "${next.title}"`
-        hasSave.value = hasPrototypeSave()
       },
     })
 
@@ -133,42 +128,6 @@ const [nodes] = scope(() => [
       el('button', { attr: { type: 'button' }, on: { click: () => void loadFixture(file) } }, [
         label,
       ]),
-    ),
-    el(
-      'button',
-      {
-        attr: { type: 'button' },
-        on: {
-          click: () => {
-            const loaded = loadPrototype()
-            if (!loaded) {
-              status.value = '저장된 데이터가 없다.'
-              return
-            }
-            mountEditor(loaded)
-            status.value = `불러옴 · ${loaded.pages.length} 페이지 · "${loaded.title}"`
-          },
-        },
-      },
-      ['불러오기'],
-    ),
-    when(
-      () => hasSave.value,
-      () =>
-        el(
-          'button',
-          {
-            attr: { type: 'button' },
-            on: {
-              click: () => {
-                clearPrototypeSave()
-                hasSave.value = hasPrototypeSave()
-                status.value = '저장 삭제됨.'
-              },
-            },
-          },
-          ['저장 삭제'],
-        ),
     ),
     el('span', { class: 'spacer' }),
     el('span', {}, [() => `${saveState.value} · ${status.value}`]),

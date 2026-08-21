@@ -1,5 +1,5 @@
 /**
- * React 래퍼 — `pdf-canvas-kit/react` (PLAN 20.2, D25).
+ * React 래퍼 — `pdf-canvas-kit/react` (커스텀 객체는 소비자가 정의한다).
  *
  * ```tsx
  * <PDFCanvasEditor
@@ -19,12 +19,12 @@
  *
  * ## 왜 portal 인가
  *
- * 렌더 층이 커스텀 객체의 **빈 컨테이너**를 만들고 그 엘리먼트를 알려 준다 (PLAN D25).
+ * 렌더 층이 커스텀 객체의 **빈 컨테이너**를 만들고 그 엘리먼트를 알려 준다 (커스텀 객체는 소비자가 정의한다).
  * `createPortal(children, el)` 은 React 트리 밖의 DOM 노드에 렌더하는 공식 수단이다 — 컨텍스트와
  * 훅이 정상 동작하고, 노드는 한 번 만들어진 뒤 React 가 안쪽만 갱신한다.
  *
  * 그래서 **vanilla 경로의 제약이 여기서는 사라진다.** `objectType.render` 는 객체당 한 번만
- * 불려야 하고 갱신을 `onUpdate` 로 받아야 하지만(PLAN 20.14), portal 안에서는 그냥 컴포넌트를
+ * 불려야 하고 갱신을 `onUpdate` 로 받아야 하지만, portal 안에서는 그냥 컴포넌트를
  * 쓰면 된다 — 배열 추가·삭제, 조건부 렌더, 훅 전부.
  *
  * ⚠️ **`position: fixed` 는 갇힌다.** 컨테이너가 `transform: scale()` 안에 있어 드롭다운·툴팁이
@@ -70,7 +70,7 @@ export interface CustomSlotProps<Data = unknown> {
 export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 
 /**
- * 아이콘 이름 → 컴포넌트 (PLAN D32).
+ * 아이콘 이름 → 컴포넌트 (문구·아이콘은 prop 으로 받는다).
  *
  * 프레임워크 아이콘 라이브러리를 그대로 쓰는 경로다. 글리프만 바꾸려면 `strings` 의
  * `icon.*` 을, vanilla SVG 는 `icons` 를 쓴다 — 셋 중 `icons` 가 가장 먼저 이긴다.
@@ -83,7 +83,7 @@ export interface PDFCanvasEditorProps extends Omit<
 > {
   /** 캔버스 안 커스텀 객체. 기본 틀은 패키지가 그리고 이 컴포넌트가 안을 채운다. */
   renderObject?: SlotMap
-  /** 우측 인스펙터의 속성 편집. 커스텀 객체의 **편집 창구는 여기 하나**다 (PLAN D26). */
+  /** 우측 인스펙터의 속성 편집. 커스텀 객체의 **편집 창구는 여기 하나**다 (커스텀 객체의 편집 창구는 인스펙터 하나다). */
   renderInspector?: SlotMap
   /** 아이콘을 컴포넌트로 교체한다 (D32). */
   renderIcon?: IconMap
@@ -281,7 +281,7 @@ export function PDFCanvasEditor({
 
 export interface PDFCanvasViewerProps extends Omit<ViewerProps, 'onMountCustom'> {
   /**
-   * 캔버스 안 커스텀 객체 — **응답을 받는 폼**이다 (PLAN D29).
+   * 캔버스 안 커스텀 객체 — **응답을 받는 폼**이다 (뷰어는 응답을 갖지 않는다).
    *
    * 편집기의 `renderObject` 와 슬롯 맵 형태가 같지만 화면의 목적이 다르다. 편집기는 미리보기를
    * 그리고 편집은 인스펙터에서 하는데(D26), 뷰어는 그 자리에서 입력을 받는다.
@@ -293,7 +293,7 @@ export interface PDFCanvasViewerProps extends Omit<ViewerProps, 'onMountCustom'>
 }
 
 /**
- * 읽기 전용 뷰어 (PLAN D15 · R11).
+ * 읽기 전용 뷰어 (편집기는 데스크탑 전용, 뷰어만 반응형이다).
  *
  * ```tsx
  * <PDFCanvasViewer

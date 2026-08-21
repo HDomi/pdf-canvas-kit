@@ -2,7 +2,7 @@
  * 문서 팩토리.
  *
  * id는 `createId()` 를 쓴다. 이 라이브러리가 대상으로 하는 모든 브라우저에 내장돼 있고,
- * nanoid보다 의존성이 하나 적다 (PLAN 3.4).
+ * nanoid보다 의존성이 하나 적다.
  */
 import { createId } from '../util/id'
 import type { PageBackground, Size, PDFCanvasDoc, PDFCanvasPage } from './types'

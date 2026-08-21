@@ -1,5 +1,5 @@
 /**
- * 커스텀 객체 타입 레지스트리 (PLAN D25).
+ * 커스텀 객체 타입 레지스트리 (커스텀 객체는 소비자가 정의한다).
  *
  * 이 패키지는 **기본 틀**만 안다 — pt 사각형, 리사이즈, 배경·테두리, 회전. 그 안에 무엇을
  * 그릴지, 무엇이 유효한지는 소비자가 여기로 알려 준다.
@@ -51,7 +51,7 @@ export interface ObjectSize {
  * ## ★ `render` 는 객체당 **한 번만** 불린다
  *
  * 데이터가 바뀔 때마다 다시 부르면 **입력 중 노드가 파괴되어 포커스가 날아간다.** 한글 IME 는
- * 조합까지 끊긴다 — 2026.08.20 에 실제로 그 버그를 냈다(PLAN 20.14).
+ * 조합까지 끊긴다 — 2026.08.20 에 실제로 그 버그를 냈다.
  *
  * 그래서 값은 스냅샷이 아니라 **함수**로 준다. 스냅샷을 들고 있으면 즉시 낡는다.
  *
@@ -74,7 +74,7 @@ export interface ObjectRenderContext<Data = unknown> {
   objectId: string
   /** 현재 데이터. **함수다** — `render` 가 한 번만 불리므로 스냅샷은 낡는다. */
   data: () => Data
-  /** pt 단위. 배율은 부모 컨테이너가 처리하므로 곱하지 않는다 (PLAN 5.3). */
+  /** pt 단위. 배율은 부모 컨테이너가 처리하므로 곱하지 않는다. */
   rect: () => { x: Pt; y: Pt; w: Pt; h: Pt }
   selected: () => boolean
   /** 데이터를 바꾼다. 커맨드 한 번으로 커밋되어 undo 한 항목이 된다. */
@@ -98,7 +98,7 @@ export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
   /**
    * 리사이즈 최소 크기. pt. 생략하면 `EDITOR_DEFAULTS.minObjectSize` 를 쓴다.
    *
-   * 학생이 탭해야 하는 입력처럼 손가락보다 커야 하는 객체가 있다. 이전 판은 이걸
+   * 모바일에서 탭해야 하는 입력처럼 손가락보다 커야 하는 객체가 있다. 이전 판은 이걸
    * `LIMITS.minAnswerBoxSize`(80×32pt)로 코어에 박아 뒀는데, 타입별 요구라 여기가 맞다.
    */
   minSize?: ObjectSize
@@ -107,7 +107,7 @@ export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
   /**
    * 회전을 허용할지. **기본은 `true`.**
    *
-   * 이전 판은 "Answer Box 는 회전하지 않는다"(PLAN Q8)를 코어에 박아 뒀다 — 학생 폼 요소가
+   * 이전 판은 "Answer Box 는 회전하지 않는다"를 코어에 박아 뒀다 — 뷰어 폼 요소가
    * 기울면 입력과 모바일 렌더가 깨지기 때문이다. 그 판단은 콘텐츠를 아는 쪽의 것이므로
    * 여기로 옮겼다. 입력 요소를 담는 타입은 대개 `rotatable: false` 가 맞다 — 기울어진 입력은 쓰기 어렵다.
    */
@@ -120,7 +120,7 @@ export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
    */
   validate?: (data: Data) => string[] | null
   /**
-   * 학생·독자에게 내보낼 때 데이터에서 **비밀을 제거한다** (구 PLAN D14).
+   * 뷰어·독자에게 내보낼 때 데이터에서 **비밀을 제거한다** (정답은 편집 문서에만 있다).
    *
    * 이전 판은 `toPublicDoc()` 이 `answers` · `correctChoiceIds` · `rubric` 을 코어에서 지웠다.
    * 이제 이 패키지는 `data` 안에 무엇이 비밀인지 모르므로 소비자가 알려 준다.
@@ -129,7 +129,7 @@ export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
    * toPublic: ({ answers: _a, ...rest }) => rest
    * ```
    *
-   * **생략하면 데이터가 그대로 나간다.** 정답이 학생 번들에 실려 가면 안 되는 타입은 반드시
+   * **생략하면 데이터가 그대로 나간다.** 정답이 뷰어 번들에 실려 가면 안 되는 타입은 반드시
    * 구현해야 한다 — 이 패키지는 그것을 강제할 방법이 없다.
    */
   toPublic?: (data: Data) => unknown
@@ -145,11 +145,11 @@ export interface ObjectTypeDef<Data = unknown, PublicData = Data> {
    *
    * `render` 와 같은 규칙이다 — 프레임워크 래퍼는 이걸 주지 않고 컨테이너에 portal 한다.
    * **선택된 객체당 한 번만 불린다.** 이전 판의 `ShortAnswerPanel` · `DropboxPanel` 이
-   * 여기로 옮겨졌다 (PLAN D25).
+   * 여기로 옮겨졌다 (커스텀 객체는 소비자가 정의한다).
    */
   renderInspector?: (ctx: ObjectRenderContext<Data>) => Node
   /**
-   * **뷰어**의 객체 내용. vanilla DOM. `PDFCanvasViewer` 가 부른다 (PLAN D29).
+   * **뷰어**의 객체 내용. vanilla DOM. `PDFCanvasViewer` 가 부른다 (뷰어는 응답을 갖지 않는다).
    *
    * `render` 와 나누는 이유는 두 화면이 하는 일이 다르기 때문이다. 편집기의 객체는 **배치
    * 대상**이라 미리보기만 보여주고 편집은 인스펙터에서 한다(D26). 뷰어의 객체는 **응답을 받는

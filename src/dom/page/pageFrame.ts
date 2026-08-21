@@ -1,7 +1,7 @@
 /**
  * 페이지 하나. 레이아웃 박스, 스케일된 페이지, 오버레이로 구성된다.
  *
- * ## 두 겹 구조 ★ (PLAN 5.3)
+ * ## 두 겹 구조 ★
  *
  * `transform` 은 **레이아웃 크기에 영향을 주지 않는다.** 그래서 스케일된 엘리먼트 하나만 두면
  * 스크롤 컨테이너가 배율 1 기준 크기로 남아 — 축소 시 여백이, 확대 시 잘림이 생긴다.
@@ -12,7 +12,7 @@
  * 120pt 지점에 놓인다.
  *
  * 오버레이는 스케일된 엘리먼트 **밖**이다. 그래야 핸들이 어떤 배율에서도 일정한 픽셀 크기를
- * 유지한다 (PLAN D5).
+ * 유지한다 (핸들·마퀴는 scale 밖 오버레이다).
  *
  * ## 편집기·뷰어 공용이다
  *
@@ -30,14 +30,14 @@ import { pageBackground } from './pageBackground'
 export interface PageFrameProps {
   page: ReadSignal<PDFCanvasPage>
   scale: ReadSignal<number>
-  /** 스케일 안쪽 — 객체들. rect 값을 px 로 그대로 읽는다 (PLAN 5.3). */
+  /** 스케일 안쪽 — 객체들. rect 값을 px 로 그대로 읽는다. */
   objects: Child
   /** 스케일 밖 — 선택 테두리·핸들·마퀴. 뷰어에는 없다. */
   overlay?: Child
   /**
    * 프레임 엘리먼트를 컨트롤러에 넘긴다.
    *
-   * 좌표 변환이 이 요소의 `getBoundingClientRect()` 를 기준으로 하기 때문이다 (PLAN 5.4).
+   * 좌표 변환이 이 요소의 `getBoundingClientRect()` 를 기준으로 하기 때문이다.
    */
   ref?: (el: HTMLElement | null) => void
   /**

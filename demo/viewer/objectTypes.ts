@@ -1,5 +1,5 @@
 /**
- * 뷰어 데모용 객체 타입 (PLAN D25 · D29).
+ * 뷰어 데모용 객체 타입 (커스텀 객체는 소비자가 정의한다 / 뷰어는 응답을 갖지 않는다).
  *
  * 편집기 데모(`demo/editor/objectTypes.ts`)와 **같은 `kind`** 를 쓴다 — 그게 Editor↔Viewer
  * 계약이다. 다른 것은 슬롯 셋이다.
@@ -7,8 +7,8 @@
  * | 슬롯 | 화면 | 하는 일 |
  * | --- | --- | --- |
  * | `render` | 편집기 캔버스 | 미리보기 배지 ("2점 · 정답 미입력") |
- * | `renderInspector` | 편집기 인스펙터 | 교사가 정답·배점을 넣는다 |
- * | `renderViewer` | **뷰어** | 학생이 답을 쓴다 |
+ * | `renderInspector` | 편집기 인스펙터 | 정답·배점을 입력한다 |
+ * | `renderViewer` | **뷰어** | 응답을 입력한다 |
  *
  * `toPublic` 이 정답을 지우므로 뷰어의 `data()` 에는 `answers` 가 **없다**. 이 파일의
  * `renderViewer` 가 그 사실을 화면에 드러낸다 — 정답을 읽으려 해도 `undefined` 다.
@@ -20,7 +20,7 @@ import { defineObjectType } from 'pdf-canvas-kit'
 interface AnswerData {
   answers: string[]
   points: number
-  /** 학생 응답. 편집 시점에는 없다. */
+  /** 뷰어 응답. 편집 시점에는 없다. */
   response?: string
 }
 
@@ -42,7 +42,7 @@ export const shortAnswer = defineObjectType<AnswerData, PublicAnswerData>({
   defaultData: () => ({ answers: [], points: 1 }),
   rotatable: false,
   validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
-  // 정답은 학생 번들에 실려 가면 안 된다 (PLAN D14).
+  // 정답은 뷰어 번들에 실려 가면 안 된다 (정답은 편집 문서에만 있다).
   toPublic: ({ answers: _answers, ...rest }) => rest,
 
   render: ({ data, onUpdate }) => {
@@ -74,7 +74,7 @@ export const shortAnswer = defineObjectType<AnswerData, PublicAnswerData>({
   },
 
   /**
-   * 뷰어 — 학생이 답을 쓴다.
+   * 뷰어 — 응답을 입력한다.
    *
    * 여기서는 콘텐츠가 포인터 이벤트를 받으므로(D29) 실제 `<input>` 이 동작한다. 편집기
    * 캔버스에서는 같은 코드가 동작하지 않았고, 그게 D26 의 이유였다.

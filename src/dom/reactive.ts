@@ -1,8 +1,8 @@
 /**
- * 미세 반응성 프리미티브 (PLAN D20).
+ * 미세 반응성 프리미티브 (미세 반응성으로 DOM 을 직접 바인딩한다. VDOM 이 없다).
  *
  * API 모양을 Vue 의 `ref` · `computed` · `watch` 와 일부러 같게 맞췄다. 구 `src/vue/` 의
- * 컨트롤러 로직 ~2,000줄이 이 파일 하나로 기계적으로 이식되기 때문이다 (PLAN 20.1).
+ * 컨트롤러 로직 ~2,000줄이 이 파일 하나로 기계적으로 이식되기 때문이다.
  *
  * ---
  *
@@ -27,7 +27,7 @@
  *
  * **2. effect 가 동기다.** Vue 는 마이크로태스크 큐에 모아 실행하고, 그래서 레이아웃을 읽어야 하는
  * 코드가 `flush: 'post'` 를 필요로 했다. 여기서는 대입이 끝나는 순간 DOM 이 이미 갱신돼 있으므로
- * 다음 줄에서 바로 `getBoundingClientRect()` 를 읽어도 된다 (좌표계가 여기에 의존한다 — PLAN 5.4).
+ * 다음 줄에서 바로 `getBoundingClientRect()` 를 읽어도 된다 (좌표계가 여기에 의존한다).
  *
  * 한 제스처가 여러 signal 을 건드릴 때는 `batch()` 로 묶어 중간 상태 렌더를 건너뛴다.
  */
@@ -142,7 +142,7 @@ export interface WritableSignal<T> extends Signal<T> {
  * 파생 값. **지연 계산 + 캐시**다.
  *
  * 아무도 읽지 않으면 계산하지 않고, 의존성이 바뀌면 더럽다고 표시만 해 둔다. 문서 전체를 훑는
- * 파생값(문항 번호·검증 결과)이 문서 변경마다 즉시 재계산되지 않게 하려는 것이다 (PLAN 13).
+ * 파생값(문항 번호·검증 결과)이 문서 변경마다 즉시 재계산되지 않게 하려는 것이다.
  */
 export function computed<T>(get: () => T): ReadSignal<T>
 export function computed<T>(get: () => T, set: (v: T) => void): WritableSignal<T>

@@ -92,6 +92,8 @@ function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
     case 'shape':
       return shapeObjectView({
         object: props.object as ReadSignal<Extract<PDFCanvasObject, { type: 'shape' }>>,
+        // SVG 는 크기를 스스로 쓴다. 미리보기를 넘기지 않으면 드래그 중 제자리에 남는다.
+        previewRect: props.previewRect,
       })
 
     case 'mask':
@@ -105,6 +107,8 @@ function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
         selected: props.selected,
         types: props.types,
         onChange: (next) => props.onChangeData?.(next),
+        // 슬롯의 ctx.rect() 가 드래그 중에도 맞아야 한다.
+        previewRect: props.previewRect,
         ...(props.onMountCustom ? { onMount: props.onMountCustom } : {}),
       })
   }

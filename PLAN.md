@@ -3037,3 +3037,29 @@ export interface PDFCanvasViewerRef { handle: ViewerHandle | null }
 
 `handle` 이 `EditorHandle` 을 그대로 가리키므로 facade 에 메서드가 추가돼도 따라온다.
 소비자 앱에서 캐스트를 지우고 `vue-tsc` exit 0 을 확인했다.
+
+#### 2026.08.21 — 도형 리사이즈 미리보기가 핸들을 따라오지 않았다
+
+핸들은 실시간으로 움직이는데 도형만 제자리에 남고, `pointerup` 에서야 크기가 반영됐다.
+
+`shapeObjectView` 가 **`previewRect` 를 받지 않았다.** SVG 의 `viewBox` · `width` · `height` 를
+직접 계산하는 유일한 뷰인데 그 값을 `object.rect` 에서 읽었고, 드래그 중 문서는 아직 옛
+값이다(D3 — 커밋은 `pointerup` 한 번). 다른 유형은 컨테이너를 `100%` 로 채우므로 부모
+(`objectView`)가 크기를 바꾸면 알아서 따라온다 — 그래서 도형만 티가 났다.
+
+같은 종류를 하나 더 찾았다. `customObjectView` 가 `mountRenderSlot` 의 `read()` 에
+`props.object.value.rect` 를 넘기고 있었다. 소비자 슬롯이 `ctx.rect()` 로 크기에 반응하면
+드래그 중 옛 값을 읽는다. 둘 다 `previewRect` 를 받게 했다.
+
+| 뷰 | 크기를 어디서 | 영향 |
+| --- | --- | --- |
+| `shapeObjectView` | **SVG 속성으로 직접** | 미리보기가 안 따라온다 |
+| `customObjectView` | `ctx.rect()` 로 슬롯에 전달 | 소비자 렌더가 옛 값을 읽는다 |
+| `textObjectView` · `maskView` | CSS `100%` | 부모가 바뀌면 따라온다 — 무해 |
+
+> **규칙:** 객체 뷰가 크기를 **스스로 쓰면** `previewRect` 를 받아야 한다. CSS 로 부모를
+> 채우는 뷰만 안 받아도 된다. 케이스 2건으로 고정했다 (`objectRenderCases`).
+
+`npm run checks` 는 통과하는데 `npm run typecheck` 가 잡은 실수가 하나 있었다 — 케이스에서
+`shapeObj()` 를 인자 없이 불렀다. vite 변환은 타입을 보지 않으므로 **두 게이트가 서로를
+대신하지 못한다.**

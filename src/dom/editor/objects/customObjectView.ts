@@ -36,7 +36,7 @@ import { el } from '../../h'
 import { onCleanup, type ReadSignal } from '../../reactive'
 import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { ObjectTypeRegistry } from '../../../core/objectTypes'
-import type { CustomObject } from '../../../core/model/types'
+import type { CustomObject, Rect } from '../../../core/model/types'
 import { mountRenderSlot } from './renderSlot'
 
 export interface CustomObjectViewProps {
@@ -51,6 +51,13 @@ export interface CustomObjectViewProps {
    * 언마운트 시 `null` 로 한 번 더 불린다 — 래퍼가 portal 을 걷어야 한다.
    */
   onMount?: (objectId: string, el: HTMLElement | null) => void
+  /**
+   * 드래그·리사이즈 중 미리보기 rect.
+   *
+   * 슬롯의 `ctx.rect()` 가 이 값을 본다. 넘기지 않으면 소비자가 크기에 반응하는 렌더를 했을 때
+   * 드래그 중 옛 값을 읽는다 — `shapeObjectView` 와 같은 종류의 버그다 (2026.08.21).
+   */
+  previewRect?: () => Rect | null
 }
 
 export function customObjectView(props: CustomObjectViewProps): HTMLElement {
@@ -93,7 +100,8 @@ export function customObjectView(props: CustomObjectViewProps): HTMLElement {
       onChange: props.onChange,
       read: () => ({
         data: props.object.value.data,
-        rect: props.object.value.rect,
+        // 드래그 중에는 문서가 아직 옛 값이다.
+        rect: props.previewRect?.() ?? props.object.value.rect,
         selected: props.selected(),
       }),
     })

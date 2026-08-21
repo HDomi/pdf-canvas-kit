@@ -151,6 +151,39 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
         actual: () => render(textObj(), px, { previewRect: { x: 10, y: 20, w: 30, h: 40 } }),
       },
       {
+        /*
+         * ★ SVG 는 크기를 스스로 쓴다.
+         *
+         * 다른 유형은 컨테이너를 100% 로 채우므로 부모가 크기를 바꾸면 따라오지만, 도형은
+         * viewBox·width·height 를 직접 계산한다. previewRect 를 넘기지 않으면 드래그 중
+         * **핸들만 움직이고 도형은 제자리에 남는다** — 2026.08.21 에 실제로 그랬다.
+         */
+        name: '★ 도형 SVG 도 previewRect 를 따른다 (핸들만 움직이던 버그)',
+        expected: ['30', '40', '0 0 30 40'],
+        actual: () =>
+          render(
+            shapeObj('rect'),
+            (n) => {
+              const el = n.querySelector('.pck-obj-shape')!
+              return [
+                el.getAttribute('width'),
+                el.getAttribute('height'),
+                el.getAttribute('viewBox'),
+              ]
+            },
+            { previewRect: { x: 10, y: 20, w: 30, h: 40 } },
+          ),
+      },
+      {
+        name: 'previewRect 가 없으면 도형은 문서 값을 쓴다',
+        expected: ['100', '60'],
+        actual: () =>
+          render(shapeObj('rect'), (n) => {
+            const el = n.querySelector('.pck-obj-shape')!
+            return [el.getAttribute('width'), el.getAttribute('height')]
+          }),
+      },
+      {
         name: '회전 0 이면 transform 을 남기지 않는다',
         expected: '',
         actual: () => render(textObj(), (n) => n.style.getPropertyValue('transform')),

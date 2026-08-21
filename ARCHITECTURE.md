@@ -640,6 +640,20 @@ import {
 
 ---
 
+## 10.0 ⚠️ 크기를 스스로 쓰는 뷰는 `previewRect` 를 받아야 한다
+
+드래그·리사이즈 중에는 문서를 바꾸지 않는다 — 커밋은 `pointerup` 한 번이다(D3). 그래서 그
+사이의 크기는 `previewRect` 에만 있다.
+
+| 뷰 | 크기를 어디서 읽나 | `previewRect` |
+| --- | --- | --- |
+| `shapeObjectView` | SVG `viewBox`·`width`·`height` **직접** | **필수** |
+| `customObjectView` | 슬롯의 `ctx.rect()` 로 전달 | **필수** |
+| `textObjectView` · `maskView` | CSS `100%` — 부모를 채운다 | 불필요 |
+
+빠뜨리면 **핸들만 움직이고 객체는 제자리에 남는다.** 2026.08.21 에 도형에서 실제로 그랬다
+(PLAN 20.20). 새 객체 뷰를 추가할 때 이 표에 한 줄을 더한다고 생각하면 된다.
+
 ## 10.1 드래그 반응성 — rAF를 쓰지 않는다
 
 `pointermove` 를 `requestAnimationFrame` 으로 묶지 않는다.

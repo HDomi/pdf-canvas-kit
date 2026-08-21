@@ -7,16 +7,36 @@
  * ⚠️ **자식도 `svg()` 로 만들어야 한다.** `el()` 로 만들면 HTML 네임스페이스가 되어 에러 없이
  * 안 보인다 (ARCHITECTURE §13.4).
  *
+ * ## ⚠️ 크기를 `previewRect` 에서 읽는다
+ *
+ * SVG 의 `viewBox` · `width` · `height` 를 직접 계산하는 유일한 뷰다. 다른 유형은 컨테이너를
+ * `100%` 로 채우므로 부모(`objectView`)가 크기를 바꾸면 알아서 따라오지만, 여기는 그 값을
+ * 스스로 쓴다. **그래서 미리보기 rect 를 따로 받아야 한다** — 문서를 아직 바꾸지 않은 드래그
+ * 중에는 `object.rect` 가 옛 값이고, 그러면 핸들은 움직이는데 도형만 제자리에 남는다
+ * (2026.08.21 에 실제로 그 버그가 있었다).
+ *
  * 구 `src/vue/editor/objects/ShapeObjectView.vue` 의 이식.
  */
 import { svg, when } from '../../h'
 import type { ReadSignal } from '../../reactive'
-import type { ShapeObject } from '../../../core/model/types'
+import type { Rect, ShapeObject } from '../../../core/model/types'
 
-export function shapeObjectView(props: { object: ReadSignal<ShapeObject> }): SVGElement {
+export interface ShapeObjectViewProps {
+  object: ReadSignal<ShapeObject>
+  /**
+   * 드래그·리사이즈 중 미리보기 rect. 없으면 문서 값을 쓴다.
+   *
+   * 뷰어에는 드래그가 없으므로 optional 이다.
+   */
+  previewRect?: () => Rect | null
+}
+
+export function shapeObjectView(props: ShapeObjectViewProps): SVGElement {
   const o = () => props.object.value
-  const w = () => o().rect.w
-  const h = () => o().rect.h
+  /** 미리보기가 있으면 그것을 쓴다. 드래그 중 문서는 아직 옛 값이다. */
+  const rect = () => props.previewRect?.() ?? o().rect
+  const w = () => rect().w
+  const h = () => rect().h
   const st = () => o().style
   const dash = () => st().dash?.join(' ') ?? null
 

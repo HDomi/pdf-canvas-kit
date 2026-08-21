@@ -154,6 +154,8 @@ try {
       CONTROLLER_GROUPS: 'controller',
       OBJECT_RENDER_GROUPS: 'render',
       SHELL_GROUPS: 'shell',
+      VIEWER_GROUPS: 'viewer',
+      WRAPPER_GROUPS: 'wrapper',
     }
     for (const [k, label] of Object.entries(src)) {
       const g = mod[k]

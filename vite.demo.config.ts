@@ -6,6 +6,13 @@ const r = (p: string) => resolve(import.meta.dirname, p)
 
 /** 데모 dev 서버 (PLAN 14.1). */
 export default defineConfig({
+  /*
+   * 여러 HTML 진입점을 가진 다중 페이지 앱이다.
+   *
+   * 명시하지 않으면 vite 가 SPA 로 보고 **없는 경로에 루트 index.html 을 준다** — 지워진
+   * 페이지가 200 으로 응답해 "아직 있다" 고 오해하게 된다. 실제로 그 혼란을 겪었다.
+   */
+  appType: 'mpa',
   root: r('demo'),
   plugins: [react()],
   resolve: {

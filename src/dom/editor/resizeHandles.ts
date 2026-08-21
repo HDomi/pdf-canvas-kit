@@ -5,6 +5,12 @@
  * 없다. 그래서 좌표는 `rectToFrame` 으로 화면 px 로 변환하고, 핸들 자체 크기는 배율과 무관하게
  * 고정한다.
  *
+ * ## 도형 밖으로 밀어낸다 (2026.08.21)
+ *
+ * 핸들 앵커는 객체 경계가 아니라 `EDITOR_DEFAULTS.handles.outsetPx` 만큼 넓힌 사각형이다.
+ * 리사이즈 계산은 포인터 델타로 하므로 핸들이 어디 그려져도 결과가 같다 — 옮기는 것은
+ * **보이는 위치와 히트 영역**뿐이다.
+ *
  * ## 회전 반영
  *
  * 객체가 회전하면 핸들도 함께 돌아야 한다. 핸들 좌표를 하나씩 회전 계산하는 대신 **감싸는
@@ -38,11 +44,29 @@ export interface ResizeHandlesProps {
 
 const size = EDITOR_DEFAULTS.handles.sizePx
 const hit = EDITOR_DEFAULTS.handles.hitPx
-/** 히트 영역을 시각 크기보다 키운다. 잡기 편해야 한다. */
-const pad = (hit - size) / 2
+const outset = EDITOR_DEFAULTS.handles.outsetPx
+/**
+ * 히트 영역을 시각 크기보다 키운다. 잡기 편해야 한다.
+ *
+ * **투명 테두리**로 준다 — `padding` 으로 주면 보이는 테두리(`box-shadow: inset`)가 흰
+ * 사각형 경계가 아니라 히트 박스 경계에 그려진다 (`editor.css` 의 `.pck-handle` 주석).
+ */
+const border = (hit - size) / 2
 
 export function resizeHandles(props: ResizeHandlesProps): HTMLElement {
-  const frameRect = () => rectToFrame(props.rect(), props.viewport())
+  /**
+   * 핸들을 놓을 사각형. 객체 프레임을 `outsetPx` 만큼 **밖으로 넓힌** 것이다.
+   *
+   * 객체 경계에 붙이면 핸들이 도형 위에 얹혀 얇은 객체(선·화살표)의 본체를 덮는다 —
+   * 잡아 옮길 자리가 없어진다. 넓히면 가운데가 비고, 실제 도형 경계는 `.pck-select-box` 가
+   * 계속 보여 준다.
+   *
+   * 좌우·상하로 같은 값을 더하므로 **중심은 변하지 않는다** — 회전 원점이 그대로다.
+   */
+  const frameRect = () => {
+    const r = rectToFrame(props.rect(), props.viewport())
+    return { x: r.x - outset, y: r.y - outset, w: r.w + outset * 2, h: r.h + outset * 2 }
+  }
 
   /** 핸들 자신은 역회전시켜 화면 기준 정사각형을 유지한다. */
   const counterRotate = () => (props.rotation() ? ` rotate(${-props.rotation()}deg)` : '')
@@ -79,7 +103,7 @@ export function resizeHandles(props: ResizeHandlesProps): HTMLElement {
               top: r.y + r.h * a.fy,
               width: size,
               height: size,
-              padding: pad,
+              'border-width': border,
               // translate 로 앵커를 핸들 중앙에 맞춘 뒤 역회전을 얹는다.
               transform: `translate(-50%, -50%)${counterRotate()}`,
               cursor: HANDLE_CURSORS[id],
@@ -108,7 +132,7 @@ export function resizeHandles(props: ResizeHandlesProps): HTMLElement {
               top: r.y - ROTATE_HANDLE_OFFSET_PX,
               width: size,
               height: size,
-              padding: pad,
+              'border-width': border,
               transform: `translate(-50%, -50%)${counterRotate()}`,
             }
           },

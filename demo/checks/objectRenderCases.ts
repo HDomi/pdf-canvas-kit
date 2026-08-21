@@ -18,6 +18,7 @@ import {
   createPage,
   defineObjectType,
   A4_PT,
+  EDITOR_DEFAULTS,
 } from '@h_domi/pdf-canvas-kit'
 import type { AnyObjectTypeDef } from '@h_domi/pdf-canvas-kit'
 import type {
@@ -951,6 +952,117 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
               n.querySelectorAll('.pck-handle:not(.pck-handle--rotate)').length,
               n.querySelectorAll('.pck-handle--rotate').length,
             ]
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        /*
+         * 핸들이 도형 위에 얹히면 얇은 객체(선·화살표)의 본체를 덮어 잡아 옮길 수 없다.
+         * 그래서 앵커 사각형을 `outsetPx` 만큼 밖으로 넓힌다 (§21.1.1 · resizeHandles.ts).
+         */
+        name: '★ 핸들은 객체 경계에서 outsetPx 만큼 밖에 놓인다',
+        expected: { nw: ['-10px', '-10px'], se: ['170px', '50px'] },
+        actual: () => {
+          const vp: PageViewport = {
+            pageId: 'p',
+            size: A4_PT,
+            scale: 1,
+            frameRect: { left: 0, top: 0 },
+          }
+          // 프레임 로컬 좌표로 0,0 에서 시작하는 160×40 객체.
+          const rect: Rect = { x: 0, y: 0, w: 160, h: 40 }
+          const [res, dispose] = scope(() => {
+            const n = selectionOverlay({
+              viewport: signal<PageViewport | null>(vp),
+              selectedRects: signal([]),
+              preview: signal(null),
+              handleRect: signal(rect),
+              rotatable: signal(false),
+              handleRotation: signal(0),
+              onGrabHandle: () => {},
+              onGrabRotate: () => {},
+            })
+            const at = (id: string) => {
+              const h = n.querySelector<HTMLElement>(`[data-handle="${id}"]`)!
+              return [h.style.getPropertyValue('left'), h.style.getPropertyValue('top')]
+            }
+            return { nw: at('nw'), se: at('se') }
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        /*
+         * 히트 영역을 **투명 테두리**로 넓힌다. `padding` 으로 넓히면 보이는 테두리
+         * (`box-shadow: inset`, padding-box 기준)가 흰 사각형이 아니라 히트 박스 경계에
+         * 그려져 "작은 네모 + 멀리 떨어진 큰 네모" 가 된다.
+         */
+        name: '★ 히트 확장은 padding 이 아니라 border-width 다',
+        expected: { width: '8px', borderWidth: '5px', padding: '' },
+        actual: () => {
+          const vp: PageViewport = {
+            pageId: 'p',
+            size: A4_PT,
+            scale: 1,
+            frameRect: { left: 0, top: 0 },
+          }
+          const [res, dispose] = scope(() => {
+            const n = selectionOverlay({
+              viewport: signal<PageViewport | null>(vp),
+              selectedRects: signal([]),
+              preview: signal(null),
+              handleRect: signal(RECT),
+              rotatable: signal(false),
+              handleRotation: signal(0),
+              onGrabHandle: () => {},
+              onGrabRotate: () => {},
+            })
+            const h = n.querySelector<HTMLElement>('.pck-handle')!
+            return {
+              width: h.style.getPropertyValue('width'),
+              borderWidth: h.style.getPropertyValue('border-width'),
+              padding: h.style.getPropertyValue('padding'),
+            }
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        /*
+         * 어기면 핸들의 히트 영역이 객체 본체까지 넘어와, 얇은 객체에서 본체를 잡을 수
+         * 없다는 원래 문제로 되돌아간다. 값을 조정할 때 함께 보게 케이스로 박아 둔다.
+         */
+        name: '★ 불변식: hitPx / 2 <= outsetPx (핸들 히트가 본체를 침범하지 않는다)',
+        expected: true,
+        actual: () => EDITOR_DEFAULTS.handles.hitPx / 2 <= EDITOR_DEFAULTS.handles.outsetPx,
+      },
+      {
+        name: '회전 원점은 객체 중심 — outset 이 좌우·상하 대칭이라 변하지 않는다',
+        expected: '80px 20px',
+        actual: () => {
+          const vp: PageViewport = {
+            pageId: 'p',
+            size: A4_PT,
+            scale: 1,
+            frameRect: { left: 0, top: 0 },
+          }
+          const [res, dispose] = scope(() => {
+            const n = selectionOverlay({
+              viewport: signal<PageViewport | null>(vp),
+              selectedRects: signal([]),
+              preview: signal(null),
+              handleRect: signal({ x: 0, y: 0, w: 160, h: 40 }),
+              rotatable: signal(false),
+              handleRotation: signal(30),
+              onGrabHandle: () => {},
+              onGrabRotate: () => {},
+            })
+            const g = n.querySelector<HTMLElement>('.pck-handle-group')!
+            return g.style.getPropertyValue('transform-origin')
           })
           dispose()
           return res

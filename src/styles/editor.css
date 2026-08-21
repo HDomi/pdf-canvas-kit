@@ -854,18 +854,45 @@
     border-style: solid;
   }
 
-  /* 핸들만 포인터를 받는다. 오버레이 자체는 클릭을 통과시켜야 한다. */
+  /**
+ * 리사이즈·회전 핸들. 핸들만 포인터를 받는다 — 오버레이 자체는 클릭을 통과시켜야 한다.
+ *
+ * ## 히트 영역을 **투명 테두리**로 넓힌다 ★ (2026.08.21)
+ *
+ * 보이는 크기와 집는 크기가 달라야 한다. 작아야 도형을 가리지 않고, 커야 잡힌다.
+ *
+ * 예전에는 `padding` 으로 넓히고 `border` 로 테두리를 그렸다. 박스 모델상 `border` 는
+ * `padding` **밖**이므로, 화면에는 작은 사각형 하나와 그것을 멀리서 감싸는 큰 테두리 사각형
+ * 둘이 보였다 — "검은 네모 밖에 파란 네모" 가 그 모양이다.
+ *
+ * 지금은 반대로 쓴다.
+ *
+ * | 역할 | 수단 | 기준 박스 |
+ * | --- | --- | --- |
+ * | 히트 영역 | `border-color: transparent` + 인라인 `border-width` | border-box |
+ * | 흰 배경 | `background-clip: content-box` | content-box |
+ * | 파란 테두리 | **`box-shadow: inset`** | padding-box (= `padding: 0` 이므로 content-box) |
+ *
+ * `inset` 그림자가 padding-box 기준이라는 점이 핵심이다. 그래서 테두리가 투명 테두리 밖이
+ * 아니라 **흰 사각형의 경계**에 그려진다.
+ *
+ * 의사요소로 그리는 방법도 있지만 `::before` 에는 인라인 스타일을 줄 수 없어 크기를 CSS 변수로
+ * 흘려야 하고, 그러면 호스트가 핸들 크기를 바꿀 수 있게 된다 — 그건 의도가 아니다(§3.2).
+ */
   .pck-handle {
     position: absolute;
     pointer-events: auto;
     padding: 0;
-    border: 1px solid var(--pck-handle-stroke);
+    /* 두께는 인라인으로 온다. 색만 여기서 정한다 — 투명해야 히트만 넓어진다. */
+    border-style: solid;
+    border-color: transparent;
     background: var(--pck-handle-bg);
+    background-clip: content-box;
+    box-shadow: inset 0 0 0 1px var(--pck-handle-stroke);
     border-radius: 1px;
     box-sizing: content-box;
     /* 앵커 지점을 핸들 중앙에 맞춘다. */
     transform: translate(-50%, -50%);
-    background-clip: content-box;
   }
 
   .pck-tool-error {
@@ -1219,10 +1246,16 @@
 
   /* ---- 회전 핸들 -------------------------------------------------------- */
 
+  /*
+   * 회전 핸들은 동그라미다.
+   *
+   * ⚠️ `border-color` 를 주지 않는다. 테두리는 히트 확장용 투명이므로(위 `.pck-handle`)
+   * 색을 주면 핸들에서 멀리 떨어진 큰 원이 하나 더 그려진다 — 2026.08.21 까지 그랬다.
+   * 보이는 테두리는 `box-shadow: inset` 이 담당한다.
+   */
   .pck-handle--rotate {
     border-radius: 50%;
     cursor: grab;
-    border-color: var(--pck-select-stroke);
   }
 
   .pck-handle--rotate:active {
@@ -1523,9 +1556,21 @@
     width: 100%;
     height: 100%;
     box-sizing: border-box;
-    background: var(--pck-obj-fill);
-    border: 1px solid var(--pck-obj-stroke);
-    color: var(--pck-obj-text);
+    /*
+     * 편집기의 `.pck-obj-custom` 과 **같은 토큰**을 쓴다 (2026.08.21).
+     *
+     * 원래는 `--pck-obj-fill` · `--pck-obj-stroke` · `--pck-obj-text` 였는데 그 셋은
+     * 어디에도 선언되지 않았다 — 뷰어를 이식할 때 이름이 갈렸다. 미정의 토큰을 참조하면
+     * 선언 전체가 무효가 되므로 뷰어의 커스텀 객체 틀에 배경도 테두리도 없었다. 예제
+     * 테마가 `.pck-viewer-custom` 을 덮어써서 증상이 가려져 있었다.
+     *
+     * 이름을 새로 만들지 않고 편집기 것을 쓴다. "편집기에서 본 것과 뷰어에서 본 것이 같다"
+     * 가 계약이므로 색이 갈릴 이유가 없다. `npm run verify:tarball` 이 미정의 토큰 참조를
+     * 검사한다.
+     */
+    background: var(--pck-custom-bg);
+    border: 1px solid var(--pck-custom-border);
+    color: var(--pck-custom-ink);
     overflow: hidden;
     /*
    * 크기 컨테인먼트. 안쪽 콘텐츠가 틀을 넘지 못하고, 컨테이너 쿼리로 pt 박스 크기에 반응할

@@ -11,7 +11,7 @@
 
 ---
 
-## 1. 토큰 (74개)
+## 1. 토큰 (78개)
 
 감싸는 요소나 `:root` 어디서든 덮어쓴다.
 
@@ -241,3 +241,31 @@ SVG·컴포넌트로 교체하는 다른 경로는 [아이콘](11-icons.md).
 > 패키지의 버튼·입력은 전부 `color` 를 우리 토큰으로 명시한다. UA 스타일시트가 `<button>` 에
 > 주는 `color: ButtonText` 는 상속이 아니라 **시스템 색**이라, 그것에 의존하면 다크 모드에서
 > 흰 버튼에 흰 글자가 된다. `npm run verify:tarball` 이 이 규칙을 검사한다.
+
+---
+
+## 종이 위 레이어 — 다크 모드를 따라가지 않는다
+
+토큰 대부분은 `light-dark()` 로 OS 모드를 따라간다. **종이 위에 그려지는 것은 예외다.**
+배경이 항상 밝기 때문이다 — PDF 를 래스터화한 흰 종이 이미지다.
+
+| 토큰 | 무엇 |
+| --- | --- |
+| `--pck-page-bg` | 종이 자체 |
+| `--pck-paper-ink` · `--pck-paper-line` · `--pck-paper-danger` · `--pck-paper-accent` | 종이 위에서 쓰는 기준 색 |
+| `--pck-select-stroke` · `--pck-select-fill` · `--pck-handle-bg` · `--pck-handle-stroke` | 선택 오버레이 |
+| `--pck-custom-*` · `--pck-invalid-stroke` · `--pck-thumb-obj-*` | 객체 틀 |
+
+이 값들을 다크 모드에 맞추면 흰 종이 위의 검은 핸들, 흰 반투명 박스 위의 흰 글자가 된다.
+색을 바꾸고 싶으면 `--pck-paper-*` 넷을 바꾸면 아래가 따라온다.
+
+```css
+.pck-editor {
+  --pck-paper-ink: #23324a;
+  --pck-paper-line: #a8b4c8;
+}
+```
+
+> 핸들 **크기**는 토큰이 아니다. 인라인 스타일로 주므로 CSS 로 바꿀 수 없다 — 취향이 아니라
+> "집을 수 있는지" 의 문제이고, 너무 크면 얇은 객체에서 핸들 8개가 겹친다
+> (ARCHITECTURE §3.2).

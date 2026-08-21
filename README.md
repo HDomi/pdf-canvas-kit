@@ -91,7 +91,7 @@ html, body, #app { height: 100%; margin: 0; }
 | [뷰어](docs/06-viewer.md) | 읽기 전용 렌더 + 응답 받기 |
 | [도형](docs/17-shapes.md) · [글꼴](docs/16-fonts.md) | 도형 11종 / **웹폰트는 호스트가 불러온다** |
 | [저장 · 업로드](docs/07-storage.md) · [내보내기](docs/08-export.md) | 포트 주입, 검증 게이트 |
-| [스타일 오버라이드](docs/09-styling.md) | 토큰 74개 + **`@layer`** — 특이도 싸움이 없다 |
+| [스타일 오버라이드](docs/09-styling.md) | 토큰 78개 + **`@layer`** — 특이도 싸움이 없다 |
 | [문구 · 번역](docs/10-strings.md) · [아이콘](docs/11-icons.md) | 모든 텍스트·아이콘을 교체 |
 | [다이얼로그 위임](docs/12-dialogs.md) | 우리 팝업 대신 **내 모달** |
 | [호스트 앱에 녹이기](docs/15-integration.md) | 단축키 충돌 · 예외 · 이탈 확인 · **다크 모드** |

@@ -155,6 +155,21 @@ try {
   check('레이어 밖에 규칙이 없다 (토큰 선언만 허용)', outside.length === 0, `${outside.length}개`)
 
   /*
+   * 참조하는 토큰이 전부 선언돼 있어야 한다.
+   *
+   * 미정의 커스텀 프로퍼티를 참조하면(폴백 없이) 그 **선언 전체가 무효**가 된다. 에러도 경고도
+   * 없고 그 속성만 조용히 사라진다. 뷰어의 커스텀 객체 틀이 `--pck-obj-fill` 등 선언되지 않은
+   * 이름을 써서 배경도 테두리도 없이 그려지고 있었다 — 예제 테마가 그 클래스를 덮어써서
+   * 2026.08.21 까지 아무도 못 봤다.
+   *
+   * 폴백이 있는 참조(`var(--x, red)`)는 의도된 것이므로 세지 않는다.
+   */
+  const declared = new Set([...css.matchAll(/(--pck-[\w-]+)\s*:/g)].map((m) => m[1]))
+  const referenced = new Set([...css.matchAll(/var\(\s*(--pck-[\w-]+)\s*\)/g)].map((m) => m[1]))
+  const undeclared = [...referenced].filter((t) => !declared.has(t))
+  check('참조하는 --pck-* 토큰이 전부 선언돼 있다', undeclared.length === 0, undeclared.join(' '))
+
+  /*
    * 폼 컨트롤은 **색을 명시해야 한다.**
    *
    * UA 스타일시트가 `<button>` 에 `color: ButtonText` 를, 입력에 `color: FieldText` 를 준다.

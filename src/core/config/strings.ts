@@ -103,11 +103,11 @@ export const DEFAULT_STRINGS = {
   'stage.actualSize': '100%',
 
   'export.title': '문서를 과제로 내보내기',
-  'export.name': 'Assignment Name',
-  'export.namePlaceholder': 'Untitled Document',
+  'export.name': '과제 이름',
+  'export.namePlaceholder': '제목 없는 문서',
   'export.access': '공개 범위',
-  'export.public': 'Public',
-  'export.classOnly': 'Class Only',
+  'export.public': '전체 공개',
+  'export.classOnly': '학급 전용',
   'export.class': '대상 Class',
   'export.classPlaceholder': '대상 Class 선택',
   'export.noClasses': '선택할 수 있는 Class가 없습니다.',
@@ -126,14 +126,14 @@ export const DEFAULT_STRINGS = {
     '이후 문서를 수정해도 이 과제에는 반영되지 않습니다. 수정본을 내려면 다시 내보내 주세요.',
   'export.failed': '내보내기에 실패했습니다. 다시 시도해 주세요.',
 
-  'upload.title': 'Upload Documents',
-  'upload.tabFile': 'From File',
+  'upload.title': '문서 불러오기',
+  'upload.tabFile': '파일에서',
   'upload.tabDrive': 'Google Drive',
-  'upload.hint': 'Click to upload a file',
-  'upload.subHint': 'Automatically Create activity from an uploaded file',
-  'upload.action': 'Upload file',
+  'upload.hint': '클릭해서 파일을 고르세요',
+  'upload.subHint': '올린 파일에서 문서를 자동으로 만듭니다',
+  'upload.action': '파일 선택',
   'upload.limit': '(1 limit, 500MB)',
-  'upload.formats': 'Supported file format: pdf, doc, docx, ppt, pptx',
+  'upload.formats': '지원 형식: pdf, doc, docx, ppt, pptx',
   'upload.converting': '변환 중…',
   'upload.driveUnavailable': 'Google Drive 연동은 아직 준비 중입니다.',
 
@@ -151,9 +151,35 @@ export const DEFAULT_STRINGS = {
   'error.exportBlocked': '내보낼 수 없는 문항이 {count}개 있습니다.',
   'error.minPages': '최소 1페이지는 유지해야 합니다.',
 
-  'confirm.deletePage': '이 페이지의 Answer Box·객체가 함께 삭제됩니다. 삭제할까요?',
+  'confirm.deletePage': '이 페이지의 객체가 함께 삭제됩니다. 삭제할까요?',
   'confirm.cancel': '취소',
   'confirm.ok': '삭제',
+
+  /* ------------------------------------------------------------ 아이콘 -- */
+
+  /*
+   * 아이콘도 문구다 (R12 후속).
+   *
+   * 유니코드 글리프를 쓰는 이유: SVG 스프라이트를 넣으면 소비자가 그것을 교체할 방법이
+   * 별도로 필요해지고, 아이콘 프레임워크를 요구하게 된다. 문자열로 두면 **문구와 같은
+   * 경로로 덮어쓸 수 있다** — `strings` prop 하나로 끝난다.
+   *
+   * SVG 로 바꾸고 싶으면 CSS 로 한다. 아이콘 버튼에 `data-icon` 속성이 있고 패키지 스타일이
+   * `@layer` 안에 있으므로 아래가 이긴다.
+   *
+   *   .pck-icon-btn[data-icon='undo'] { font-size: 0; background: url(undo.svg) center/16px no-repeat; }
+   */
+  'icon.back': '‹',
+  'icon.undo': '↶',
+  'icon.redo': '↷',
+  'icon.zoomOut': '−',
+  'icon.zoomIn': '+',
+  'icon.close': '×',
+  'icon.remove': '×',
+  /** 등록되지 않은 커스텀 객체 타입 표시. */
+  'icon.unknown': '?',
+  /** 드롭다운 캐럿. */
+  'icon.caret': '▾',
 } as const
 
 export type StringKey = keyof typeof DEFAULT_STRINGS

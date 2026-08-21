@@ -12,6 +12,7 @@
  * 빈 문자열은 `0` 으로 보낸다. `NaN` 을 문서에 넣으면 직렬화가 깨진다.
  */
 import { el, when, type Child } from '../../h'
+import { icon } from '../icon'
 
 /** 라벨 + 컨트롤. 세로 배치. */
 export function field(label: string, control: Child, note?: string): HTMLElement {
@@ -172,7 +173,7 @@ export function rowButton(opts: {
       ...(opts.disabled ? { prop: { disabled: opts.disabled } } : {}),
       on: { click: opts.onClick },
     },
-    ['×'],
+    [icon('remove')],
   )
 }
 

@@ -38,6 +38,7 @@ import { boxStyleToCss } from '../../../core/model/boxStyle'
 import type { ObjectTypeRegistry } from '../../../core/objectTypes'
 import type { CustomObject, Rect } from '../../../core/model/types'
 import { mountRenderSlot } from './renderSlot'
+import { icon } from '../icon'
 
 export interface CustomObjectViewProps {
   object: ReadSignal<CustomObject>
@@ -79,7 +80,7 @@ export function customObjectView(props: CustomObjectViewProps): HTMLElement {
         attr: { 'data-kind': kind, title: `unknown object kind: ${kind}` },
         style: () => boxStyleToCss(props.object.value.style),
       },
-      [el('span', { class: 'pck-obj-custom-unknown-mark' }, ['?'])],
+      [el('span', { class: 'pck-obj-custom-unknown-mark' }, [icon('unknown')])],
     )
   }
 

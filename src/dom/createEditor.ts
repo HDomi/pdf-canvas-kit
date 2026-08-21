@@ -17,6 +17,7 @@
  */
 import { onCleanup, scope, type Dispose } from './reactive'
 import { editorShell } from './editor/editorShell'
+import { setIconMount } from './editor/icon'
 import { createEditorController, type EditorProps } from '../controller/editor'
 import type { PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
 import type { ValidationResult } from '../core/validation/rules'
@@ -107,6 +108,15 @@ export function createPDFCanvasEditor(
   props: EditorProps = {},
 ): EditorHandle {
   const [inner, dispose] = scope(() => {
+    /*
+     * 아이콘 portal 통로를 세운다 (D32).
+     *
+     * 컨트롤러보다 **먼저** 세워야 한다 — 셸이 렌더 중에 `icon()` 을 부르고, 그때 이미
+     * 콜백이 있어야 컨테이너를 알린다.
+     */
+    setIconMount(props.onMountIcon ?? null)
+    onCleanup(() => setIconMount(null))
+
     const c = createEditorController(props)
 
     /*

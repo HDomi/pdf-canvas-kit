@@ -13,6 +13,7 @@ import { text } from '../../../core/config/strings'
 import { signal, type ReadSignal } from '../../reactive'
 import { LIMITS } from '../../../core/config/defaults'
 import type { ImportProgress } from '../../../core/engine'
+import { icon } from '../icon'
 
 export interface UploadDialogProps {
   /** 변환이 진행 중인 동안 non-null. */
@@ -82,7 +83,7 @@ export function uploadDialog(props: UploadDialogProps): HTMLElement {
                 prop: { disabled: busy },
                 on: { click: props.onClose },
               },
-              ['×'],
+              [icon('close')],
             ),
           ]),
 

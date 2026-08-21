@@ -12,6 +12,8 @@ import { editorShell } from '../../src/dom/editor/editorShell'
 import { createPDFCanvasEditor } from '../../src/dom/createEditor'
 import { createEditorController } from '../../src/controller/editor'
 import { scope } from '../../src/dom/reactive'
+import { resetStrings } from '../../src/core/config/strings'
+import { resetIcons } from '../../src/core/config/icons'
 import { createPage, createPDFCanvasDoc, defineObjectType, A4_PT } from 'pdf-canvas-kit'
 import type { PDFCanvasDoc, PDFCanvasPage } from 'pdf-canvas-kit'
 import type { CaseGroup } from './cases'
@@ -711,6 +713,145 @@ export const SHELL_GROUPS: CaseGroup[] = [
           editor.destroy()
           host.remove()
           return pages
+        },
+      },
+    ],
+  },
+
+  {
+    title: 'shell — 문구 · 아이콘 오버라이드 (D32) ★',
+    note: '아이콘 경로 셋의 우선순위가 뒤집히면 소비자가 준 SVG 대신 글리프가 나오거나 그 반대가 된다. 조용히 잘못 그려지는 종류다.',
+    cases: [
+      {
+        name: 'strings prop 이 문구를 덮는다',
+        expected: '눌러서 지우기',
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          // 툴바는 페이지가 있어야 그려진다.
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: docWithPages(1),
+            strings: { 'toolbar.eraser': '눌러서 지우기' },
+          })
+          const label =
+            [...host.querySelectorAll('.pck-toolbar button')]
+              .map((b) => b.textContent ?? '')
+              .find((t) => t === '눌러서 지우기') ?? ''
+          editor.destroy()
+          host.remove()
+          resetStrings()
+          return label
+        },
+      },
+      {
+        name: '★ 기본은 글리프 (strings 의 icon.*)',
+        expected: '↶',
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {})
+          const btn = host.querySelector('[data-icon="undo"]')
+          const glyph = btn?.textContent ?? ''
+          editor.destroy()
+          host.remove()
+          return glyph
+        },
+      },
+      {
+        name: '★ strings 로 글리프를 바꾼다',
+        expected: 'U',
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, { strings: { 'icon.undo': 'U' } })
+          const glyph = host.querySelector('[data-icon="undo"]')?.textContent ?? ''
+          editor.destroy()
+          host.remove()
+          resetStrings()
+          return glyph
+        },
+      },
+      {
+        /*
+         * ★ vanilla 경로가 글리프를 이긴다. 노드를 넣으면 텍스트가 아니라 엘리먼트가 들어간다.
+         */
+        name: '★ icons 가 글리프를 이긴다 (노드가 들어간다)',
+        expected: ['svg', 0],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            icons: {
+              undo: () => {
+                const n = document.createElement('svg')
+                n.className = 'my-icon'
+                return n
+              },
+            },
+          })
+          const btn = host.querySelector('[data-icon="undo"]')
+          const child = btn?.firstElementChild
+          const r = [child?.tagName.toLowerCase() ?? 'none', (btn?.textContent ?? '').length]
+          editor.destroy()
+          host.remove()
+          resetIcons()
+          return r
+        },
+      },
+      {
+        /*
+         * ★ portal 경로. 래퍼가 컨테이너를 받아야 프레임워크 컴포넌트를 꽂을 수 있다.
+         *
+         * `icons` 가 없을 때만 불려야 한다 — 둘 다 있으면 노드가 두 겹이 된다.
+         */
+        name: '★ onMountIcon 이 컨테이너를 알린다 (icons 가 없을 때만)',
+        expected: [true, true],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const seen: string[] = []
+          const editor = createPDFCanvasEditor(host, {
+            onMountIcon: (name, el) => seen.push(`${name}:${el === null ? 'null' : 'el'}`),
+          })
+          const mounted = seen.includes('undo:el')
+          const slot = host.querySelector('[data-icon="undo"] .pck-icon-slot') !== null
+          editor.destroy()
+          host.remove()
+          return [mounted, slot]
+        },
+      },
+      {
+        name: '★ icons 가 있으면 onMountIcon 을 부르지 않는다',
+        expected: false,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          let called = false
+          const editor = createPDFCanvasEditor(host, {
+            icons: { undo: () => document.createElement('i') },
+            onMountIcon: (name) => {
+              if (name === 'undo') called = true
+            },
+          })
+          editor.destroy()
+          host.remove()
+          resetIcons()
+          return called
+        },
+      },
+      {
+        name: '정리 시 아이콘 컨테이너를 null 로 알린다 (래퍼가 portal 을 걷는다)',
+        expected: true,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const seen: string[] = []
+          const editor = createPDFCanvasEditor(host, {
+            onMountIcon: (name, el) => seen.push(`${name}:${el === null ? 'null' : 'el'}`),
+          })
+          editor.destroy()
+          host.remove()
+          return seen.includes('undo:null')
         },
       },
     ],

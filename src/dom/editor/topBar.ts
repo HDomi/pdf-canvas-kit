@@ -11,6 +11,8 @@
  */
 import { el } from '../h'
 import { text } from '../../core/config/strings'
+import { icon } from './icon'
+import type { IconName } from '../../core/config/icons'
 import type { ReadSignal } from '../reactive'
 import type { SaveState } from '../../core/model/viewState'
 import { saveBadge } from './saveBadge'
@@ -32,9 +34,16 @@ export interface TopBarProps {
   onManualSave: () => void
 }
 
-/** 아이콘 버튼. 라벨이 글리프라 `aria-label` 이 반드시 필요하다. */
+/**
+ * 아이콘 버튼. 라벨이 글리프라 `aria-label` 이 반드시 필요하다.
+ *
+ * `data-icon` 을 붙이는 이유: 글리프는 `strings` 로 바꿀 수 있지만 SVG 로 교체하려면 CSS 가
+ * 필요하고, 그러려면 **어느 버튼인지 선택할 수단**이 있어야 한다.
+ *
+ *   .pck-icon-btn[data-icon='undo'] { font-size: 0; background: url(undo.svg) center/16px; }
+ */
 function iconButton(
-  glyph: string,
+  name: IconName,
   labelKey: string,
   disabled: (() => boolean) | null,
   onClick: () => void,
@@ -44,17 +53,17 @@ function iconButton(
     'button',
     {
       class: 'pck-icon-btn',
-      attr: { type: 'button', title: label, 'aria-label': label },
+      attr: { type: 'button', title: label, 'aria-label': label, 'data-icon': name },
       ...(disabled ? { prop: { disabled } } : {}),
       on: { click: onClick },
     },
-    [glyph],
+    [icon(name)],
   )
 }
 
 export function topBar(props: TopBarProps): HTMLElement {
   return el('header', { class: 'pck-topbar' }, [
-    iconButton('‹', 'topbar.back', null, props.onBack),
+    iconButton('back', 'topbar.back', null, props.onBack),
 
     titleInput({
       value: props.title,
@@ -66,8 +75,8 @@ export function topBar(props: TopBarProps): HTMLElement {
 
     el('div', { class: 'pck-topbar-spacer' }),
 
-    iconButton('↶', 'topbar.undo', () => !props.canUndo.value, props.onUndo),
-    iconButton('↷', 'topbar.redo', () => !props.canRedo.value, props.onRedo),
+    iconButton('undo', 'topbar.undo', () => !props.canUndo.value, props.onUndo),
+    iconButton('redo', 'topbar.redo', () => !props.canRedo.value, props.onRedo),
 
     el('span', { class: 'pck-topbar-divider' }),
 

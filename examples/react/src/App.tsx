@@ -42,6 +42,14 @@ import { ConfirmDialog } from './components/ConfirmDialog'
 import { UploadDialog } from './components/UploadDialog'
 import { DevBar } from './components/DevBar'
 import { useThemeToggle } from './useThemeToggle'
+import {
+  BackIcon,
+  RedoIcon,
+  UndoIcon,
+  ZoomInIcon,
+  ZoomOutIcon,
+  closeIconNode,
+} from './components/Icons'
 
 /*
  * pdf.js 는 CMap·표준 폰트·wasm 을 런타임에 URL 로 가져온다.
@@ -56,6 +64,30 @@ configurePdfResources({
   wasmUrl: '/pdfjs/wasm/',
   iccUrl: '/pdfjs/iccs/',
 })
+
+/*
+ * 문구를 호스트가 정한다 (PLAN D32).
+ *
+ * 번역이 필요한 앱은 자기 i18n 에서 뽑아 넘긴다. 키는 `StringKey` 로 타입이 잡혀 오타가
+ * 컴파일 에러가 된다. **최초 1회만 읽는다** — 언어를 런타임에 바꾸려면 컴포넌트를 다시
+ * 마운트한다 (React 는 `key` 변경).
+ */
+const STRINGS = {
+  // 글리프도 문구다. 캐럿만 다른 유니코드로 바꿔 본다
+  'icon.caret': '⌄',
+  // 실제 앱이 흔히 바꾸는 것들
+  'toolbar.duplicate': '복사',
+  'confirm.deletePage': '이 페이지의 객체가 함께 사라집니다. 계속할까요?',
+  'inspector.empty': '캔버스에서 객체를 골라 주세요',
+} as const
+
+/**
+ * vanilla 아이콘 (D32) — 노드를 직접 만든다.
+ *
+ * `renderIcon`(컴포넌트)보다 **먼저 이긴다.** 여기서는 `close` 만 이 경로로 넣어 우선순위를
+ * 드러낸다 — 나머지는 `renderIcon` 이 처리한다.
+ */
+const ICONS = { close: closeIconNode }
 
 /** ⚠️ `pages[0]` 만 세면 현재 페이지가 아닌 곳의 객체가 빠진다. */
 function countObjects(doc: PDFCanvasDoc | null): number {
@@ -154,6 +186,19 @@ export function App() {
             renderObject={{ 'example.shortAnswer': AnswerBadge }}
             renderInspector={{ 'example.shortAnswer': AnswerFields }}
             onChange={setDoc}
+            strings={STRINGS}
+            icons={ICONS}
+            /*
+             * 프레임워크 컴포넌트 경로 (D32). 아이콘 라이브러리를 그대로 쓸 수 있다.
+             * `icons` 에 있는 `close` 는 여기 없어도 되고, 있어도 `icons` 가 이긴다.
+             */
+            renderIcon={{
+              back: BackIcon,
+              undo: UndoIcon,
+              redo: RedoIcon,
+              zoomIn: ZoomInIcon,
+              zoomOut: ZoomOutIcon,
+            }}
             onRequestUpload={() => setUploadOpen(true)}
             onRequestConfirm={setConfirm}
             onImportStateChange={setImporting}

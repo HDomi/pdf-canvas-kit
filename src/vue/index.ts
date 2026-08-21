@@ -47,6 +47,7 @@ import {
 import { createPDFCanvasEditor, type EditorHandle, type EditorProps } from '../dom/createEditor'
 import { createPDFCanvasViewer, type ViewerHandle } from '../dom/createViewer'
 import type { AnyObjectTypeDef } from '../core/objectTypes'
+import type { IconName } from '../core/config/icons'
 import type { CustomObject, PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
 import type { SaveState } from '../core/model/viewState'
 
@@ -83,6 +84,14 @@ export interface PDFCanvasViewerRef {
 /** `kind` → 컴포넌트. `objectId` · `data` · `onChange` 를 prop 으로 받는다. */
 export type SlotMap = Record<string, Component>
 
+/**
+ * 아이콘 이름 → 컴포넌트 (PLAN D32).
+ *
+ * 글리프만 바꾸려면 `strings` 의 `icon.*` 을, vanilla SVG 는 `icons` 를 쓴다 — 셋 중
+ * `icons` 가 가장 먼저 이긴다.
+ */
+export type IconMap = Partial<Record<IconName, Component>>
+
 /** 문서에서 커스텀 객체를 찾는다. 인스펙터 대상이 현재 페이지가 아닐 수 있어 전부 훑는다. */
 function findCustom(doc: PDFCanvasDoc, objectId: string): CustomObject | null {
   for (const page of doc.pages) {
@@ -91,6 +100,27 @@ function findCustom(doc: PDFCanvasDoc, objectId: string): CustomObject | null {
     }
   }
   return null
+}
+
+/**
+ * 아이콘 컨테이너에 Teleport 한다.
+ *
+ * 키는 엘리먼트가 아니라 이름+순번이다 — Teleport 의 `key` 는 문자열이어야 한다.
+ */
+function iconPortals(
+  mounts: ReadonlyMap<HTMLElement, IconName>,
+  icons: IconMap | undefined,
+): VNode[] {
+  if (!icons) return []
+  const out: VNode[] = []
+  let i = 0
+  for (const [node, name] of mounts) {
+    const comp = icons[name]
+    i++
+    if (!comp) continue
+    out.push(h(Teleport, { to: node, key: `${name}-${i}` }, [h(comp)]))
+  }
+  return out
 }
 
 export const PDFCanvasEditor = defineComponent({
@@ -135,6 +165,12 @@ export const PDFCanvasEditor = defineComponent({
     renderObject: { type: Object as PropType<SlotMap>, default: undefined },
     /** 우측 인스펙터. 커스텀 객체의 **편집 창구는 여기 하나**다 (PLAN D26). */
     renderInspector: { type: Object as PropType<SlotMap>, default: undefined },
+    /** 아이콘을 컴포넌트로 교체한다 (D32). **최초 1회만 읽는다.** */
+    renderIcon: { type: Object as PropType<IconMap>, default: undefined },
+    /** UI 문구 오버라이드. **최초 1회만 읽는다.** 전역 표에 병합된다 (§19.4). */
+    strings: { type: Object as PropType<EditorProps['strings']>, default: undefined },
+    /** 아이콘을 vanilla 노드로 교체한다. **최초 1회만 읽는다.** */
+    icons: { type: Object as PropType<EditorProps['icons']>, default: undefined },
   },
 
   emits: {
@@ -158,6 +194,30 @@ export const PDFCanvasEditor = defineComponent({
     /** 슬롯 컨테이너. 새 Map 을 대입해야 반응성이 전달된다. */
     const objectMounts = shallowRef<ReadonlyMap<string, HTMLElement>>(new Map())
     const inspectorMounts = shallowRef<ReadonlyMap<string, HTMLElement>>(new Map())
+    /*
+     * 아이콘은 **엘리먼트를 키로** 쓴다.
+     *
+     * 같은 아이콘이 여러 곳에 나온다 — `icon.remove`(×)는 인스펙터 필드마다 하나씩이다.
+     * 이름을 키로 쓰면 나중 것이 앞의 것을 덮어써 하나만 그려진다.
+     */
+    const iconMounts = shallowRef<ReadonlyMap<HTMLElement, IconName>>(new Map())
+
+    const setIcon = (name: IconName, el: HTMLElement | null) => {
+      const prev = iconMounts.value
+      if (el === null) {
+        // 엘리먼트가 null 이면 그 이름의 항목을 전부 걷는다.
+        const next = new Map<HTMLElement, IconName>()
+        let changed = false
+        for (const [node, n] of prev) {
+          if (n === name) changed = true
+          else next.set(node, n)
+        }
+        if (changed) iconMounts.value = next
+        return
+      }
+      if (prev.get(el) === name) return
+      iconMounts.value = new Map(prev).set(el, name)
+    }
 
     const setMount =
       (target: typeof objectMounts) => (objectId: string, el: HTMLElement | null) => {
@@ -195,6 +255,10 @@ export const PDFCanvasEditor = defineComponent({
         onBack: () => emit('back'),
         onMountCustom: setMount(objectMounts),
         onMountInspector: setMount(inspectorMounts),
+        onMountIcon: setIcon,
+        // 문구·아이콘은 최초 1회만 읽는다 (§19.4).
+        ...(props.strings ? { strings: props.strings } : {}),
+        ...(props.icons ? { icons: props.icons } : {}),
       })
       doc.value = handle.getDoc()
     })
@@ -282,6 +346,7 @@ export const PDFCanvasEditor = defineComponent({
         h('div', { ref: host, style: 'height:100%' }),
         ...portals(objectMounts.value, props.renderObject),
         ...portals(inspectorMounts.value, props.renderInspector),
+        ...iconPortals(iconMounts.value, props.renderIcon),
       ])
   },
 })

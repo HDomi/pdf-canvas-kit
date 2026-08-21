@@ -149,7 +149,7 @@ export default tseslint.config(
    * 이 규칙들을 완화한다.
    */
   {
-    files: ['src/vue/**/*.ts', 'demo/**/*.ts', 'examples/**/*.ts'],
+    files: ['src/vue/**/*.ts', 'demo/**/*.ts', 'examples/**/*.ts', 'examples/**/*.vue'],
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

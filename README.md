@@ -739,18 +739,63 @@ examples/{react,vue}/src/
 
 테마는 상단바·툴바·좌측 패널·스테이지·인스펙터·뷰어를 **전부** 덮는다.
 
-### 문구 바꾸기
+### 4. 문구 — 번역·표현 바꾸기
 
-UI 문구는 전부 `strings.ts` 를 거친다. 하드코딩이 없다.
+UI 문구는 전부 `strings` 를 거친다. **하드코딩이 없다.** prop 으로 넘기는 것이 기본이다.
 
-```ts
-import { configureStrings } from 'pdf-canvas-kit'
-configureStrings({ 'confirm.deletePage': '이 페이지를 지울까요?' })
+```tsx
+<PDFCanvasEditor
+  strings={{
+    'confirm.deletePage': 'Delete this page?',
+    'toolbar.text': 'Text',
+    'inspector.empty': 'Nothing selected',
+  }}
+/>
 ```
 
-반응형이 아니다 — 앱 부팅 때 한 번 설정한다.
+키는 `StringKey` 로 타입이 잡혀 **오타가 컴파일 에러**가 된다. 전체 목록은 `DEFAULT_STRINGS`.
+앱 전체에 한 번만 설정하려면 `configureStrings()` 를 써도 된다.
 
-### 코드 상수
+⚠️ **최초 1회만 읽는다.** 언어를 런타임에 바꾸려면 컴포넌트를 다시 마운트한다 (React 는
+`key` 변경). 전역 표에 병합되므로 **한 페이지에 언어가 다른 편집기 둘은 지원하지 않는다.**
+
+### 5. 아이콘 — 글리프 · SVG · 컴포넌트 ★
+
+세 경로가 있고 위에서부터 먼저 이긴다.
+
+| 방법 | 무엇을 주는가 | 언제 |
+| --- | --- | --- |
+| `icons` | `() => Node` | vanilla·SSR 없는 앱, SVG 를 직접 만들 때 |
+| `renderIcon` (래퍼) | 프레임워크 컴포넌트 | React·Vue 아이콘 라이브러리를 쓸 때 |
+| `strings` 의 `icon.*` | 글리프 문자열 | 다른 유니코드·이모지로 바꿀 때 (기본값) |
+
+```tsx
+<PDFCanvasEditor
+  // 1. 컴포넌트 — 가장 흔한 경로
+  renderIcon={{ undo: UndoIcon, redo: RedoIcon, zoomIn: ZoomInIcon }}
+  // 2. vanilla 노드 — renderIcon 보다 먼저 이긴다
+  icons={{ close: () => mySvgElement() }}
+  // 3. 글리프만 교체
+  strings={{ 'icon.caret': '⌄' }}
+/>
+```
+
+아이콘 이름: `back` `undo` `redo` `zoomOut` `zoomIn` `close` `remove` `unknown` `caret`
+(`IconName` 타입).
+
+⚠️ `icons` 의 함수는 **부를 때마다 새 노드**를 반환해야 한다. 같은 노드를 돌려주면 DOM 은 한
+곳에만 붙을 수 있어 두 번째 사용처에서 첫 번째 아이콘이 사라진다.
+
+CSS 로 바꾸는 길도 있다. 아이콘 버튼에 `data-icon` 이 붙어 있다.
+
+```css
+.pck-icon-btn[data-icon='undo'] {
+  font-size: 0; /* 글리프를 숨긴다 */
+  background: url(undo.svg) center / 16px no-repeat;
+}
+```
+
+### 6. 코드 상수
 
 | 대상 | 위치 |
 | --- | --- |

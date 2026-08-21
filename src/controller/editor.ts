@@ -27,7 +27,8 @@
  */
 import { batch, computed, onCleanup, signal, watch, type ReadSignal } from '../dom/reactive'
 import { EDITOR_DEFAULTS } from '../core/config/defaults'
-import { text } from '../core/config/strings'
+import { configureStrings, text, type StringKey } from '../core/config/strings'
+import { configureIcons, type IconName } from '../core/config/icons'
 import { setTitle } from '../core/commands/doc'
 import {
   addObject,
@@ -135,6 +136,42 @@ export interface EditorProps {
   onMountCustom?: (objectId: string, el: HTMLElement | null) => void
   /** 커스텀 객체의 인스펙터 컨테이너. 위와 같은 규칙. */
   onMountInspector?: (objectId: string, el: HTMLElement | null) => void
+
+  /* --------------------------------------------- 문구 · 아이콘 (PLAN D32) -- */
+
+  /**
+   * UI 문구 오버라이드. **최초 1회만 읽는다.**
+   *
+   * 호스트가 번역하거나 표현을 바꿀 수 있어야 한다. 키 목록은 `DEFAULT_STRINGS` 에 있고
+   * `StringKey` 로 타입이 잡힌다 — 오타가 컴파일 에러가 된다.
+   *
+   * ```ts
+   * strings={{ 'confirm.deletePage': 'Delete this page?', 'toolbar.text': 'Text' }}
+   * ```
+   *
+   * ⚠️ **전역 표에 병합된다.** 한 페이지에 언어가 다른 편집기 둘은 지원하지 않는다 —
+   * 렌더 층 14개 파일에 prop 을 흘리는 비용을 내지 않았다 (ARCHITECTURE §19.4).
+   */
+  strings?: Partial<Record<StringKey, string>>
+  /**
+   * 아이콘을 노드로 교체한다. **최초 1회만 읽는다.**
+   *
+   * 글리프(`strings` 의 `icon.*`)로 부족할 때 쓴다. 부를 때마다 **새 노드**를 반환해야 한다 —
+   * 같은 노드를 돌려주면 두 번째 사용처에서 첫 번째의 아이콘이 사라진다.
+   *
+   * ```ts
+   * icons={{ undo: () => mySvgElement() }}
+   * ```
+   *
+   * 프레임워크 컴포넌트를 쓰려면 래퍼의 `renderIcon` 을 쓴다 (portal 경로).
+   */
+  icons?: Partial<Record<IconName, () => Node>>
+  /**
+   * 아이콘 컨테이너를 알린다. 프레임워크 래퍼가 여기에 portal 한다 (§19.4).
+   *
+   * `icons` 가 있으면 그것이 이기고 이 콜백은 불리지 않는다.
+   */
+  onMountIcon?: (name: IconName, el: HTMLElement | null) => void
 
   /* ------------------------------------------- 다이얼로그 위임 (PLAN D31) -- */
 
@@ -362,6 +399,19 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    */
   const props = signal<EditorProps>(initialProps)
   const readOnly = computed(() => props.value.readOnly === true)
+
+  /*
+   * 문구·아이콘을 적용한다 (D32). **최초 1회만** — `setProps` 에서 다시 읽지 않는다.
+   *
+   * 렌더 층이 `text()` · `icon()` 을 렌더 시점에 한 번 평가하므로, 나중에 바꿔도 이미 그려진
+   * 노드는 갱신되지 않는다. 반응형으로 만들려면 문구 하나하나를 signal 로 읽어야 하고 그건
+   * 문구 80곳의 렌더 경로를 전부 바꾸는 일이다. 호스트는 앱 부팅 때 언어를 정하고, 런타임에
+   * 바꿔야 하면 컴포넌트를 다시 마운트한다 (React 는 `key` 변경).
+   *
+   * ⚠️ 전역 표에 병합된다. 한 페이지에 언어가 다른 편집기 둘은 지원하지 않는다.
+   */
+  if (initialProps.strings) configureStrings(initialProps.strings)
+  if (initialProps.icons) configureIcons(initialProps.icons)
 
   /* ---------------------------------------------------------------- engine -- */
 

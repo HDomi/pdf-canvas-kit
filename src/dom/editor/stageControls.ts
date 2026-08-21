@@ -10,6 +10,8 @@
  */
 import { el, when } from '../h'
 import { text } from '../../core/config/strings'
+import { icon } from './icon'
+import type { IconName } from '../../core/config/icons'
 import { signal, type ReadSignal } from '../reactive'
 
 export interface StageControlsProps {
@@ -32,7 +34,7 @@ export function stageControls(props: StageControlsProps): HTMLElement {
   }
 
   const zoomButton = (
-    glyph: string,
+    name: IconName,
     labelKey: string,
     enabled: () => boolean,
     onClick: () => void,
@@ -42,17 +44,18 @@ export function stageControls(props: StageControlsProps): HTMLElement {
       'button',
       {
         class: 'pck-zoom-btn',
-        attr: { type: 'button', title: label, 'aria-label': label },
+        // `data-icon` 으로 CSS 에서 이 버튼만 골라 SVG 배경을 줄 수 있다 (§19.4).
+        attr: { type: 'button', title: label, 'aria-label': label, 'data-icon': name },
         prop: { disabled: () => !enabled() },
         on: { click: onClick },
       },
-      [glyph],
+      [icon(name)],
     )
   }
 
   return el('div', { class: 'pck-stage-controls' }, [
     zoomButton(
-      '−',
+      'zoomOut',
       'stage.zoomOut',
       () => props.canZoomOut.value,
       () => props.onStep(-1),
@@ -73,7 +76,7 @@ export function stageControls(props: StageControlsProps): HTMLElement {
     ),
 
     zoomButton(
-      '+',
+      'zoomIn',
       'stage.zoomIn',
       () => props.canZoomIn.value,
       () => props.onStep(1),

@@ -40,6 +40,42 @@ import ConfirmDialog from './components/ConfirmDialog.vue'
 import UploadDialog from './components/UploadDialog.vue'
 import DevBar from './components/DevBar.vue'
 import { useThemeToggle } from './useThemeToggle'
+import BackIcon from './icons/BackIcon.vue'
+import UndoIcon from './icons/UndoIcon.vue'
+import RedoIcon from './icons/RedoIcon.vue'
+import ZoomInIcon from './icons/ZoomInIcon.vue'
+import ZoomOutIcon from './icons/ZoomOutIcon.vue'
+import { closeIconNode } from './icons/closeIconNode'
+
+/*
+ * 문구를 호스트가 정한다 (PLAN D32).
+ *
+ * 번역이 필요한 앱은 자기 i18n 에서 뽑아 넘긴다. **최초 1회만 읽는다** — 언어를 런타임에
+ * 바꾸려면 컴포넌트를 다시 마운트한다.
+ */
+const STRINGS = {
+  // 글리프도 문구다. 캐럿만 다른 유니코드로 바꿔 본다
+  'icon.caret': '⌄',
+  'toolbar.duplicate': '복사',
+  'confirm.deletePage': '이 페이지의 객체가 함께 사라집니다. 계속할까요?',
+  'inspector.empty': '캔버스에서 객체를 골라 주세요',
+}
+
+/**
+ * vanilla 아이콘 — 노드를 직접 만든다. `renderIcon`(컴포넌트)보다 **먼저 이긴다.**
+ *
+ * 여기서는 `close` 만 이 경로로 넣어 우선순위를 드러낸다.
+ */
+const ICONS = { close: closeIconNode }
+
+/** 프레임워크 컴포넌트 경로. 아이콘 라이브러리를 그대로 쓸 수 있다. */
+const RENDER_ICON = {
+  back: BackIcon,
+  undo: UndoIcon,
+  redo: RedoIcon,
+  zoomIn: ZoomInIcon,
+  zoomOut: ZoomOutIcon,
+}
 
 /*
  * ⚠️ `workerSrc` 만 주면 PDF 는 열리지만 **한국어 글자가 조용히 사라진다.**
@@ -164,6 +200,9 @@ function onChangeData(objectId: string, next: unknown) {
           :object-types="OBJECT_TYPES"
           :render-object="{ 'example.shortAnswer': AnswerBadge }"
           :render-inspector="{ 'example.shortAnswer': AnswerFields }"
+          :strings="STRINGS"
+          :icons="ICONS"
+          :render-icon="RENDER_ICON"
           :on-request-upload="() => (uploadOpen = true)"
           :on-request-confirm="(req) => (confirmReq = req)"
           :on-import-state-change="(st) => (importing = st)"

@@ -43,6 +43,7 @@ import { createPortal } from 'react-dom'
 import { createPDFCanvasEditor, type EditorHandle, type EditorProps } from '../dom/createEditor'
 import { createPDFCanvasViewer, type ViewerHandle, type ViewerProps } from '../dom/createViewer'
 import type { CustomObject, PDFCanvasDoc, PublicPDFCanvasDoc } from '../core/model/types'
+import type { IconName } from '../core/config/icons'
 
 export type { EditorHandle, ViewerHandle }
 
@@ -68,14 +69,24 @@ export interface CustomSlotProps<Data = unknown> {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type SlotMap = Record<string, (props: CustomSlotProps<any>) => ReactNode>
 
+/**
+ * 아이콘 이름 → 컴포넌트 (PLAN D32).
+ *
+ * 프레임워크 아이콘 라이브러리를 그대로 쓰는 경로다. 글리프만 바꾸려면 `strings` 의
+ * `icon.*` 을, vanilla SVG 는 `icons` 를 쓴다 — 셋 중 `icons` 가 가장 먼저 이긴다.
+ */
+export type IconMap = Partial<Record<IconName, () => ReactNode>>
+
 export interface PDFCanvasEditorProps extends Omit<
   EditorProps,
-  'onMountCustom' | 'onMountInspector'
+  'onMountCustom' | 'onMountInspector' | 'onMountIcon'
 > {
   /** 캔버스 안 커스텀 객체. 기본 틀은 패키지가 그리고 이 컴포넌트가 안을 채운다. */
   renderObject?: SlotMap
   /** 우측 인스펙터의 속성 편집. 커스텀 객체의 **편집 창구는 여기 하나**다 (PLAN D26). */
   renderInspector?: SlotMap
+  /** 아이콘을 컴포넌트로 교체한다 (D32). */
+  renderIcon?: IconMap
   /** 컨테이너에 붙는다. **높이를 반드시 줘야 한다** (ARCHITECTURE §15.4). */
   className?: string
   style?: React.CSSProperties
@@ -139,6 +150,7 @@ function findCustom(doc: PDFCanvasDoc, objectId: string): CustomObject | null {
 export function PDFCanvasEditor({
   renderObject,
   renderInspector,
+  renderIcon,
   className,
   style,
   ref: refProp,
@@ -149,6 +161,29 @@ export function PDFCanvasEditor({
 
   const [objectMounts, onMountCustom] = useMounts()
   const [inspectorMounts, onMountInspector] = useMounts()
+  /*
+   * 아이콘 마운트는 **엘리먼트를 키로** 쓴다.
+   *
+   * 같은 아이콘이 여러 곳에 나온다 — `icon.remove`(×)는 인스펙터 필드마다 하나씩이다.
+   * 이름을 키로 쓰면 나중 것이 앞의 것을 덮어써 하나만 그려진다.
+   */
+  const [iconMounts, setIconMounts] = useState<ReadonlyMap<HTMLElement, IconName>>(() => new Map())
+  const onMountIcon = useCallback((name: IconName, el: HTMLElement | null) => {
+    setIconMounts((prev) => {
+      if (el === null) {
+        // 이름만 주고 엘리먼트가 null 이면 그 이름의 항목을 전부 걷는다.
+        const next = new Map<HTMLElement, IconName>()
+        let changed = false
+        for (const [node, n] of prev) {
+          if (n === name) changed = true
+          else next.set(node, n)
+        }
+        return changed ? next : prev
+      }
+      if (prev.get(el) === name) return prev
+      return new Map(prev).set(el, name)
+    })
+  }, [])
 
   /*
    * prop 을 ref 로 들고 있다가 마운트 effect 안에서 읽는다.
@@ -168,6 +203,7 @@ export function PDFCanvasEditor({
       ...propsRef.current,
       onMountCustom,
       onMountInspector,
+      onMountIcon,
     })
     handleRef.current = handle
     assignRef(refProp, handle)
@@ -178,7 +214,7 @@ export function PDFCanvasEditor({
       assignRef(refProp, null)
     }
     // 마운트 시 한 번만. 콜백은 `useCallback` 으로 안정적이다.
-  }, [onMountCustom, onMountInspector])
+  }, [onMountCustom, onMountInspector, onMountIcon])
 
   // 렌더마다 prop 을 흘린다. `initialDoc` 류는 facade 가 무시한다.
   useEffect(() => {
@@ -232,6 +268,11 @@ export function PDFCanvasEditor({
       />
       {portals(objectMounts, renderObject)}
       {portals(inspectorMounts, renderInspector)}
+      {renderIcon &&
+        [...iconMounts].map(([node, name]) => {
+          const Icon = renderIcon[name]
+          return Icon ? createPortal(<Icon />, node, `${name}-${iconKey(node)}`) : null
+        })}
     </>
   )
 }
@@ -338,4 +379,21 @@ export function PDFCanvasViewer({
       {portals}
     </>
   )
+}
+
+/*
+ * 아이콘 컨테이너의 안정적인 키.
+ *
+ * portal 키가 렌더마다 바뀌면 React 가 매번 새로 만든다. 엘리먼트에 번호를 새겨 두고 그것을
+ * 쓴다 — WeakMap 을 쓰면 노드가 사라질 때 항목도 함께 사라진다.
+ */
+const iconKeys = new WeakMap<HTMLElement, number>()
+let iconSeq = 0
+function iconKey(node: HTMLElement): number {
+  let k = iconKeys.get(node)
+  if (k === undefined) {
+    k = ++iconSeq
+    iconKeys.set(node, k)
+  }
+  return k
 }

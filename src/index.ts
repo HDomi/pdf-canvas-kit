@@ -196,6 +196,9 @@ export type { ImageMap, SaveResult } from './prototype/localStorageStore'
 export { createId, copyText } from './core/util/id'
 
 export { DEFAULT_STRINGS, configureStrings, resetStrings, text } from './core/config/strings'
+/* 아이콘 교체 (D32). 글리프는 `strings` 의 `icon.*`, 노드는 여기, 컴포넌트는 래퍼의 renderIcon. */
+export { configureIcons, resetIcons } from './core/config/icons'
+export type { IconName, IconFactory } from './core/config/icons'
 export type { StringKey } from './core/config/strings'
 
 export { createPointerMachine } from './core/interaction/pointerMachine'

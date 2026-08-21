@@ -1185,7 +1185,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
           `${(json.length / 1024).toFixed(1)}KB`,
       )
       // eslint-disable-next-line no-console
-      console.log(json)
+      console.log(doc.value)
 
       /*
        * 저장 가능성은 별도로 알린다.

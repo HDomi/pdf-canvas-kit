@@ -11,7 +11,7 @@
  * 사용법: node scripts/verify-tarball.mjs
  */
 import { execFileSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync, existsSync } from 'node:fs'
+import { mkdtempSync, readdirSync, readFileSync, rmSync, existsSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -29,14 +29,26 @@ const check = (name, ok, detail) => {
 const work = mkdtempSync(join(tmpdir(), 'pck-tarball-'))
 try {
   console.log('packing…')
-  const tgz = join(
-    work,
-    execFileSync('npm', ['pack', '--pack-destination', work], { cwd: root, encoding: 'utf8' })
-      .trim()
-      .split('\n')
-      .pop()
-      .trim(),
-  )
+  /*
+   * `npm pack` 의 stdout 마지막 줄을 파일명으로 쓰지 않는다.
+   *
+   * `prepare` 훅이 먼저 돌면서 자기 로그를 stdout 에 쓴다 — 그 줄이 마지막이 되면 파일명이
+   * 아니라 로그를 경로로 쓰게 된다. 2026.08.21 에 실제로 그 실패를 냈다.
+   *
+   * 출력에서 `.tgz` 로 끝나는 줄을 찾는다. 없으면 디렉토리를 읽는다 — 어느 쪽이든 파일명을
+   * 추측하지 않는다 (scoped 이름은 `@scope/x` → `scope-x-1.0.0.tgz` 로 바뀐다).
+   */
+  const packOut = execFileSync('npm', ['pack', '--pack-destination', work], {
+    cwd: root,
+    encoding: 'utf8',
+  })
+  const named = packOut
+    .split('\n')
+    .map((l) => l.trim())
+    .filter((l) => l.endsWith('.tgz'))
+    .pop()
+  const tgz = join(work, named ?? readdirSync(work).find((f) => f.endsWith('.tgz')) ?? '')
+  if (!tgz.endsWith('.tgz')) throw new Error('verify-tarball: tarball 을 찾지 못했다')
 
   execFileSync('tar', ['xzf', tgz, '-C', work])
   const pkgDir = join(work, 'package')
@@ -95,7 +107,12 @@ try {
   const layerAt = css.indexOf('@layer')
   const layerName = css.match(/@layer\s+([a-z-]+)\s*\{/)?.[1]
   check('@layer 선언이 있다', layerAt >= 0)
-  check('레이어 이름이 @h_domi/pdf-canvas-kit', layerName === '@h_domi/pdf-canvas-kit', layerName)
+  /*
+   * 레이어 이름은 **패키지명이 아니다.** 소비자가 `@layer pdf-canvas-kit, my-app;` 으로
+   * 순서를 지정하는 데 쓰는 식별자라, 패키지명을 바꿔도 그대로 둔다 — 바꾸면 소비자의
+   * 레이어 선언이 조용히 무효가 된다.
+   */
+  check('레이어 이름이 pdf-canvas-kit', layerName === 'pdf-canvas-kit', layerName)
   const tokenAt = css.indexOf('--pck-bg')
   check('토큰이 레이어 밖(앞)에 있다', tokenAt >= 0 && tokenAt < layerAt)
   const outside = css

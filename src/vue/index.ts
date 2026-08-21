@@ -52,6 +52,34 @@ import type { SaveState } from '../core/model/viewState'
 
 export type { EditorHandle, ViewerHandle }
 
+/**
+ * `ref` 에 붙는 인스턴스 타입 (R11).
+ *
+ * Vue 의 `expose()` 는 **런타임 API 라 생성된 `.d.ts` 에 타입이 남지 않는다.** React 는
+ * `useImperativeHandle` 로 `ref` 타입이 자동으로 잡히지만 Vue 는 소비자가 명시해야 한다.
+ * 그 비대칭을 여기서 메운다 — 없으면 소비자가 캐스트를 발명하게 되고, 공개 API 가 캐스트를
+ * 요구하면 그건 API 버그다 (PLAN 20.19).
+ *
+ * ```vue
+ * <script setup lang="ts">
+ * import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+ * const editor = ref<PDFCanvasEditorRef | null>(null)
+ * // 캐스트 없이 facade 전체가 나온다
+ * await editor.value?.handle?.importFile(file)
+ * </script>
+ * <template><PDFCanvasEditor ref="editor" :initial-doc="doc" /></template>
+ * ```
+ */
+export interface PDFCanvasEditorRef {
+  /** 마운트 전이거나 언마운트 후에는 `null` 이다. */
+  handle: EditorHandle | null
+}
+
+/** 뷰어의 `ref` 인스턴스 타입. `PDFCanvasEditorRef` 와 같은 이유로 필요하다. */
+export interface PDFCanvasViewerRef {
+  handle: ViewerHandle | null
+}
+
 /** `kind` → 컴포넌트. `objectId` · `data` · `onChange` 를 prop 으로 받는다. */
 export type SlotMap = Record<string, Component>
 

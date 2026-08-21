@@ -1269,6 +1269,20 @@ DOM 을 직접 들고 있기 때문의 제약이고, portal 경로에는 해당�
 | 목록 증감 | DOM 을 손으로 | `map` / `v-for` |
 | 포커스 가드 | **필요** | 불필요 |
 
+### ⚠️ Vue 의 `expose` 는 타입을 남기지 않는다
+
+React 의 `useImperativeHandle` 은 `ref` 타입을 자동으로 잡지만, Vue 의 `expose()` 는 런타임
+API 라 생성된 `.d.ts` 에 아무것도 남지 않는다. 그래서 래퍼가 인스턴스 타입을 직접 내보낸다.
+
+```ts
+// src/vue/index.ts
+export interface PDFCanvasEditorRef { handle: EditorHandle | null }
+export interface PDFCanvasViewerRef { handle: ViewerHandle | null }
+```
+
+facade 에 메서드를 추가할 때 여기는 고치지 않아도 된다 — `handle` 이 `EditorHandle` 을
+그대로 가리키므로 자동으로 따라온다.
+
 ### ⚠️ 슬롯 맵 타입은 `any` 여야 한다
 
 ```ts

@@ -2865,7 +2865,7 @@ React 앱은 `StrictMode` 로 띄웠고 편집기가 두 벌 남지 않는다.
 | | |
 | --- | --- |
 | 실제 registry 설치 (`npm publish` 후) | ⏳ 미배포. `file:` 프로토콜과 registry 는 tarball 해석이 같지만 동일하다고 단정하지 않는다 |
-| pdf.js 자산 복사를 소비자가 직접 하는 경로 | ⏳ 두 앱 모두 `workerSrc` 만 설정했고 PDF 를 실제로 열지는 않았다. CJK 폰트 누락은 그 경로에서만 드러난다 |
+| pdf.js 자산 복사를 소비자가 직접 하는 경로 | ✅ **2026.08.21 에 실제로 터졌다** — 아래 참고 |
 | peer 미설치 시 경고 (Vue 앱에 react 없음 / 반대) | ✅ optional peer 라 경고 없음 — 두 앱 설치 로그에 peer 경고가 없었다 |
 
 ### 20.20 R11 — `PDFCanvasViewer` (2026.08.21)
@@ -2989,3 +2989,51 @@ R10 의 소비자 앱 검증도 이걸 놓쳤다. 내가 만든 앱이 `pdf-canv
 > **이것이 D15 의 실제 의미다.** "Editor 는 데스크탑 전용" 은 창 크기 이야기가 아니라
 > **편집기에 좁은 컨테이너를 주면 안 된다**는 제약이다. 호스트가 사이드바를 두는 레이아웃도
 > 같은 문제를 만든다.
+
+#### 2026.08.21 — pdf.js 자산이 소비자 앱에서 404 였다
+
+20.19 에서 "확인하지 못한 것" 으로 남긴 항목이 그대로 터졌다. 소비자 앱이 `workerSrc` 만
+설정하고 **자산을 복사하지 않았다.**
+
+```
+pdf.worker.mjs  404 (Not Found)
+Failed to load module script: MIME type "text/html"
+```
+
+두 번째 줄이 첫 번째의 결과다 — 404 응답의 HTML 본문을 module script 로 읽으려다 실패한다.
+`workerSrc` 만 보고 "설정했다" 고 넘긴 것이 원인이고, 나머지 넷(`cMapUrl` ·
+`standardFontDataUrl` · `wasmUrl` · `iccUrl`)도 빠져 있었다. 그건 **한국어 PDF 에서 글자가
+조용히 사라지는** 경로다.
+
+README 가 안내하는 `postinstall` 문장을 소비자 앱에 그대로 넣어 확인했다 — **안내는 정확했다.**
+그 문장이 동작하는 것까지가 이번 검증에 포함됐다.
+
+| 확인 | 결과 |
+| --- | --- |
+| `postinstall` 로 자산 복사 | ✅ `cmaps` `standard_fonts` `wasm` `iccs` `pdf.worker.mjs` |
+| worker · cmap · font · wasm 서빙 | ✅ 전부 200 |
+| worker 의 MIME | ✅ `text/javascript` (module script 라 중요) |
+| `importFile()` 로 CJK 픽스처 열기 | ⏳ 버튼을 붙였다. **브라우저 확인 필요** |
+
+> **검증 앱이 실제 소비자만큼 완전해야 한다.** 앱이 `workerSrc` 하나로 "설정 완료" 라고
+> 보였기 때문에 R10 이 통과했다. 20.20 의 `createPDFCanvasEditor` export 누락도 같은 종류다 —
+> 앱이 `/react` 서브패스만 써서 메인 엔트리를 건드리지 않았다.
+
+#### Vue 의 `expose` 는 타입을 남기지 않는다
+
+같은 작업에서 하나 더 나왔다. Vue 앱에서 `handle` 에 닿으려면 캐스트가 필요했다.
+
+```ts
+await (editor.value?.handle as { importFile(f: File): Promise<void> })?.importFile(file)
+```
+
+React 의 `useImperativeHandle` 은 `ref` 타입을 자동으로 잡지만 Vue 의 `expose()` 는 **런타임
+API 라 생성된 `.d.ts` 에 아무것도 남기지 않는다.** 래퍼가 인스턴스 타입을 직접 내보내야 한다.
+
+```ts
+export interface PDFCanvasEditorRef { handle: EditorHandle | null }
+export interface PDFCanvasViewerRef { handle: ViewerHandle | null }
+```
+
+`handle` 이 `EditorHandle` 을 그대로 가리키므로 facade 에 메서드가 추가돼도 따라온다.
+소비자 앱에서 캐스트를 지우고 `vue-tsc` exit 0 을 확인했다.

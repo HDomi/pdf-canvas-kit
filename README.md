@@ -533,8 +533,11 @@ async function onExport() {
 
 ```vue
 <!-- Vue — expose 된 handle 을 그대로 쓴다 -->
-<script setup>
-const editor = ref(null)
+<script setup lang="ts">
+import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+
+// ⚠️ 타입을 명시한다. Vue 의 expose 는 런타임 API 라 자동 추론되지 않는다
+const editor = ref<PDFCanvasEditorRef | null>(null)
 
 async function onExport() {
   if (!editor.value?.handle?.checkBeforeExport()) return
@@ -543,6 +546,10 @@ async function onExport() {
 </script>
 <template><PDFCanvasEditor ref="editor" :initial-doc="doc" /></template>
 ```
+
+> Vue 에서는 `ref` 타입을 `PDFCanvasEditorRef`(뷰어는 `PDFCanvasViewerRef`)로 명시한다.
+> React 는 `useImperativeHandle` 로 자동이지만 Vue 의 `expose()` 는 `.d.ts` 에 타입을 남기지
+> 않는다. 명시하지 않으면 `handle` 이 `any` 로 잡혀 facade 의 오타가 조용히 통과한다.
 
 **`toPublicDoc()` 은 각 객체 타입의 `toPublic(data)` 를 거친다.** 구현하지 않은 타입은 데이터가
 그대로 나간다 — 정답처럼 학생에게 보이면 안 되는 값은 반드시 그 함수로 제거한다.

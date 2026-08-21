@@ -43,6 +43,14 @@
 
 ## 동작하는 예제
 
+배포된 것을 먼저 본다 — 설치 없이 브라우저에서 열린다.
+
+| | |
+| --- | --- |
+| [데모](https://h-domi.cloud/pdf-canvas-kit/) | 편집기 · 뷰어 · 검증 케이스 · PDF 스파이크 |
+| [React 예제](https://h-domi.cloud/pdf-canvas-kit/react/) | 설치된 `dist` 를 쓰는 소비자 앱 |
+| [Vue 예제](https://h-domi.cloud/pdf-canvas-kit/vue/) | 같은 구성, 다른 디자인 시스템 |
+
 레포에 소비자 앱 두 개가 있다. **별칭 없이** 설치된 `dist` 를 쓰므로 실제 환경과 같다.
 
 ```bash

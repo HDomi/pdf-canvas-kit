@@ -4,10 +4,24 @@ PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **텍스트·도�
 올리는 편집기와 뷰어. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고
 React·Vue 래퍼가 같은 컴포넌트를 제공한다.
 
+## 브라우저에서 바로 보기
+
+| | |
+| --- | --- |
+| **[데모](https://h-domi.cloud/pdf-canvas-kit/)** | 편집기 · 뷰어 · 검증 케이스 · PDF 스파이크 |
+| **[React 예제](https://h-domi.cloud/pdf-canvas-kit/react/)** | 설치된 `dist` 를 쓰는 소비자 앱 |
+| **[Vue 예제](https://h-domi.cloud/pdf-canvas-kit/vue/)** | 같은 구성, **다른 디자인 시스템** |
+
+두 예제는 같은 패키지를 전혀 다른 테마로 쓴다. 상단 **[테마 ON/OFF]** 로 `@layer` 오버라이드가
+실제로 이기는 것을, **`</>` 배지**로 각 기능이 어떻게 배선됐는지 볼 수 있다.
+
+---
+
 ```bash
-# 첫 공개는 beta 다. latest 태그는 아직 비어 있다
-npm install @h_domi/pdf-canvas-kit@next
+npm install @h_domi/pdf-canvas-kit
 ```
+
+> 아직 **beta** 다. prerelease 를 `latest` 태그로 올리므로 위 명령이 최신 beta 를 받는다.
 
 ```tsx
 // React
@@ -38,7 +52,7 @@ const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
 > controlled 가 아니다. 이름이 그 계약이다.
 
 런타임 의존성은 `pdfjs-dist` 하나다. `react` · `vue` 는 **optional peer** 라 쓰는 쪽만 설치한다.
-번들 크기는 코어 11KB + React 래퍼 2.8KB / Vue 래퍼 4.5KB + CSS 20KB.
+번들 크기는 코어 10.9KB + React 래퍼 3.4KB / Vue 래퍼 5.5KB + CSS 21.9KB (2026.08.21 실측).
 
 ---
 
@@ -171,23 +185,26 @@ const shortAnswer = defineObjectType<Answer, Omit<Answer, 'answers'>>({
 
 ## 현재 상태
 
-**미배포.** 편집 기능은 전부 동작하고, 남은 일은 [docs/TODO.md](docs/TODO.md) 에 있다.
+**배포됨 — 아직 beta 다.** [npm](https://www.npmjs.com/package/@h_domi/pdf-canvas-kit) ·
+[데모](https://h-domi.cloud/pdf-canvas-kit/). 편집기와 뷰어 모두 React·Vue·vanilla 에서 쓸 수
+있다. 남은 일은 [docs/TODO.md](docs/TODO.md) 에 있다.
 
-**위 세 예제는 동작한다.** 편집기와 뷰어 모두 React·Vue·vanilla 에서 쓸 수 있다. 남은 것은 npm 배포뿐이다.
+`0.1.0` (안정판) 으로 올리는 조건은 **실제 앱에 붙여 보는 것**이다. 지금까지 붙여 본 것은
+`examples/` 둘뿐이다.
 
 | 항목 | 상태 |
 | --- | --- |
 | vanilla facade (`createPDFCanvasEditor`) | 완료 (R9) |
-| React 래퍼 (`@h_domi/pdf-canvas-kit/react`) | 완료 (R9) — 번들 2.0KB |
-| Vue 래퍼 (`@h_domi/pdf-canvas-kit/vue`) | 완료 (R9) — 번들 3.0KB |
+| React 래퍼 (`@h_domi/pdf-canvas-kit/react`) | 완료 (R9) — 번들 3.4KB |
+| Vue 래퍼 (`@h_domi/pdf-canvas-kit/vue`) | 완료 (R9) — 번들 5.5KB |
 | 렌더 층 바닥 (`src/dom/reactive.ts` · `h.ts`) | 완료 (R2) |
 | 객체·페이지·스테이지 렌더 | 완료 (R4·R5) |
 | 편집기 크롬 (상단바·툴바·페이지목록·다이얼로그) | 완료 (R6) |
 | 인스펙터 | 완료 (R7) |
 | 커스텀 객체 레지스트리 | 완료 (R8) — 소비자가 타입을 정의한다 |
 | 프레임워크 무관 컨트롤러 (`src/controller/`) | 완료 (R3) |
-| 검증 케이스 | **287건 / 42 그룹** (`npm run checks`) |
-| npm 배포 | **미배포.** tarball 설치 검증은 완료 (R10) — React 19 앱 · Vue 3.5 앱 |
+| 검증 케이스 | **364건 / 53 그룹** (`npm run checks`) |
+| npm 배포 | **beta 배포 중** — `latest` 태그. tarball·registry 설치 모두 검증 (R10) |
 | `PDFCanvasViewer` | 완료 (R11) — 연속 스크롤 · 페이지별 fit-to-width · `renderViewer` 슬롯 |
 | 크롬 UI 슬롯 교체 | **미구현** (R12) — 결정은 D27 |
 
@@ -221,6 +238,8 @@ const shortAnswer = defineObjectType<Answer, Omit<Answer, 'answers'>>({
 | 자동저장 파이프라인 | 동작 — 저장 대상은 콘솔(`console.debug`). 실서버 미연결 |
 | 상단바 [JSON 출력] | 문서 JSON 을 콘솔로. **저장이 아니라 현재 상태 보기**다 |
 | 상단바 [내보내기] | ⚠️ **임시 제거** — 검증 게이트는 `EditorHandle` 로 노출돼 있다 |
+| 도형 | 11종 (사각·원·삼각·마름모·오각·육각·별·십자·선·화살표·양쪽화살표) |
+| 글꼴 선택 | 동작 — **웹폰트 파일은 호스트가 불러온다** ([글꼴](docs/16-fonts.md)) |
 
 ---
 
@@ -240,7 +259,7 @@ npm run dev      # 3100 데모(레포 소스) · 3101 React 예제 · 3102 Vue �
 | --- | --- |
 | [`/editor/`](http://localhost:3100/editor/) | 편집기 (vanilla facade) |
 | [`/viewer/`](http://localhost:3100/viewer/) | 편집기 ↔ 뷰어 왕복, 정답 제거 확인 |
-| [`/checks/`](http://localhost:3100/checks/) | 검증 케이스 **303건 / 45 그룹** |
+| [`/checks/`](http://localhost:3100/checks/) | 검증 케이스 **364건 / 53 그룹** |
 | [`/spike/`](http://localhost:3100/spike/) | PDF 변환 진단 (페이지 크기·폰트) |
 | [React 예제](http://localhost:3101/) | **테마 토글 · 호스트 모달 · 아이콘 3경로** |
 | [Vue 예제](http://localhost:3102/) | 같은 것의 SFC 판. **다른 디자인**이 적용돼 있다 |

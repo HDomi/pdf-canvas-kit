@@ -116,6 +116,13 @@ interface ViewerCustomProps {
  * 상태가 없다. 한 함수에 넣으면 분기가 절반씩 죽은 코드가 된다.
  */
 function viewerCustomObject(props: ViewerCustomProps): HTMLElement {
+  /*
+   * `kind` 는 객체 수명 동안 바뀌지 않는다 — 그것을 바꾸는 커맨드가 없고, 인스펙터는 `data` 만
+   * 고친다. `list()` 가 `id` 로 노드를 만들므로 다른 kind 는 곧 다른 노드다 (§13.3).
+   *
+   * 그래서 여기서 한 번만 읽는다. **근거 없이 이렇게 쓰면 안 된다** — `shape` 을 이렇게 읽어
+   * 모양 변경이 반영되지 않는 버그가 있었다 (§13.2.1).
+   */
   const kind = props.object.value.kind
   const def = props.types.get(kind)
 

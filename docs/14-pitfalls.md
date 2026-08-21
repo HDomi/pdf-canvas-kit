@@ -70,6 +70,23 @@ Vue 의 `expose()` 는 **런타임 API 라 `.d.ts` 에 타입을 남기지 않�
 const editor = ref<PDFCanvasEditorRef | null>(null)
 ```
 
+### `shortcuts` · `warnOnUnload` · `onError` 가 Vue 에서 안 먹는다
+
+`0.1.0-beta.3` 까지의 버그. Vue 래퍼가 prop 을 나열식으로 넘기면서 D33 의 셋을 **선언조차 하지
+않았다.** React 는 통째로 넘기므로 정상이었다.
+
+지금은 제외 목록만 두고 나머지를 전부 흘린다. 새 prop 은 선언만 하면 따라온다.
+
+### 선택 테두리가 도형 테두리를 덮어 색이 안 보인다
+
+`0.1.0-beta.3` 까지의 버그. 핸들은 도형 밖으로 밀었는데 선택 테두리는 객체 경계에 남아,
+도형 자신의 테두리와 정확히 겹쳤다. 지금은 둘이 같은 사각형(`outsetFrame`)을 쓴다.
+
+### `import type { ErrorContext }` 가 안 된다
+
+`0.1.0-beta.3` 까지 `index.ts` 에서 export 되지 않았다 — 문서에는 공개 타입으로 적혀 있었다.
+`UploadFile` 도 같았다. 지금은 둘 다 된다.
+
 ### prop 을 바꿨는데 반영되지 않는다
 
 `watchEffect` 안에서 optional chaining 뒤에 prop 을 읽으면 **의존성이 등록되지 않는다.**

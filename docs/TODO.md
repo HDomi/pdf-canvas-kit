@@ -33,7 +33,9 @@
 - [x] `0.1.0-beta.3` 배포
 - [ ] **`0.1.0-beta.4` 배포** — `./publish.sh 0.1.0-beta.3`
   - beta.3 에 없는 것: 휠 줌 감도(1.0015 → 1.0025) + **deltaMode 정규화**
-  (Firefox 에서 줌이 거의 안 움직였다), publish 를 항상 latest 태그로
+  (Firefox 에서 줌이 거의 안 움직였다), publish 를 항상 latest 태그로,
+  **선택 테두리를 핸들과 같은 사각형으로**, **Vue 래퍼의 D33 prop 누락**,
+  `ErrorContext` · `UploadFile` export 누락, 죽은 문구 26개 제거(파괴적)
   - ⚠️ `publish.sh` 가 이제 prerelease 도 **latest** 로 올린다. `npm i <pkg>` 기본 설치가
   베타가 된다 — 지금은 베타가 곧 최신이라 그게 맞다
   - beta.2 에 없는 것: **폼 컨트롤 색 명시**(§22 — 다크 모드에서 버튼 글자가 사라졌다),
@@ -63,6 +65,9 @@
 - [ ] 핸들이 흰 사각형 + 파란 테두리로 보이는지 — `box-shadow: inset` 이 padding-box 기준이라는
   전제에 의존한다. 구조만 확인했다
 - [ ] 얇은 선의 **본체**를 잡아 드래그할 수 있는지 (핸들 히트가 본체를 안 덮는지)
+- [ ] 선택 테두리가 도형 테두리와 떨어져 보이는지 — 도형 색이 가려지지 않아야 한다
+- [ ] Vue 예제에서 `:shortcuts="false"` · `:warn-on-unload="false"` · `:on-error` 가 먹는지
+  (순수 함수는 케이스로 고정했지만 컴포넌트를 통한 경로는 브라우저에서만 확인된다)
 - [ ] 핸들이 밖으로 나가면서 옆 객체를 가리는 정도가 실제로 견딜 만한지
 - [ ] `ResizeObserver` 발화 · `scrollIntoView` 위치
 - [ ] 뷰어 응답 폼의 한글 IME

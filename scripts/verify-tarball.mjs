@@ -205,6 +205,46 @@ try {
     check(`.${cls} 이 color 를 명시한다 (시스템 색 의존 금지)`, colored)
   }
 
+  /*
+   * 문서에 적힌 타입이 **실제로 import 가능해야 한다.**
+   *
+   * `docs/13-api.md` 의 "타입" 절이 계약이다. 거기 적혀 있는데 `index.ts` 가 내보내지 않으면
+   * 소비자가 `import type { X } from '@h_domi/pdf-canvas-kit'` 에서 막힌다. `ErrorContext` 가
+   * 실제로 그 상태였고(D33), R9 에서 `createPDFCanvasEditor` 를 빠뜨린 것과 같은 종류다.
+   *
+   * `·` 로 구분된 식별자 목록만 읽는다. 함수 시그니처(`(` 포함)나 문장은 건너뛴다.
+   */
+  console.log('\n[문서에 적힌 타입이 실제로 export 되는가]')
+  const dts = readFileSync(join(pkgDir, 'dist/index.d.ts'), 'utf8')
+  const apiDoc = readFileSync(resolve(root, 'docs/13-api.md'), 'utf8')
+  /*
+   * ARCHITECTURE §9 도 함께 본다. 그쪽에 D25 로 지운 `ShortAnswerBox` 와 제거된 `I18nPort` 가
+   * import 예제로 남아 있었다 — 문서 두 곳이 같은 계약을 말하므로 검사도 둘을 봐야 한다.
+   */
+  const arch = readFileSync(resolve(root, 'ARCHITECTURE.md'), 'utf8')
+  const archSection = arch.slice(arch.indexOf('\n## 9. 타입 사용'), arch.indexOf('\n## 10.'))
+  const typeSection = apiDoc.slice(apiDoc.indexOf('\n## 타입')) + archSection
+  const names = new Set()
+  for (const m of typeSection.matchAll(/```ts\n([\s\S]*?)```/g)) {
+    for (const line of m[1].split('\n')) {
+      const code = line.split('//')[0].trim()
+      if (!code || code.includes('(') || code.includes('=')) continue
+      if (code.startsWith('import') || code.startsWith('}')) continue
+      for (const n of code.split('·').flatMap((x) => x.split(','))) {
+        const id = n.trim()
+        if (/^[A-Z][A-Za-z0-9]*$/.test(id)) names.add(id)
+      }
+    }
+  }
+  const missingTypes = [...names].filter(
+    (n) => !new RegExp(`\\b${n}\\b`).test(dts.replace(/\/\*[\s\S]*?\*\//g, '')),
+  )
+  check(
+    `docs/13-api.md 의 타입 ${names.size}개가 전부 dist/index.d.ts 에 있다`,
+    missingTypes.length === 0,
+    missingTypes.join(' '),
+  )
+
   console.log('\n[의존성]')
   check(
     'dependencies 는 pdfjs-dist 하나',

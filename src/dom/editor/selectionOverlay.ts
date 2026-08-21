@@ -10,7 +10,7 @@
 import { el, list, when } from '../h'
 import type { ReadSignal } from '../reactive'
 import { rectToFrame, type PageViewport } from '../../core/geometry/units'
-import type { HandleId } from '../../core/geometry/handles'
+import { outsetFrame, type HandleId } from '../../core/geometry/handles'
 import type { Rect } from '../../core/model/types'
 import { resizeHandles } from './resizeHandles'
 
@@ -58,7 +58,15 @@ export function selectionOverlay(props: SelectionOverlayProps): HTMLElement {
           style: () => {
             const vp = props.viewport.value
             if (!vp) return {}
-            return boxStyle(rectToFrame(item.value.rect, vp), item.value.rotation)
+            /*
+             * 핸들과 **같은 사각형**을 쓴다 (`outsetFrame`).
+             *
+             * 객체 경계에 두면 이 테두리가 객체 자신의 테두리를 정확히 덮어 도형 색이
+             * 보이지 않는다 — 2026.08.21 에 그 상태였다. 선택 표시는 객체 밖에 있어야 한다.
+             *
+             * 객체 유형과 무관하다. 텍스트·마스크·커스텀 객체도 같은 경로로 그려진다.
+             */
+            return boxStyle(outsetFrame(rectToFrame(item.value.rect, vp)), item.value.rotation)
           },
         }),
     ),
@@ -72,6 +80,11 @@ export function selectionOverlay(props: SelectionOverlayProps): HTMLElement {
             const vp = props.viewport.value
             const p = props.preview.value
             if (!vp || !p) return {}
+            /*
+             * 마퀴는 **넓히지 않는다.** 드래그한 영역 자체가 정보이고, 선택 마퀴는 그 사각형과
+             * 교차하는 객체를 잡는다 — 표시가 판정보다 크면 잡히지 않은 객체가 안에 들어와
+             * 보인다.
+             */
             return boxStyle(rectToFrame(p.rect, vp), 0)
           },
         }),

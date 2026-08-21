@@ -24,6 +24,7 @@ import { flushSync } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 import { PDFCanvasEditor, PDFCanvasViewer } from '../../src/react/index'
 import type { EditorHandle, ViewerHandle } from '../../src/react/index'
+import { mountProps, updatableProps, updatableViewerProps } from '../../src/vue/props'
 import {
   PDFCanvasEditor as VueEditor,
   PDFCanvasViewer as VueViewer,
@@ -256,5 +257,75 @@ const refEditor = createRef<EditorHandle>()
 const refEditor2 = createRef<EditorHandle>()
 const refViewer = createRef<ViewerHandle>()
 
+/**
+ * Vue prop 전달 (2026.08.21) ★
+ *
+ * `updatableProps` 를 순수 함수로 뽑은 이유가 이 그룹이다. 예전에는 흘릴 prop 을 `setup()` 안에
+ * 나열했고 D33 의 셋(`shortcuts` · `warnOnUnload` · `onError`)이 빠져 Vue 에서만 먹지 않았다.
+ * "제외 목록만 둔다" 로 뒤집은 뒤에도 그 제외 목록이 잘못되면 같은 증상이 나므로 고정한다.
+ */
+const VUE_PROPS_GROUP: CaseGroup = {
+  title: 'wrapper — Vue prop 전달 (2026.08.21) ★',
+  note: 'facade 는 아는 키만 읽으므로 "전부 넘기고 제외만 적는" 방향이 안전하다. 나열식은 새 prop 을 빠뜨린다.',
+  cases: [
+    {
+      name: '★ D33 prop 셋이 갱신으로 흘러간다 (2026.08.21 에 전부 빠져 있었다)',
+      expected: { shortcuts: false, warnOnUnload: false, onError: 'function' },
+      actual: () => {
+        const out = updatableProps({
+          shortcuts: false,
+          warnOnUnload: false,
+          onError: () => {},
+          readOnly: false,
+        })
+        return {
+          shortcuts: out.shortcuts,
+          warnOnUnload: out.warnOnUnload,
+          onError: typeof out.onError,
+        }
+      },
+    },
+    {
+      name: '`undefined` 는 빼고 넘긴다 — facade 기본값을 undefined 로 덮지 않게',
+      expected: [false, false],
+      actual: () => {
+        const out = updatableProps({ autosave: undefined, ports: undefined, readOnly: true })
+        return ['autosave' in out, 'ports' in out]
+      },
+    },
+    {
+      name: '최초 1회만 읽는 것은 갱신에서 뺀다 (initialDoc · strings · icons …)',
+      expected: [],
+      actual: () => {
+        const out = updatableProps({
+          initialDoc: {},
+          initialScale: 1,
+          objectTypes: [],
+          strings: {},
+          icons: {},
+        })
+        return Object.keys(out)
+      },
+    },
+    {
+      name: '마운트에는 그것들도 넘긴다 — Vue 전용 키만 뺀다',
+      expected: [true, true, false],
+      actual: () => {
+        const out = mountProps({
+          initialDoc: {},
+          strings: {},
+          renderObject: {},
+        }) as Record<string, unknown>
+        return ['initialDoc' in out, 'strings' in out, 'renderObject' in out]
+      },
+    },
+    {
+      name: '뷰어는 doc 을 흘린다 (controlled) — 편집기의 initialDoc 과 반대다',
+      expected: true,
+      actual: () => 'doc' in (updatableViewerProps({ doc: null, maxScale: 2 }) as object),
+    },
+  ],
+}
+
 /** React·Vue 두 그룹. 러너와 화면이 이 배열만 본다. */
-export const WRAPPER_GROUPS: CaseGroup[] = [...REACT_GROUPS, ...VUE_GROUPS]
+export const WRAPPER_GROUPS: CaseGroup[] = [...REACT_GROUPS, ...VUE_GROUPS, VUE_PROPS_GROUP]

@@ -25,6 +25,7 @@ import {
   HANDLE_ANCHORS,
   HANDLE_CURSORS,
   HANDLE_IDS,
+  outsetFrame,
   ROTATE_HANDLE_OFFSET_PX,
   type HandleId,
 } from '../../core/geometry/handles'
@@ -44,7 +45,6 @@ export interface ResizeHandlesProps {
 
 const size = EDITOR_DEFAULTS.handles.sizePx
 const hit = EDITOR_DEFAULTS.handles.hitPx
-const outset = EDITOR_DEFAULTS.handles.outsetPx
 /**
  * 히트 영역을 시각 크기보다 키운다. 잡기 편해야 한다.
  *
@@ -63,10 +63,7 @@ export function resizeHandles(props: ResizeHandlesProps): HTMLElement {
    *
    * 좌우·상하로 같은 값을 더하므로 **중심은 변하지 않는다** — 회전 원점이 그대로다.
    */
-  const frameRect = () => {
-    const r = rectToFrame(props.rect(), props.viewport())
-    return { x: r.x - outset, y: r.y - outset, w: r.w + outset * 2, h: r.h + outset * 2 }
-  }
+  const frameRect = () => outsetFrame(rectToFrame(props.rect(), props.viewport()))
 
   /** 핸들 자신은 역회전시켜 화면 기준 정사각형을 유지한다. */
   const counterRotate = () => (props.rotation() ? ` rotate(${-props.rotation()}deg)` : '')

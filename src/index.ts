@@ -75,6 +75,7 @@ export {
   HANDLE_ANCHORS,
   HANDLE_CURSORS,
   ROTATE_HANDLE_OFFSET_PX,
+  outsetFrame,
 } from './core/geometry/handles'
 export type { HandleId, ResizeOptions } from './core/geometry/handles'
 
@@ -160,6 +161,14 @@ export { createPDFCanvasEditor } from './dom/createEditor'
 export type { EditorHandle, EditorProps } from './dom/createEditor'
 /* 다이얼로그 위임 (D31). 호스트가 자기 모달을 쓰려면 이 두 타입이 필요하다. */
 export type { ConfirmRequest, ImportState } from './controller/editor'
+/*
+ * `onError` 의 두 번째 인수와 `uploadFile` prop 의 타입 (D33 · Q11).
+ *
+ * 2026.08.21 까지 빠져 있었다 — `docs/13-api.md` 는 `ErrorContext` 를 공개 타입으로 적어
+ * 두었는데 실제로는 import 할 수 없었다. R9 에서 `createPDFCanvasEditor` 를 빠뜨린 것과 같은
+ * 종류다: **문서에 적힌 것이 곧 계약**이고, 그 계약을 검사가 지켜야 한다.
+ */
+export type { ErrorContext, UploadFile } from './controller/editor'
 export { createPDFCanvasViewer } from './dom/createViewer'
 export type { ViewerHandle, ViewerProps } from './dom/createViewer'
 export { defineObjectType, createObjectTypeRegistry, UNKNOWN_KIND_ISSUE } from './core/objectTypes'

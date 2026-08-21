@@ -33,6 +33,10 @@ export const DEFAULT_STRINGS = {
   'topbar.titlePlaceholder': '제목 없는 문서',
   'topbar.undo': '되돌리기',
   'topbar.redo': '다시 실행',
+  /*
+   * 상단바 [내보내기] 버튼은 아직 없다 (docs/TODO.md). 검증 게이트는 `EditorHandle` 에 이미
+   * 있고 버튼만 빠져 있어 이 키만 미리 남긴다.
+   */
   'topbar.export': '내보내기',
   'topbar.save': 'JSON 출력',
   'topbar.saving': '저장 중…',
@@ -84,7 +88,6 @@ export const DEFAULT_STRINGS = {
 
   'inspector.text': '내용',
   'inspector.fontSize': '크기',
-  'inspector.color': '색',
   'inspector.align': '정렬',
   'inspector.bold': '굵게',
   'inspector.shapeKind': '모양',
@@ -121,31 +124,6 @@ export const DEFAULT_STRINGS = {
   'stage.zoomIn': '확대',
   'stage.fitWidth': '폭 맞춤',
   'stage.fitPage': '페이지 맞춤',
-  'stage.actualSize': '100%',
-
-  'export.title': '문서를 과제로 내보내기',
-  'export.name': '과제 이름',
-  'export.namePlaceholder': '제목 없는 문서',
-  'export.access': '공개 범위',
-  'export.public': '전체 공개',
-  'export.classOnly': '학급 전용',
-  'export.class': '대상 Class',
-  'export.classPlaceholder': '대상 Class 선택',
-  'export.noClasses': '선택할 수 있는 Class가 없습니다.',
-  'export.submitLimit': '제출 횟수',
-  'export.submitOnce': '1회만 제출',
-  'export.submitMultiple': '여러 번 제출',
-  'export.due': '제출 기한',
-  'export.dueNote': '선택 입력. 기한이 지나면 과제가 자동으로 마감됩니다.',
-  'export.submit': '내보내기',
-  'export.submitting': '내보내는 중…',
-  'export.link': '공유 링크',
-  'export.copy': '링크 복사',
-  'export.copied': '복사됨',
-  'export.qr': 'QR 코드',
-  'export.afterNote':
-    '이후 문서를 수정해도 이 과제에는 반영되지 않습니다. 수정본을 내려면 다시 내보내 주세요.',
-  'export.failed': '내보내기에 실패했습니다. 다시 시도해 주세요.',
 
   'upload.title': '문서 불러오기',
   'upload.tabFile': '파일에서',
@@ -165,9 +143,7 @@ export const DEFAULT_STRINGS = {
   'error.pageLimit': '문서 하나에 최대 500페이지까지 지원합니다.',
   'error.convertFailed': '파일을 변환할 수 없습니다. 파일을 확인해 주세요.',
   'error.encrypted': '암호가 설정된 파일은 불러올 수 없습니다.',
-  'error.serverConverter': '이 형식은 서버 변환이 필요합니다. 관리자에게 문의해 주세요.',
   'error.aborted': '업로드를 취소했습니다.',
-  'error.titleMax': '최대 100자까지 입력할 수 있습니다.',
   'error.emptyDoc': '페이지가 없습니다. 문서를 먼저 불러와 주세요.',
   'error.exportBlocked': '내보낼 수 없는 문항이 {count}개 있습니다.',
   'error.minPages': '최소 1페이지는 유지해야 합니다.',

@@ -44,6 +44,7 @@ import {
   type PropType,
   type VNode,
 } from 'vue'
+import { mountProps, mountViewerProps, updatableProps, updatableViewerProps } from './props'
 import { createPDFCanvasEditor, type EditorHandle, type EditorProps } from '../dom/createEditor'
 import { createPDFCanvasViewer, type ViewerHandle } from '../dom/createViewer'
 import type { AnyObjectTypeDef } from '../core/objectTypes'
@@ -171,6 +172,16 @@ export const PDFCanvasEditor = defineComponent({
     strings: { type: Object as PropType<EditorProps['strings']>, default: undefined },
     /** 아이콘을 vanilla 노드로 교체한다. **최초 1회만 읽는다.** */
     icons: { type: Object as PropType<EditorProps['icons']>, default: undefined },
+    /*
+     * 호스트 앱과의 경계 (D33). 2026.08.21 까지 **선언이 빠져 있어 아예 먹지 않았다** —
+     * React 는 prop 을 통째로 넘겨 정상이었고 Vue 만 무효였다.
+     */
+    /** `false` 면 단축키를 완전히 끈다. Space 팬도 함께 멈춘다. */
+    shortcuts: { type: Boolean, default: undefined },
+    /** `false` 면 이탈 확인창을 띄우지 않는다. 저장 flush 는 계속 동작한다. */
+    warnOnUnload: { type: Boolean, default: undefined },
+    /** 렌더 층이 vanilla DOM 이라 Vue 의 `errorHandler` 가 못 잡는 예외를 받는다. */
+    onError: { type: Function as PropType<EditorProps['onError']>, default: undefined },
   },
 
   emits: {
@@ -236,17 +247,12 @@ export const PDFCanvasEditor = defineComponent({
     onMounted(() => {
       if (!host.value) return
       handle = createPDFCanvasEditor(host.value, {
-        ...(props.initialDoc ? { initialDoc: props.initialDoc } : {}),
-        ...(props.ports ? { ports: props.ports } : {}),
-        readOnly: props.readOnly,
-        ...(props.autosave !== undefined ? { autosave: props.autosave } : {}),
-        ...(props.initialScale !== undefined ? { initialScale: props.initialScale } : {}),
-        ...(props.uploadFile ? { uploadFile: props.uploadFile } : {}),
-        ...(props.objectTypes ? { objectTypes: props.objectTypes } : {}),
-        // 다이얼로그 위임 (D31). 아래 watchEffect 가 갱신도 흘린다.
-        ...(props.onRequestUpload ? { onRequestUpload: props.onRequestUpload } : {}),
-        ...(props.onRequestConfirm ? { onRequestConfirm: props.onRequestConfirm } : {}),
-        ...(props.onImportStateChange ? { onImportStateChange: props.onImportStateChange } : {}),
+        /*
+         * 선언된 prop 을 **통째로** 넘긴다 (Vue 전용 키만 뺀다 — `props.ts`).
+         *
+         * 나열하면 prop 을 추가할 때 여기를 함께 고쳐야 하고, 실제로 D33 의 셋이 빠졌다.
+         */
+        ...mountProps(props),
         onChange: (next) => {
           doc.value = next
           emit('change', next)
@@ -256,9 +262,6 @@ export const PDFCanvasEditor = defineComponent({
         onMountCustom: setMount(objectMounts),
         onMountInspector: setMount(inspectorMounts),
         onMountIcon: setIcon,
-        // 문구·아이콘은 최초 1회만 읽는다 (§19.4).
-        ...(props.strings ? { strings: props.strings } : {}),
-        ...(props.icons ? { icons: props.icons } : {}),
       })
       doc.value = handle.getDoc()
     })
@@ -275,21 +278,21 @@ export const PDFCanvasEditor = defineComponent({
      *
      * 객체를 먼저 만들어 prop 을 확실히 읽는다.
      */
+    /*
+     * ⚠️ **나열하지 않는다** (2026.08.21).
+     *
+     * 예전에는 흘릴 prop 을 여기 하나씩 적었다. 그 방식은 prop 을 추가할 때마다 **여기를 함께
+     * 고쳐야 한다는 것을 기억해야** 하고, 실제로 D33 의 `shortcuts` · `warnOnUnload` ·
+     * `onError` 셋이 빠졌다 — React 는 prop 을 통째로 넘기므로 정상이었고 Vue 만 먹지 않았다.
+     * 같은 계약이 프레임워크마다 다르게 동작하면 그게 버그의 형태다.
+     *
+     * 이제 `updatableProps()` 가 제외 목록만 보고 나머지를 전부 흘린다. 새 prop 은 선언만
+     * 하면 자동으로 따라온다.
+     */
     watchEffect(() => {
-      const next: Partial<EditorProps> = {
-        readOnly: props.readOnly,
-        ...(props.autosave !== undefined ? { autosave: props.autosave } : {}),
-        ...(props.ports ? { ports: props.ports } : {}),
-        ...(props.uploadFile ? { uploadFile: props.uploadFile } : {}),
-        /*
-         * 다이얼로그 위임도 흘린다 (D31). React 래퍼는 prop 을 통째로 넘기므로 자동으로
-         * 갱신되는데, Vue 는 나열식이라 여기 없으면 마운트 값에 고정된다 — 같은 계약이
-         * 프레임워크마다 다르게 동작하면 그게 버그의 형태다.
-         */
-        ...(props.onRequestUpload ? { onRequestUpload: props.onRequestUpload } : {}),
-        ...(props.onRequestConfirm ? { onRequestConfirm: props.onRequestConfirm } : {}),
-        ...(props.onImportStateChange ? { onImportStateChange: props.onImportStateChange } : {}),
-      }
+      // ⚠️ 위 주석의 이유로 **객체를 먼저 만든다.** `handle?.update(f(props))` 로 쓰면
+      // `handle` 이 null 인 첫 실행에서 `f(props)` 가 평가되지 않아 의존성이 등록되지 않는다.
+      const next = updatableProps(props)
       handle?.update(next)
     })
 
@@ -409,8 +412,7 @@ export const PDFCanvasViewer = defineComponent({
       if (!host.value) return
       handle = createPDFCanvasViewer(host.value, {
         doc: props.doc,
-        ...(props.objectTypes ? { objectTypes: props.objectTypes } : {}),
-        ...(props.maxScale !== undefined ? { maxScale: props.maxScale } : {}),
+        ...mountViewerProps(props),
         onChangeData: (objectId, next) => emit('changeData', objectId, next),
         onMountCustom: setMount,
       })
@@ -423,10 +425,9 @@ export const PDFCanvasViewer = defineComponent({
      * 의존성이 등록되지 않아 이후 갱신이 전부 무시된다 — 위 편집기 쪽 주석 참고.
      */
     watchEffect(() => {
-      const next = {
-        doc: props.doc,
-        ...(props.maxScale !== undefined ? { maxScale: props.maxScale } : {}),
-      }
+      // ⚠️ 객체를 먼저 만든다 (위 이유). `doc` 은 `null` 도 유효한 값이라 따로 넣는다 —
+      // `updatableViewerProps` 는 `undefined` 만 걸러 낸다.
+      const next = { doc: props.doc, ...updatableViewerProps(props) }
       handle?.update(next)
     })
 

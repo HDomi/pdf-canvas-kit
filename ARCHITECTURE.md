@@ -408,7 +408,9 @@ clientDeltaToPage(d, scale) // 드래그 델타
 | `AssetPort` | 페이지 이미지를 어디에 둘지 | `createBlobAssetPort()` — 메모리, 세션 한정 |
 | `ConverterPort` | 문서 → 페이지 이미지 | `createPdfjsConverter()` — **PDF만** |
 | `StoragePort` | 문서 저장 | `noopStoragePort()` — 저장 안 함 |
-| `I18nPort` | 문구 | 내장 ko/en |
+
+`I18nPort` 는 **없다.** i18n 시스템을 제거하고 문구 표 하나로 대체했다(§15) — 이 표에 남아
+있었고 2026.08.21 에 지웠다.
 
 ### 7.1 AssetPort와 blob 안전장치
 `persist()`는 `origin`을 **정직하게** 반환해야 한다.
@@ -570,6 +572,8 @@ src/
 ├─ index.ts 공개 API (프레임워크 무관)
 ├─ core/ ★ Vue import 금지
 │ ├─ model/types.ts 문서·객체 타입
+│ │ serialize.ts 저장 직렬화 + blob 가드
+│ │ viewState.ts 뷰 상태·도구 id (문서에 저장하지 않는다)
 │ ├─ config/defaults.ts ★ 모든 튜너블 상수
 │ ├─ config/fonts.ts 글꼴 목록 — 웹폰트 파일은 싣지 않는다
 │ ├─ geometry/
@@ -587,6 +591,7 @@ src/
 │ ├─ interaction/
 │ │ tools.ts 도구 정의·도구별 객체 생성
 │ │ wheel.ts 휠 deltaY 단위 정규화 (브라우저마다 다르다)
+│ ├─ config/fonts.ts 글꼴 목록 (위 §21.3)
 │ │ pointerMachine.ts ★ 드래그 상태 머신 (DOM 비의존)
 │ ├─ pdf/
 │ │ resources.ts ★ worker·CMap·wasm 설정
@@ -602,6 +607,7 @@ src/
 │ │ debouncedSaver.ts 5초 디바운스 + 최대 지연 + 재시도
 │ ├─ model/numbering.ts 문항 번호 (위치에서 파생)
 │ ├─ ports/ 호스트 주입 인터페이스
+│ │ AssetPort.ts ConverterPort.ts StoragePort.ts consoleStorage.ts
 │ ├─ validation/
 │ │ rules.ts ★ 검증 규칙 — 인스펙터와 내보내기가 공유
 │ │ exportGuard.ts 내보내기 게이트 + publicDoc 생성
@@ -641,6 +647,7 @@ src/
 │ engineState.ts editorState.ts textEntry.ts
 ├─ react/index.tsx 얇은 래퍼 — createPortal + useSyncExternalStore (§17.2)
 ├─ vue/index.ts 얇은 래퍼 — Teleport + defineComponent (SFC 아님, §17.2)
+│ props.ts ★ prop 전달 — 나열하지 않고 **제외 목록**만 둔다 (§17.4)
 ├─ styles.ts CSS 전용 엔트리 (`@h_domi/pdf-canvas-kit/styles.css`)
 └─ styles/
  tokens.css ★ CSS 변수
@@ -661,25 +668,38 @@ scripts/ 픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-che
 
 ```ts
 import type {
- PDFCanvasDoc, PDFCanvasPage, PDFCanvasObject,
- ShortAnswerBox, DropboxAnswerBox, EssayAnswerBox,
+ PDFCanvasDoc, PublicPDFCanvasDoc, PDFCanvasPage, PDFCanvasObject,
+ TextObject, ShapeObject, MaskObject, CustomObject, ShapeKind,
  PageBackground, Rect, Size, Pt,
- AssetPort, ConverterPort, StoragePort, I18nPort,
+ AssetPort, ConverterPort, StoragePort, EnginePorts,
  RasterPage, ConvertProgress,
+ EditorProps, EditorHandle, ViewerProps, ViewerHandle,
+ ConfirmRequest, ImportState, ErrorContext, UploadFile,
+ ObjectTypeDef, ObjectRenderContext, FontOption,
 } from '@h_domi/pdf-canvas-kit'
 
 import {
+ createPDFCanvasEditor, createPDFCanvasViewer, defineObjectType,
  createPdfjsConverter, createBlobAssetPort, configurePdfResources,
  LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS,
- formatPaperLabel, ConvertError,
+ configureStrings, configureIcons, configureFonts,
+ formatPaperLabel, asPublicDoc, ConvertError,
 } from '@h_domi/pdf-canvas-kit'
 ```
 
 - 객체는 `type` 필드로 판별하는 **discriminated union**이다.
- `if (o.type === 'answer.dropbox')` 후에는 `o.choices`가 좁혀진다
+ `if (o.type === 'shape')` 후에는 `o.shape` · `o.style.strokeWidth` 가 좁혀진다.
+ 커스텀 객체는 `o.type === 'custom'` 뒤 `o.kind` 로 다시 판별한다 (§16)
 - `LIMITS` 등은 `as const`라 리터럴 타입이 유지된다
 - 오류는 `ConvertError` 인스턴스이며 `code`로 분기한다
- (`unsupported-format` · `file-too-large` · `page-limit` · `encrypted` · `corrupt` · `aborted`)
+ (`unsupported-format` · `file-too-large` · `page-limit` · `encrypted` · `corrupt` ·
+ `aborted` · `worker-unavailable`)
+
+> ⚠️ **이 목록은 검사 대상이다.** 2026.08.21 까지 여기에 `ShortAnswerBox` ·
+> `DropboxAnswerBox` · `EssayAnswerBox` · `I18nPort` 가 남아 있었다 — D25 로 답안 박스를
+> 걷어내고 i18n 을 제거할 때 §9 를 함께 고치지 않았다. 존재하지 않는 타입을 import 예제로
+> 보여주고 있었던 것이다. `npm run verify:tarball` 이 이제 이 블록의 식별자가 전부
+> `dist/index.d.ts` 에 있는지 확인한다.
 
 ---
 
@@ -688,7 +708,8 @@ import {
 | 규칙 | 대상 | 왜 |
 | --- | --- | --- |
 | `vue`·`@vueuse/*`·`*.vue` import 금지 | `src/core/**` | 코어를 프레임워크 무관하게 유지 |
-| `geometry/units` import 금지 | `src/vue/editor/objects/**` | 객체 렌더는 pt를 px로 그대로 쓴다(§6.2) |
+| `geometry/units` import 금지 | `src/dom/editor/objects/**` | 객체 렌더는 pt를 px로 그대로 쓴다(§6.2) |
+| `react`·`vue` import 금지 | `src/dom/**` · `src/controller/**` | 렌더 층은 프레임워크 무관이다 (§17) |
 | `no-floating-promises` | 전체 | PDF 변환 비동기 누락 방지 |
 | `consistent-type-imports` | 전체 | 타입 전용 import를 런타임에서 제거 |
 
@@ -1358,6 +1379,30 @@ assignRef(refProp, handle)
 `expose({ get handle() {…} })` 게터라 접근 시점에 평가되어 같은 문제가 없다.
 
 `wrapperCases.ts` 가 이 불변식을 지킨다 — React 런타임을 실제로 띄우는 유일한 케이스다.
+
+## 17.4 ⚠️ Vue 는 prop 을 **나열하지 않는다** (2026.08.21)
+
+React 래퍼는 `{...editorProps}` 로 통째로 넘긴다. Vue 는 prop 을 선언해야 하므로 예전에는
+흘릴 것을 `setup()` 안에 하나씩 적었다. 그러면 prop 을 추가할 때마다 **거기를 함께 고쳐야
+한다는 것을 기억해야** 하고, 실제로 D33 의 `shortcuts` · `warnOnUnload` · `onError` 셋이 통째로
+빠졌다 — 선언조차 없어 `:on-error` 를 줘도 attr 로만 남았다.
+
+같은 계약이 프레임워크마다 다르게 동작하면 **그게 버그의 형태다.** 그래서 방향을 뒤집었다.
+
+| | |
+| --- | --- |
+| 기본 | **전부 흘린다** |
+| 예외 | `src/vue/props.ts` 의 제외 목록에만 적는다 |
+
+제외는 두 부류다. Vue 전용 키(`renderObject` 등 — facade 가 이름을 모른다)와 "최초 1회만
+읽는" 것(`initialDoc` · `initialScale` · `objectTypes` · `strings` · `icons`). 뷰어는 `doc` 이
+controlled 이므로 제외 목록이 다르다 — **흘려야** 한다.
+
+`undefined` 는 뺀다. Vue 는 주지 않은 prop 도 키를 만들고 `undefined` 를 넣으므로, 그대로
+넘기면 `setProps` 의 `'key' in next` 판정이 통과해 facade 기본값을 `undefined` 로 덮는다.
+
+순수 함수로 뽑은 이유: `setup()` 안에 두면 Vue 런타임 없이 확인할 수 없다. `props.ts` 라면
+`npm run checks` 가 "새 prop 이 흘러가는가" 를 고정한다.
 
 ### ⚠️ `handle?.update({ … props.x … })` 로 쓰지 않는다 (Vue)
 

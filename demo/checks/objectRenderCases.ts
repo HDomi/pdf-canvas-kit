@@ -896,7 +896,11 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
          * "확대할수록 선택 테두리가 객체에서 멀어진다" 다 (CLAUDE.md 6장의 단골 실수).
          */
         name: '★ 선택 박스는 프레임 로컬 좌표다 — frameRect 를 더하지 않는다',
-        expected: ['60px', '150px', '80px', '20px'],
+        /*
+         * rect(120,300,160,40) × scale 0.5 = (60,150,80,20) 이고, 거기서 `outsetFrame` 이
+         * 사방 10px 을 더한다 → (50,140,100,40). `frameRect.left/top`(100,50)은 더하지 않는다.
+         */
+        expected: ['50px', '140px', '100px', '40px'],
         actual: () => {
           const vp: PageViewport = {
             pageId: 'p',
@@ -962,6 +966,81 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
          * 핸들이 도형 위에 얹히면 얇은 객체(선·화살표)의 본체를 덮어 잡아 옮길 수 없다.
          * 그래서 앵커 사각형을 `outsetPx` 만큼 밖으로 넓힌다 (§21.1.1 · resizeHandles.ts).
          */
+        name: '★ 선택 테두리도 핸들과 같은 사각형이다 — 도형 테두리를 덮지 않게',
+        expected: { border: ['-10px', '-10px', '180px', '60px'], handleNw: ['-10px', '-10px'] },
+        actual: () => {
+          const vp: PageViewport = {
+            pageId: 'p',
+            size: A4_PT,
+            scale: 1,
+            frameRect: { left: 0, top: 0 },
+          }
+          const rect: Rect = { x: 0, y: 0, w: 160, h: 40 }
+          const [res, dispose] = scope(() => {
+            const n = selectionOverlay({
+              viewport: signal<PageViewport | null>(vp),
+              selectedRects: signal([{ rect, rotation: 0 }]),
+              preview: signal(null),
+              handleRect: signal(rect),
+              rotatable: signal(false),
+              handleRotation: signal(0),
+              onGrabHandle: () => {},
+              onGrabRotate: () => {},
+            })
+            const box = n.querySelector<HTMLElement>('.pck-select-box')!
+            const nw = n.querySelector<HTMLElement>('[data-handle="nw"]')!
+            return {
+              border: [
+                box.style.getPropertyValue('left'),
+                box.style.getPropertyValue('top'),
+                box.style.getPropertyValue('width'),
+                box.style.getPropertyValue('height'),
+              ],
+              handleNw: [nw.style.getPropertyValue('left'), nw.style.getPropertyValue('top')],
+            }
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        /*
+         * 마퀴는 넓히지 않는다. 드래그한 영역 자체가 정보이고, 선택 마퀴는 그 사각형과 교차하는
+         * 객체를 잡으므로 표시가 판정보다 크면 잡히지 않은 객체가 안에 들어와 보인다.
+         */
+        name: '마퀴는 넓히지 않는다 — 표시와 판정이 같아야 한다',
+        expected: ['0px', '0px', '160px', '40px'],
+        actual: () => {
+          const vp: PageViewport = {
+            pageId: 'p',
+            size: A4_PT,
+            scale: 1,
+            frameRect: { left: 0, top: 0 },
+          }
+          const [res, dispose] = scope(() => {
+            const n = selectionOverlay({
+              viewport: signal<PageViewport | null>(vp),
+              selectedRects: signal([]),
+              preview: signal({ rect: { x: 0, y: 0, w: 160, h: 40 }, kind: 'marquee' as const }),
+              handleRect: signal(null),
+              rotatable: signal(false),
+              handleRotation: signal(0),
+              onGrabHandle: () => {},
+              onGrabRotate: () => {},
+            })
+            const m = n.querySelector<HTMLElement>('.pck-marquee')!
+            return [
+              m.style.getPropertyValue('left'),
+              m.style.getPropertyValue('top'),
+              m.style.getPropertyValue('width'),
+              m.style.getPropertyValue('height'),
+            ]
+          })
+          dispose()
+          return res
+        },
+      },
+      {
         name: '★ 핸들은 객체 경계에서 outsetPx 만큼 밖에 놓인다',
         expected: { nw: ['-10px', '-10px'], se: ['170px', '50px'] },
         actual: () => {

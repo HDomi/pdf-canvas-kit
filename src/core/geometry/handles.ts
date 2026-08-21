@@ -6,6 +6,7 @@
  */
 import type { Pt, Rect, Size, PDFCanvasObjectType } from '../model/types'
 import { constrainRect, minSizeFor } from './constrain'
+import { EDITOR_DEFAULTS } from '../config/defaults'
 
 /** 핸들 위치. `n` = 북(위), `se` = 남동 등. */
 export type HandleId = 'nw' | 'n' | 'ne' | 'e' | 'se' | 's' | 'sw' | 'w'
@@ -190,6 +191,26 @@ export function resizeRect(
 
 /** 회전 핸들의 rect 기준 위치. 위쪽 엣지 바깥이다. */
 export const ROTATE_HANDLE_OFFSET_PX = 22
+
+/**
+ * 선택 표시를 놓을 사각형 — 객체 프레임을 `handles.outsetPx` 만큼 **밖으로** 넓힌다.
+ *
+ * 단위는 **프레임 px** 다(pt 가 아니다). 선택 표시는 배율 transform 밖에 그리므로 어떤
+ * 배율에서도 같은 두께·같은 간격이어야 한다.
+ *
+ * ## 선택 테두리와 핸들이 같은 사각형을 쓴다 ★
+ *
+ * 핸들만 밖으로 밀고 테두리를 객체 경계에 두면, 테두리가 **도형 자신의 테두리를 정확히
+ * 덮는다.** 두 선이 같은 자리에 겹쳐 도형 색이 보이지 않는다 — 2026.08.21 에 실제로 그랬다.
+ *
+ * 그래서 함수 하나로 둔다. 두 곳에 각자 적으면 한쪽만 고치는 이 버그가 다시 난다.
+ *
+ * 좌우·상하로 같은 값을 더하므로 **중심은 변하지 않는다** — 회전 원점이 그대로다.
+ */
+export function outsetFrame(frame: Rect): Rect {
+  const o = EDITOR_DEFAULTS.handles.outsetPx
+  return { x: frame.x - o, y: frame.y - o, w: frame.w + o * 2, h: frame.h + o * 2 }
+}
 
 /**
  * 포인터 위치로 회전 각도를 구한다.

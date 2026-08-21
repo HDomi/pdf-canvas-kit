@@ -8,7 +8,10 @@
 
 ## 배포
 
-- [ ] **npm publish** — `prepublishOnly` 가 typecheck·lint·checks·build·verify:tarball 을 돌린다
+- [ ] **npm publish** — `./publish.sh` 로 한다 (gitignore 대상. `DRY_RUN=1` 로 먼저 확인)
+  - `npm login` 이 선행돼야 한다. scoped 패키지라 `publishConfig.access = "public"` 이 필수다
+  - ⚠️ `verify:tarball` 을 `prepublishOnly` 에 넣지 않는다 — `publish → prepublishOnly →
+    pack → prepare` 로 npm 이 재귀 실행되며 출력이 섞인다. `publish.sh` 가 publish 전에 부른다
   - tarball 을 실제 React·Vue 앱에 설치해 검증했다 (`examples/*` 가 그 경로를 계속 지킨다)
   - registry 설치는 `file:` 프로토콜과 tarball 해석이 같지만 **동일하다고 단정하지 않았다** —
     첫 배포 후 빈 프로젝트에서 `npm i @h_domi/pdf-canvas-kit` 로 한 번 확인한다

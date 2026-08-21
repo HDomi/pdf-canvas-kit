@@ -1,8 +1,17 @@
 {
   "name": "@h_domi/pdf-canvas-kit",
   "version": "0.1.0",
-  "description": "Framework-agnostic PDF worksheet editor — turn a PDF into page backgrounds with an interactive object layer. Vue and React wrappers included.",
+  "description": "Framework-agnostic PDF editor and viewer — render a PDF as page backgrounds and place your own components on top. Zero framework runtime, thin React and Vue wrappers.",
   "license": "MIT",
+  "author": "HDomi",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/HDomi/pdf-canvas-kit.git"
+  },
+  "homepage": "https://github.com/HDomi/pdf-canvas-kit#readme",
+  "bugs": {
+    "url": "https://github.com/HDomi/pdf-canvas-kit/issues"
+  },
   "publishConfig": {
     "access": "public"
   },
@@ -10,14 +19,16 @@
   "keywords": [
     "pdf",
     "pdf-editor",
+    "pdf-viewer",
     "pdf-annotation",
+    "pdfjs",
     "canvas",
-    "worksheet",
-    "answer-box",
-    "vue",
+    "overlay",
+    "drag-and-drop",
     "react",
+    "vue",
     "framework-agnostic",
-    "pdfjs"
+    "headless"
   ],
   "sideEffects": [
     "**/*.css"

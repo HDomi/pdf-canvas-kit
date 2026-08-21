@@ -95,7 +95,7 @@ try {
   const layerAt = css.indexOf('@layer')
   const layerName = css.match(/@layer\s+([a-z-]+)\s*\{/)?.[1]
   check('@layer 선언이 있다', layerAt >= 0)
-  check('레이어 이름이 pdf-canvas-kit', layerName === 'pdf-canvas-kit', layerName)
+  check('레이어 이름이 @h_domi/pdf-canvas-kit', layerName === '@h_domi/pdf-canvas-kit', layerName)
   const tokenAt = css.indexOf('--pck-bg')
   check('토큰이 레이어 밖(앞)에 있다', tokenAt >= 0 && tokenAt < layerAt)
   const outside = css

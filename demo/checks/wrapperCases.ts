@@ -29,8 +29,8 @@ import {
   PDFCanvasViewer as VueViewer,
   type PDFCanvasEditorRef,
 } from '../../src/vue/index'
-import type { PublicPDFCanvasDoc } from 'pdf-canvas-kit'
-import { asPublicDoc, createPDFCanvasDoc, createPage, A4_PT } from 'pdf-canvas-kit'
+import type { PublicPDFCanvasDoc } from '@h_domi/pdf-canvas-kit'
+import { asPublicDoc, createPDFCanvasDoc, createPage, A4_PT } from '@h_domi/pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
 /** 마운트하고 passive effect 까지 끝난 뒤 검사한다. */

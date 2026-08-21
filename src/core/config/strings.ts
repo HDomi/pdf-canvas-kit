@@ -13,7 +13,7 @@
  * ## 바꾸는 방법
  *
  * ```ts
- * import { configureStrings } from 'pdf-canvas-kit'
+ * import { configureStrings } from '@h_domi/pdf-canvas-kit'
  *
  * // 앱 부트스트랩에서 한 번. 지정한 키만 덮는다.
  * configureStrings({ 'topbar.export': '과제로 내보내기' })

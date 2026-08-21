@@ -16,7 +16,7 @@ import {
   type PageBackground,
   type RasterPage,
   type PDFCanvasPage,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 
 const $ = <T extends HTMLElement>(id: string): T => {
   const el = document.getElementById(id)

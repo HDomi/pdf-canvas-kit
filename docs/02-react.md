@@ -1,6 +1,6 @@
 # React
 
-`pdf-canvas-kit/react` 는 vanilla facade 를 감싼 **2.8KB** 래퍼다. 편집기 본체는 프레임워크를
+`@h_domi/pdf-canvas-kit/react` 는 vanilla facade 를 감싼 **2.8KB** 래퍼다. 편집기 본체는 프레임워크를
 모르는 DOM 코드이고, 래퍼가 하는 일은 셋뿐이다 — 마운트/정리, prop 전달, **`createPortal`**.
 
 > 먼저 [시작하기](01-getting-started.md)의 pdf.js 자산 설정과 높이 규칙을 확인한다.
@@ -10,9 +10,9 @@
 ## 최소 예제
 
 ```tsx
-import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
-import { createPDFCanvasDoc, createPage, A4_PT } from 'pdf-canvas-kit'
-import 'pdf-canvas-kit/styles.css'
+import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/react'
+import { createPDFCanvasDoc, createPage, A4_PT } from '@h_domi/pdf-canvas-kit'
+import '@h_domi/pdf-canvas-kit/styles.css'
 
 const initialDoc = createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] })
 
@@ -51,7 +51,7 @@ prop 이 아니다.
 
 ```tsx
 import { useRef } from 'react'
-import { PDFCanvasEditor, type EditorHandle } from 'pdf-canvas-kit/react'
+import { PDFCanvasEditor, type EditorHandle } from '@h_domi/pdf-canvas-kit/react'
 
 const editor = useRef<EditorHandle>(null)
 
@@ -145,7 +145,7 @@ function MySelect() {
 ## 뷰어
 
 ```tsx
-import { PDFCanvasViewer } from 'pdf-canvas-kit/react'
+import { PDFCanvasViewer } from '@h_domi/pdf-canvas-kit/react'
 
 // 편집기와 달리 doc 이 controlled 다
 <PDFCanvasViewer
@@ -171,7 +171,7 @@ import type {
   IconMap,
   PDFCanvasEditorProps,
   PDFCanvasViewerProps,
-} from 'pdf-canvas-kit/react'
+} from '@h_domi/pdf-canvas-kit/react'
 ```
 
 `CustomSlotProps<Data>` 가 슬롯 컴포넌트의 prop 타입이다.

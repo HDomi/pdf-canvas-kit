@@ -33,7 +33,7 @@ import {
   type CustomObject,
   type PageViewport,
   type PDFCanvasObject,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 
 /**
  * 한 건의 검증 케이스. `actual` 은 렌더 시점에 실행된다.

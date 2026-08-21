@@ -2,7 +2,7 @@
 /**
  * Vue 소비자 예제.
  *
- * `demo/` 와 다른 점이 하나뿐이지만 그것이 핵심이다. **별칭이 없다.** `pdf-canvas-kit` 을
+ * `demo/` 와 다른 점이 하나뿐이지만 그것이 핵심이다. **별칭이 없다.** `@h_domi/pdf-canvas-kit` 을
  * `node_modules` 에서 `exports` 맵으로 해석하므로 빌드 산출물과 진입점 정의가 틀리면 여기서
  * 즉시 드러난다.
  *
@@ -18,7 +18,11 @@
  * 폭으로 먹어 절반 폭에서는 못 쓴다 (D15). 탭으로 전환하고 **둘 다 마운트해 둔다.**
  */
 import { computed, ref, shallowRef } from 'vue'
-import { PDFCanvasEditor, PDFCanvasViewer, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+import {
+  PDFCanvasEditor,
+  PDFCanvasViewer,
+  type PDFCanvasEditorRef,
+} from '@h_domi/pdf-canvas-kit/vue'
 import {
   configurePdfResources,
   createPDFCanvasDoc,
@@ -29,8 +33,8 @@ import {
   type ImportState,
   type PDFCanvasDoc,
   type PublicPDFCanvasDoc,
-} from 'pdf-canvas-kit'
-import 'pdf-canvas-kit/styles.css'
+} from '@h_domi/pdf-canvas-kit'
+import '@h_domi/pdf-canvas-kit/styles.css'
 import './host.css'
 import { OBJECT_TYPES } from './objectType'
 import AnswerBadge from './slots/AnswerBadge.vue'

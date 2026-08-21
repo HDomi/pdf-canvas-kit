@@ -8,7 +8,7 @@
  * 위임의 요점이다. 편집기는 파일 하나만 받으면 된다.
  */
 import { useState } from 'react'
-import type { ImportState } from 'pdf-canvas-kit'
+import type { ImportState } from '@h_domi/pdf-canvas-kit'
 
 export interface UploadDialogProps {
   state: ImportState | null

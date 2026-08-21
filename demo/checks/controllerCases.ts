@@ -16,10 +16,10 @@ import { createEditorController } from '../../src/controller/editor'
 import { createEditorViewSignals } from '../../src/controller/editorState'
 import { createPageNav } from '../../src/controller/pageNav'
 import { isTextEntry } from '../../src/controller/textEntry'
-import { configureStrings, resetStrings, text } from 'pdf-canvas-kit'
+import { configureStrings, resetStrings, text } from '@h_domi/pdf-canvas-kit'
 import { computed, scope, signal } from '../../src/dom/reactive'
-import { createPage, createPDFCanvasDoc, createViewState, A4_PT } from 'pdf-canvas-kit'
-import type { PDFCanvasDoc, PDFCanvasPage } from 'pdf-canvas-kit'
+import { createPage, createPDFCanvasDoc, createViewState, A4_PT } from '@h_domi/pdf-canvas-kit'
+import type { PDFCanvasDoc, PDFCanvasPage } from '@h_domi/pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
 /** 페이지 n장을 가진 문서. 배경 없이 만든다 — 여기서는 렌더하지 않는다. */

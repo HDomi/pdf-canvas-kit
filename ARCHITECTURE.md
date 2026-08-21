@@ -181,8 +181,8 @@ npm run copy:pdfjs # {cmaps,standard_fonts,wasm,iccs}/ + build/pdf.worker.mjs �
 "postinstall": "node -e \"const{cpSync}=require('fs');for(const d of ['cmaps','standard_fonts','wasm','iccs'])cpSync('node_modules/pdfjs-dist/'+d,'public/pdfjs/'+d,{recursive:true});cpSync('node_modules/pdfjs-dist/build/pdf.worker.mjs','public/pdfjs/pdf.worker.mjs')\""
 ```
 ```ts
-// plugins/pdf-canvas-kit.client.ts
-import { configurePdfResources } from 'pdf-canvas-kit'
+// plugins/@h_domi/pdf-canvas-kit.client.ts
+import { configurePdfResources } from '@h_domi/pdf-canvas-kit'
 
 export default defineNuxtPlugin(() => {
  configurePdfResources({
@@ -380,7 +380,7 @@ blob URL을 저장하면 다음 세션에 죽은 링크가 되므로, 저장 전
 
 ```ts
 // (a) presigned URL 방식 — 가장 흔한 형태
-import { createS3AssetPort } from 'pdf-canvas-kit'
+import { createS3AssetPort } from '@h_domi/pdf-canvas-kit'
 
 const asset = createS3AssetPort({
  async getUploadUrl({ pageId, mime }) {
@@ -580,7 +580,7 @@ src/
 │ engineState.ts editorState.ts textEntry.ts
 ├─ react/index.tsx 얇은 래퍼 — createPortal + useSyncExternalStore (§17.2)
 ├─ vue/index.ts 얇은 래퍼 — Teleport + defineComponent (SFC 아님, §17.2)
-├─ styles.ts CSS 전용 엔트리 (`pdf-canvas-kit/styles.css`)
+├─ styles.ts CSS 전용 엔트리 (`@h_domi/pdf-canvas-kit/styles.css`)
 └─ styles/
  tokens.css ★ CSS 변수
  editor.css 레이아웃·크롬
@@ -605,13 +605,13 @@ import type {
  PageBackground, Rect, Size, Pt,
  AssetPort, ConverterPort, StoragePort, I18nPort,
  RasterPage, ConvertProgress,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 
 import {
  createPdfjsConverter, createBlobAssetPort, configurePdfResources,
  LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS,
  formatPaperLabel, ConvertError,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 ```
 
 - 객체는 `type` 필드로 판별하는 **discriminated union**이다.
@@ -1015,7 +1015,7 @@ DOM 을 검사하는 코드(테스트·진단)는 주석 노드를 건너뛰어�
 locale 전환이 모두 없어지고, 문구 표 하나와 조회 함수만 남았다.
 
 ```ts
-import { text } from 'pdf-canvas-kit' // 내부에서는 core/config/strings
+import { text } from '@h_domi/pdf-canvas-kit' // 내부에서는 core/config/strings
 text('error.pageLimit')
 text('error.exportBlocked', { count: 3 }) // {count} 자리를 채운다
 ```
@@ -1025,7 +1025,7 @@ text('error.exportBlocked', { count: 3 }) // {count} 자리를 채운다
 ### 15.1 문구 바꾸기
 
 ```ts
-import { configureStrings } from 'pdf-canvas-kit'
+import { configureStrings } from '@h_domi/pdf-canvas-kit'
 
 // 앱 부트스트랩에서 한 번. 지정한 키만 덮는다.
 configureStrings({ 'topbar.export': '과제로 내보내기' })
@@ -1213,7 +1213,7 @@ html, body, #app { height: 100%; margin: 0; }
 딸려 보내지 않기 위해서다. 소비자가 명시적으로 가져간다.
 
 ```ts
-import 'pdf-canvas-kit/styles.css'
+import '@h_domi/pdf-canvas-kit/styles.css'
 ```
 
 ---

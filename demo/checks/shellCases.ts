@@ -14,8 +14,8 @@ import { createEditorController } from '../../src/controller/editor'
 import { scope } from '../../src/dom/reactive'
 import { resetStrings } from '../../src/core/config/strings'
 import { resetIcons } from '../../src/core/config/icons'
-import { createPage, createPDFCanvasDoc, defineObjectType, A4_PT } from 'pdf-canvas-kit'
-import type { PDFCanvasDoc, PDFCanvasPage } from 'pdf-canvas-kit'
+import { createPage, createPDFCanvasDoc, defineObjectType, A4_PT } from '@h_domi/pdf-canvas-kit'
+import type { PDFCanvasDoc, PDFCanvasPage } from '@h_domi/pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
 function docWithPages(count: number): PDFCanvasDoc {

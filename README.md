@@ -1,17 +1,17 @@
-# pdf-canvas-kit
+# @h_domi/pdf-canvas-kit
 
 PDF를 페이지별 **배경 이미지**로 깔고, 그 위에 **텍스트·도형·직접 만든 객체를 레이어**로
 올리는 편집기와 뷰어. **프레임워크에 종속되지 않는다** — 렌더 층이 vanilla DOM 이고
 React·Vue 래퍼가 같은 컴포넌트를 제공한다.
 
 ```bash
-npm install pdf-canvas-kit
+npm install @h_domi/pdf-canvas-kit
 ```
 
 ```tsx
 // React
-import { PDFCanvasEditor } from 'pdf-canvas-kit/react'
-import 'pdf-canvas-kit/styles.css'
+import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/react'
+import '@h_domi/pdf-canvas-kit/styles.css'
 
 <PDFCanvasEditor initialDoc={doc} onChange={setDoc} />
 ```
@@ -19,15 +19,15 @@ import 'pdf-canvas-kit/styles.css'
 ```vue
 <!-- Vue / Nuxt -->
 <script setup>
-import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
-import 'pdf-canvas-kit/styles.css'
+import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/vue'
+import '@h_domi/pdf-canvas-kit/styles.css'
 </script>
 <template><PDFCanvasEditor :initial-doc="doc" @change="onChange" /></template>
 ```
 
 ```ts
 // 프레임워크 없이 — imperative facade
-import { createPDFCanvasEditor, createPDFCanvasViewer } from 'pdf-canvas-kit'
+import { createPDFCanvasEditor, createPDFCanvasViewer } from '@h_domi/pdf-canvas-kit'
 
 const editor = createPDFCanvasEditor(container, { initialDoc: doc })
 const viewer = createPDFCanvasViewer(other, { doc: editor.toPublicDoc() })
@@ -175,8 +175,8 @@ const shortAnswer = defineObjectType<Answer, Omit<Answer, 'answers'>>({
 | 항목 | 상태 |
 | --- | --- |
 | vanilla facade (`createPDFCanvasEditor`) | 완료 (R9) |
-| React 래퍼 (`pdf-canvas-kit/react`) | 완료 (R9) — 번들 2.0KB |
-| Vue 래퍼 (`pdf-canvas-kit/vue`) | 완료 (R9) — 번들 3.0KB |
+| React 래퍼 (`@h_domi/pdf-canvas-kit/react`) | 완료 (R9) — 번들 2.0KB |
+| Vue 래퍼 (`@h_domi/pdf-canvas-kit/vue`) | 완료 (R9) — 번들 3.0KB |
 | 렌더 층 바닥 (`src/dom/reactive.ts` · `h.ts`) | 완료 (R2) |
 | 객체·페이지·스테이지 렌더 | 완료 (R4·R5) |
 | 편집기 크롬 (상단바·툴바·페이지목록·다이얼로그) | 완료 (R6) |

@@ -13,8 +13,8 @@ import {
   createPDFCanvasDoc,
   createPage,
   A4_PT,
-} from 'pdf-canvas-kit'
-import 'pdf-canvas-kit/styles.css'
+} from '@h_domi/pdf-canvas-kit'
+import '@h_domi/pdf-canvas-kit/styles.css'
 
 const container = document.getElementById('editor')!  // 높이가 있어야 한다
 const editor = createPDFCanvasEditor(container, {
@@ -31,7 +31,7 @@ editor.destroy()   // 멱등하다. 두 번 불러도 안전
 ## 뷰어
 
 ```ts
-import { createPDFCanvasViewer } from 'pdf-canvas-kit'
+import { createPDFCanvasViewer } from '@h_domi/pdf-canvas-kit'
 
 const viewer = createPDFCanvasViewer(el, {
   doc: editor.toPublicDoc(),   // 정답이 제거된 문서
@@ -50,7 +50,7 @@ viewer.update({ doc: nextDoc })
 프레임워크 래퍼가 없으므로 타입 정의에 렌더 함수를 직접 넣는다.
 
 ```ts
-import { defineObjectType } from 'pdf-canvas-kit'
+import { defineObjectType } from '@h_domi/pdf-canvas-kit'
 
 const shortAnswer = defineObjectType<Answer, PublicAnswer>({
   kind: 'answer.short',
@@ -124,7 +124,7 @@ createPDFCanvasEditor(el, {
 
 ```ts
 // 앱 전체에 한 번만
-import { configureStrings, configureIcons } from 'pdf-canvas-kit'
+import { configureStrings, configureIcons } from '@h_domi/pdf-canvas-kit'
 configureStrings({ 'toolbar.text': 'Text' })
 configureIcons({ undo: () => mySvgNode() })
 ```
@@ -146,7 +146,7 @@ import {
   scaledRect,
   clientToPage,
   serializeDoc,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 ```
 
 [API 레퍼런스](13-api.md#코어)에 목록이 있다.

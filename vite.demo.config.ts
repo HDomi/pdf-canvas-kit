@@ -23,10 +23,10 @@ export default defineConfig({
      */
     alias: [
       // `styles.css` 는 실제 파일이 아니라 빌드 산출물이다. 데모는 소스 CSS 를 직접 본다.
-      { find: 'pdf-canvas-kit/styles.css', replacement: r('src/styles.ts') },
-      { find: 'pdf-canvas-kit/react', replacement: r('src/react/index.tsx') },
-      { find: 'pdf-canvas-kit/vue', replacement: r('src/vue/index.ts') },
-      { find: 'pdf-canvas-kit', replacement: r('src/index.ts') },
+      { find: '@h_domi/pdf-canvas-kit/styles.css', replacement: r('src/styles.ts') },
+      { find: '@h_domi/pdf-canvas-kit/react', replacement: r('src/react/index.tsx') },
+      { find: '@h_domi/pdf-canvas-kit/vue', replacement: r('src/vue/index.ts') },
+      { find: '@h_domi/pdf-canvas-kit', replacement: r('src/index.ts') },
       { find: '@core', replacement: r('src/core') },
     ],
   },

@@ -13,7 +13,7 @@ PDF 위에 **내 컴포넌트**를 올린다. 이 패키지는 **기본 틀**만
 프레임워크와 무관하다. React·Vue·vanilla 모두 같은 정의를 쓴다.
 
 ```ts
-import { defineObjectType } from 'pdf-canvas-kit'
+import { defineObjectType } from '@h_domi/pdf-canvas-kit'
 
 interface Answer {
   answers: string[]   // 정답 — 뷰어에 나가면 안 된다
@@ -73,7 +73,7 @@ defineObjectType<Answer, Omit<Answer, 'answers'>>({ … })
 ```
 
 ```tsx
-import type { CustomSlotProps } from 'pdf-canvas-kit/react'
+import type { CustomSlotProps } from '@h_domi/pdf-canvas-kit/react'
 
 function AnswerBadge({ data }: CustomSlotProps<Answer>) {
   return <b>{data.points}점</b>

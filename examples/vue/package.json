@@ -9,7 +9,7 @@
     "preview": "vite preview --port 3102 --strictPort"
   },
   "dependencies": {
-    "pdf-canvas-kit": "file:../..",
+    "@h_domi/pdf-canvas-kit": "file:../..",
     "vue": "^3.5.41"
   },
   "devDependencies": {

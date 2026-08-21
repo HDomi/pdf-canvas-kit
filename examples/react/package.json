@@ -9,7 +9,7 @@
     "preview": "vite preview --port 3101 --strictPort"
   },
   "dependencies": {
-    "pdf-canvas-kit": "file:../..",
+    "@h_domi/pdf-canvas-kit": "file:../..",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"
   },

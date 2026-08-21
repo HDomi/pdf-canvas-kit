@@ -55,7 +55,7 @@ viewer.update({ doc: editor.toPublicDoc() })   // ✓
 JSON 응답에는 그 표시가 없다. 이미 뷰어용이라면 단언한다.
 
 ```ts
-import { asPublicDoc } from 'pdf-canvas-kit'
+import { asPublicDoc } from '@h_domi/pdf-canvas-kit'
 
 const json = await api.getAssignment(id)
 viewer.update({ doc: asPublicDoc(json) })

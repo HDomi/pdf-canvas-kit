@@ -49,7 +49,7 @@
 동작에 영향을 주는 수치는 토큰이 아니다. 레이아웃 코드와 검증이 숫자로 필요하다.
 
 ```ts
-import { LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS } from 'pdf-canvas-kit'
+import { LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS } from '@h_domi/pdf-canvas-kit'
 ```
 
 | | |

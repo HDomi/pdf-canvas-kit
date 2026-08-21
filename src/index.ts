@@ -1,9 +1,9 @@
 /**
- * `pdf-canvas-kit` — 프레임워크 무관 코어.
+ * `@h_domi/pdf-canvas-kit` — 프레임워크 무관 코어.
  *
  * Vue 컴포넌트는 `/vue` 서브패스에 있다.
  * ```ts
- * import { PDFCanvasEditor } from 'pdf-canvas-kit/react'   // 또는 /vue
+ * import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/react'   // 또는 /vue
  * ```
  *
  * 이 엔트리는 문서 모델, 좌표 헬퍼, PDF 파이프라인, 호스트가 주입하는 port들을 내보낸다.
@@ -143,7 +143,7 @@ export { asPublicDoc } from './core/model/types'
 /* --------------------------------------------- 프레임워크 없이 쓰는 facade -- */
 
 /*
- * 프레임워크 래퍼(`pdf-canvas-kit/react` · `/vue`)를 쓰지 않는 소비자의 진입점이다.
+ * 프레임워크 래퍼(`@h_domi/pdf-canvas-kit/react` · `/vue`)를 쓰지 않는 소비자의 진입점이다.
  * 래퍼는 이 두 함수를 감싸기만 한다 (ARCHITECTURE §17).
  */
 export { createPDFCanvasEditor } from './dom/createEditor'

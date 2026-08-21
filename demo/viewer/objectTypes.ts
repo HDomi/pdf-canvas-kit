@@ -13,7 +13,7 @@
  * `toPublic` 이 정답을 지우므로 뷰어의 `data()` 에는 `answers` 가 **없다**. 이 파일의
  * `renderViewer` 가 그 사실을 화면에 드러낸다 — 정답을 읽으려 해도 `undefined` 다.
  */
-import { defineObjectType } from 'pdf-canvas-kit'
+import { defineObjectType } from '@h_domi/pdf-canvas-kit'
 
 /* ------------------------------------------------------------------ 단답형 -- */
 

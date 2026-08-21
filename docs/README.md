@@ -1,6 +1,6 @@
 # 문서
 
-`pdf-canvas-kit` 사용 설명서. 설계 근거와 내부 구조는 ARCHITECTURE.md ·
+`@h_domi/pdf-canvas-kit` 사용 설명서. 설계 근거와 내부 구조는 ARCHITECTURE.md ·
 [ARCHITECTURE.md](../ARCHITECTURE.md)에 있다.
 
 ## 처음이라면

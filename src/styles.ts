@@ -3,7 +3,7 @@
  *
  * 이전에는 Vue 엔트리(`src/vue/index.ts`)가 CSS 를 import 했다. 그 층이 사라지면서
  * `dist/styles.css` 가 emit 되지 않았는데, `package.json` 의 `exports` 는 여전히
- * `./styles.css` 를 가리키고 있었다 — 소비자가 `import 'pdf-canvas-kit/styles.css'` 를
+ * `./styles.css` 를 가리키고 있었다 — 소비자가 `import '@h_domi/pdf-canvas-kit/styles.css'` 를
  * 쓰면 해석에 실패한다.
  *
  * ## 왜 JS 가 CSS 를 import 하지 않는가

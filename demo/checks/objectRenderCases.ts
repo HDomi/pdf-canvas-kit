@@ -18,8 +18,8 @@ import {
   createPage,
   defineObjectType,
   A4_PT,
-} from 'pdf-canvas-kit'
-import type { AnyObjectTypeDef } from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
+import type { AnyObjectTypeDef } from '@h_domi/pdf-canvas-kit'
 import type {
   CustomObject,
   PageViewport,
@@ -28,7 +28,7 @@ import type {
   Rect,
   ShapeObject,
   TextObject,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
 const RECT: Rect = { x: 120, y: 300, w: 160, h: 40 }

@@ -40,7 +40,7 @@ async function onExport() {
 
 ```vue
 <script setup lang="ts">
-import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+import { PDFCanvasEditor, type PDFCanvasEditorRef } from '@h_domi/pdf-canvas-kit/vue'
 
 // ⚠️ 타입을 명시한다 — Vue 의 expose 는 .d.ts 에 타입을 남기지 않는다
 const editor = ref<PDFCanvasEditorRef | null>(null)

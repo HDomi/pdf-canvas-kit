@@ -1,5 +1,5 @@
 /**
- * React 래퍼 — `pdf-canvas-kit/react` (커스텀 객체는 소비자가 정의한다).
+ * React 래퍼 — `@h_domi/pdf-canvas-kit/react` (커스텀 객체는 소비자가 정의한다).
  *
  * ```tsx
  * <PDFCanvasEditor

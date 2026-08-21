@@ -22,7 +22,7 @@ PDF 를 올리면 페이지가 이미지로 래스터화된다. 그 이미지를
 ### presigned URL 방식
 
 ```ts
-import { createS3AssetPort } from 'pdf-canvas-kit'
+import { createS3AssetPort } from '@h_domi/pdf-canvas-kit'
 
 const asset = createS3AssetPort({
   async getUploadUrl({ pageId, mime }) {
@@ -100,7 +100,7 @@ const storage = {
 `serializeDoc` 이 이를 **거부한다.**
 
 ```ts
-import { promoteBackgrounds, serializeDoc } from 'pdf-canvas-kit'
+import { promoteBackgrounds, serializeDoc } from '@h_domi/pdf-canvas-kit'
 
 const storage = {
   async save(doc) {
@@ -123,7 +123,7 @@ const storage = {
 파이프라인은 그대로 돌리고 저장만 콘솔로 대체한다.
 
 ```ts
-import { createConsoleStoragePort } from 'pdf-canvas-kit'
+import { createConsoleStoragePort } from '@h_domi/pdf-canvas-kit'
 const storage = createConsoleStoragePort({ label: '[myapp]' })
 ```
 
@@ -169,7 +169,7 @@ import type {
   ConverterPort,
   EnginePorts,
   SaveState,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 ```
 
 [ARCHITECTURE §7](../ARCHITECTURE.md) 에 계약 상세가 있다.

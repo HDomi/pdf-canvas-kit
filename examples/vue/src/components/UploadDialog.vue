@@ -9,7 +9,7 @@
  * 위임의 요점이다. 편집기는 파일 하나만 받으면 된다.
  */
 import { computed, ref } from 'vue'
-import type { ImportState } from 'pdf-canvas-kit'
+import type { ImportState } from '@h_domi/pdf-canvas-kit'
 
 const props = defineProps<{ state: ImportState | null }>()
 const emit = defineEmits<{ pick: [file: File]; cancel: []; close: [] }>()

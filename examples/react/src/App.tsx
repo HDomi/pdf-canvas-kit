@@ -1,7 +1,7 @@
 /**
  * React 소비자 예제.
  *
- * `demo/` 와 다른 점이 하나뿐이지만 그것이 핵심이다. **별칭이 없다.** `pdf-canvas-kit` 을
+ * `demo/` 와 다른 점이 하나뿐이지만 그것이 핵심이다. **별칭이 없다.** `@h_domi/pdf-canvas-kit` 을
  * `node_modules` 에서 `exports` 맵으로 해석하므로 빌드 산출물과 진입점 정의가 틀리면 여기서
  * 즉시 드러난다.
  *
@@ -20,7 +20,7 @@
  * 편집기의 undo 스택이 날아가고 뷰어는 입력 중인 응답을 잃는다.
  */
 import { useRef, useState } from 'react'
-import { PDFCanvasEditor, PDFCanvasViewer, type EditorHandle } from 'pdf-canvas-kit/react'
+import { PDFCanvasEditor, PDFCanvasViewer, type EditorHandle } from '@h_domi/pdf-canvas-kit/react'
 import {
   configurePdfResources,
   createPDFCanvasDoc,
@@ -31,8 +31,8 @@ import {
   type ImportState,
   type PDFCanvasDoc,
   type PublicPDFCanvasDoc,
-} from 'pdf-canvas-kit'
-import 'pdf-canvas-kit/styles.css'
+} from '@h_domi/pdf-canvas-kit'
+import '@h_domi/pdf-canvas-kit/styles.css'
 import './host.css'
 import { OBJECT_TYPES } from './objectType'
 import { AnswerBadge } from './slots/AnswerBadge'

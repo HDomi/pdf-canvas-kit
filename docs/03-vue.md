@@ -1,6 +1,6 @@
 # Vue
 
-`pdf-canvas-kit/vue` 는 vanilla facade 를 감싼 **4.5KB** 래퍼다. SFC 가 아니라
+`@h_domi/pdf-canvas-kit/vue` 는 vanilla facade 를 감싼 **4.5KB** 래퍼다. SFC 가 아니라
 `defineComponent` + `h()` 로 만들어져 `@vitejs/plugin-vue` 도 `vue-tsc` 도 요구하지 않는다.
 
 > 먼저 [시작하기](01-getting-started.md)의 pdf.js 자산 설정과 높이 규칙을 확인한다.
@@ -11,9 +11,9 @@
 
 ```vue
 <script setup lang="ts">
-import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
-import { createPDFCanvasDoc, createPage, A4_PT } from 'pdf-canvas-kit'
-import 'pdf-canvas-kit/styles.css'
+import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/vue'
+import { createPDFCanvasDoc, createPage, A4_PT } from '@h_domi/pdf-canvas-kit'
+import '@h_domi/pdf-canvas-kit/styles.css'
 
 const initialDoc = createPDFCanvasDoc({ pages: [createPage({ size: A4_PT })] })
 </script>
@@ -47,7 +47,7 @@ Vue 의 `expose()` 는 **런타임 API 라 생성된 `.d.ts` 에 타입을 남�
 
 ```vue
 <script setup lang="ts">
-import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+import { PDFCanvasEditor, type PDFCanvasEditorRef } from '@h_domi/pdf-canvas-kit/vue'
 
 // ⚠️ 타입을 명시한다. 안 하면 handle 이 any 로 잡혀 오타가 조용히 통과한다
 const editor = ref<PDFCanvasEditorRef | null>(null)
@@ -134,7 +134,7 @@ const emit = defineEmits<{ change: [next: Answer] }>()
 
 ```vue
 <script setup lang="ts">
-import { PDFCanvasViewer } from 'pdf-canvas-kit/vue'
+import { PDFCanvasViewer } from '@h_domi/pdf-canvas-kit/vue'
 </script>
 
 <template>
@@ -165,7 +165,7 @@ SSR 을 지원하지 않으므로 `<ClientOnly>` 로 감싼다.
 ```ts
 // nuxt.config.ts
 export default defineNuxtConfig({
-  css: ['pdf-canvas-kit/styles.css'],
+  css: ['@h_domi/pdf-canvas-kit/styles.css'],
   vite: { optimizeDeps: { include: ['pdfjs-dist'] } },
 })
 ```
@@ -173,7 +173,7 @@ export default defineNuxtConfig({
 `configurePdfResources` 는 클라이언트 플러그인에서 부른다.
 
 ```ts
-// plugins/pdf-canvas-kit.client.ts
+// plugins/@h_domi/pdf-canvas-kit.client.ts
 export default defineNuxtPlugin(() => {
   configurePdfResources({ workerSrc: '/pdfjs/pdf.worker.mjs', cMapUrl: '/pdfjs/cmaps/', … })
 })
@@ -191,7 +191,7 @@ import type {
   PDFCanvasViewerRef,
   SlotMap,
   IconMap,
-} from 'pdf-canvas-kit/vue'
+} from '@h_domi/pdf-canvas-kit/vue'
 ```
 
 ---

@@ -4,7 +4,7 @@
  * 편집은 인스펙터에서 한다 (커스텀 객체의 편집 창구는 인스펙터 하나다). 캔버스에서 입력을 받으려 하면 드래그와 포커스가 같은
  * 포인터 이벤트를 다투게 되고, `pointerdown` 의 `preventDefault()` 가 포커스를 취소한다.
  */
-import type { CustomSlotProps } from 'pdf-canvas-kit/react'
+import type { CustomSlotProps } from '@h_domi/pdf-canvas-kit/react'
 import type { Answer } from '../objectType'
 
 export function AnswerBadge({ data }: CustomSlotProps<Answer>) {

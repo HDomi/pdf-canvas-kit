@@ -6,7 +6,7 @@
  * 다뤄야 하고, `document.activeElement` 를 확인해 포커스된 입력을 덮지 않아야 한다
  *. 그 제약이 여기에는 없다.
  */
-import type { CustomSlotProps } from 'pdf-canvas-kit/react'
+import type { CustomSlotProps } from '@h_domi/pdf-canvas-kit/react'
 import type { Answer } from '../objectType'
 
 export function AnswerFields({ data, onChange }: CustomSlotProps<Answer>) {

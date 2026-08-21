@@ -18,9 +18,9 @@ import {
   configurePdfResources,
   A4_PT,
   type PublicPDFCanvasDoc,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 import { DEMO_VIEWER_TYPES } from './objectTypes'
-import 'pdf-canvas-kit/styles.css'
+import '@h_domi/pdf-canvas-kit/styles.css'
 import '../styles.css'
 
 configurePdfResources({

@@ -25,7 +25,7 @@
 ## 확인 모달
 
 ```tsx
-import type { ConfirmRequest } from 'pdf-canvas-kit'
+import type { ConfirmRequest } from '@h_domi/pdf-canvas-kit'
 
 const [confirm, setConfirm] = useState<ConfirmRequest | null>(null)
 const editor = useRef<EditorHandle>(null)
@@ -68,7 +68,7 @@ const editor = useRef<EditorHandle>(null)
 ## 업로드 모달
 
 ```tsx
-import type { ImportState } from 'pdf-canvas-kit'
+import type { ImportState } from '@h_domi/pdf-canvas-kit'
 
 const [uploadOpen, setUploadOpen] = useState(false)
 const [importing, setImporting] = useState<ImportState | null>(null)
@@ -160,8 +160,8 @@ await editor.current?.importFile(file)
 
 ```vue
 <script setup lang="ts">
-import type { ConfirmRequest, ImportState } from 'pdf-canvas-kit'
-import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+import type { ConfirmRequest, ImportState } from '@h_domi/pdf-canvas-kit'
+import { PDFCanvasEditor, type PDFCanvasEditorRef } from '@h_domi/pdf-canvas-kit/vue'
 
 const editor = ref<PDFCanvasEditorRef | null>(null)
 const confirmReq = ref<ConfirmRequest | null>(null)

@@ -11,7 +11,7 @@
 - [ ] **npm publish** — `prepublishOnly` 가 typecheck·lint·checks·build·verify:tarball 을 돌린다
   - tarball 을 실제 React·Vue 앱에 설치해 검증했다 (`examples/*` 가 그 경로를 계속 지킨다)
   - registry 설치는 `file:` 프로토콜과 tarball 해석이 같지만 **동일하다고 단정하지 않았다** —
-    첫 배포 후 빈 프로젝트에서 `npm i pdf-canvas-kit` 로 한 번 확인한다
+    첫 배포 후 빈 프로젝트에서 `npm i @h_domi/pdf-canvas-kit` 로 한 번 확인한다
 - [ ] **GitHub Pages 로 예제 배포** (npm 배포와 별개)
   - `examples/react` · `examples/vue` 를 정적 빌드해 올린다
   - ⚠️ base path 가 `/` 가 아니므로 `vite.config.ts` 의 `base` 와 pdf.js 자산 경로

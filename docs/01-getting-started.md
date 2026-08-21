@@ -3,7 +3,7 @@
 ## 설치
 
 ```bash
-npm install pdf-canvas-kit
+npm install @h_domi/pdf-canvas-kit
 ```
 
 런타임 의존성은 `pdfjs-dist` 하나다. `react` · `vue` 는 **optional peer** 라 쓰는 쪽만 설치된다.
@@ -11,7 +11,7 @@ npm install pdf-canvas-kit
 ```jsonc
 // package.json — 필요한 것만
 "dependencies": {
-  "pdf-canvas-kit": "^0.1.0",
+  "@h_domi/pdf-canvas-kit": "^0.1.0",
   "react": "^19",        // React 로 쓸 때
   "vue": "^3.4"          // Vue 로 쓸 때
 }
@@ -38,7 +38,7 @@ pdf.js는 CMap·표준 폰트·wasm 디코더를 **런타임에 URL로** 가져�
 ### 경로를 알려준다
 
 ```ts
-import { configurePdfResources } from 'pdf-canvas-kit'
+import { configurePdfResources } from '@h_domi/pdf-canvas-kit'
 
 configurePdfResources({
   // 필수. 라이브러리는 이 경로를 스스로 찾지 않는다
@@ -108,7 +108,7 @@ html, body, #app { height: 100%; margin: 0; }
 ## 4. 스타일을 가져온다
 
 ```ts
-import 'pdf-canvas-kit/styles.css'
+import '@h_domi/pdf-canvas-kit/styles.css'
 ```
 
 코어 엔트리는 CSS를 import 하지 않는다 — 검증·좌표 함수만 쓰는 소비자에게 20KB 스타일을
@@ -151,7 +151,7 @@ Nuxt:
 
 ```ts
 export default defineNuxtConfig({
-  css: ['pdf-canvas-kit/styles.css'],
+  css: ['@h_domi/pdf-canvas-kit/styles.css'],
   vite: { optimizeDeps: { include: ['pdfjs-dist'] } },
 })
 ```

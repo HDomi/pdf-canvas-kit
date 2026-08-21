@@ -13,8 +13,13 @@ import { createPDFCanvasViewer } from '../../src/dom/createViewer'
 import { viewerObject } from '../../src/dom/viewer/viewerObject'
 import { createObjectTypeRegistry } from '../../src/core/objectTypes'
 import { effect, scope, signal } from '../../src/dom/reactive'
-import { asPublicDoc, createPDFCanvasDoc, createPage, defineObjectType } from 'pdf-canvas-kit'
-import type { CustomObject, PDFCanvasObject, PublicPDFCanvasDoc } from 'pdf-canvas-kit'
+import {
+  asPublicDoc,
+  createPDFCanvasDoc,
+  createPage,
+  defineObjectType,
+} from '@h_domi/pdf-canvas-kit'
+import type { CustomObject, PDFCanvasObject, PublicPDFCanvasDoc } from '@h_domi/pdf-canvas-kit'
 import type { CaseGroup } from './cases'
 
 /**

@@ -10,7 +10,7 @@
  * ⚠️ 둘 중 하나를 **반드시** 불러야 한다. 부르지 않으면 편집기는 그 동작을 대기 상태로
  * 유지한다 — 조용히 취소하지 않는다.
  */
-import type { ConfirmRequest } from 'pdf-canvas-kit'
+import type { ConfirmRequest } from '@h_domi/pdf-canvas-kit'
 
 export interface ConfirmDialogProps {
   request: ConfirmRequest

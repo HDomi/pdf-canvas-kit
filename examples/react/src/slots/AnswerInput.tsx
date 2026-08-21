@@ -7,7 +7,7 @@
  * `data` 에 `answers` 가 **없다.** `toPublic` 이 지웠고 타입도 그 사실을 안다
  * (`PublicAnswer`) — 두 번째 제네릭이 그걸 정정한다 (ARCHITECTURE §18.4).
  */
-import type { CustomSlotProps } from 'pdf-canvas-kit/react'
+import type { CustomSlotProps } from '@h_domi/pdf-canvas-kit/react'
 import type { PublicAnswer } from '../objectType'
 
 export function AnswerInput({ data, onChange }: CustomSlotProps<PublicAnswer>) {

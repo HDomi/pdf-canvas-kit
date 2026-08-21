@@ -1,9 +1,9 @@
 /**
- * Vue 래퍼 — `pdf-canvas-kit/vue` (커스텀 객체는 소비자가 정의한다).
+ * Vue 래퍼 — `@h_domi/pdf-canvas-kit/vue` (커스텀 객체는 소비자가 정의한다).
  *
  * ```vue
  * <script setup>
- * import { PDFCanvasEditor } from 'pdf-canvas-kit/vue'
+ * import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/vue'
  * </script>
  * <template>
  *   <PDFCanvasEditor
@@ -63,7 +63,7 @@ export type { EditorHandle, ViewerHandle }
  *
  * ```vue
  * <script setup lang="ts">
- * import { PDFCanvasEditor, type PDFCanvasEditorRef } from 'pdf-canvas-kit/vue'
+ * import { PDFCanvasEditor, type PDFCanvasEditorRef } from '@h_domi/pdf-canvas-kit/vue'
  * const editor = ref<PDFCanvasEditorRef | null>(null)
  * // 캐스트 없이 facade 전체가 나온다
  * await editor.value?.handle?.importFile(file)

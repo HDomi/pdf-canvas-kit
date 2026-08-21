@@ -16,7 +16,7 @@
  * 이 데모는 프레임워크가 없으므로 vanilla 슬롯을 쓴다. React·Vue 래퍼는 이 슬롯을 주지 않고
  * 컨테이너에 portal 한다 (R9).
  */
-import { defineObjectType } from 'pdf-canvas-kit'
+import { defineObjectType } from '@h_domi/pdf-canvas-kit'
 
 /* ------------------------------------------------------------------ 단답형 -- */
 

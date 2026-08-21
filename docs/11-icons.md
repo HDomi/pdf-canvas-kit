@@ -103,7 +103,7 @@ function UndoIcon() {
 앱 전체에 한 번만 설정하려면:
 
 ```ts
-import { configureIcons } from 'pdf-canvas-kit'
+import { configureIcons } from '@h_domi/pdf-canvas-kit'
 configureIcons({ undo: () => mySvgNode() })
 ```
 

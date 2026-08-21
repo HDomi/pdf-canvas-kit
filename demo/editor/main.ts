@@ -4,7 +4,7 @@
  * 호스트 앱 역할을 대신한다. pdf.js 자산을 설정하고 데모 port 를 주입하며, 매번 업로드 팝업을
  * 클릭하지 않고 픽스처를 불러올 수 있는 dev 바를 붙인다.
  *
- * **Vue 없이 새 렌더 층을 직접 마운트한다** (렌더 층은 vanilla DOM 이다). 이전 판은 `pdf-canvas-kit/vue` 의 SFC
+ * **Vue 없이 새 렌더 층을 직접 마운트한다** (렌더 층은 vanilla DOM 이다). 이전 판은 `@h_domi/pdf-canvas-kit/vue` 의 SFC
  * 편집기를 띄웠다 — 그 층은 2026.08.20 에 삭제됐고, 원본은
  * `_LumiTeach/lumiteach-worksheet-system` 에 보존돼 있다.
  *
@@ -16,7 +16,7 @@ import {
   createConsoleStoragePort,
   type PDFCanvasDoc,
   type SaveState,
-} from 'pdf-canvas-kit'
+} from '@h_domi/pdf-canvas-kit'
 import { DEMO_OBJECT_TYPES } from './objectTypes'
 import { createEditorController } from '../../src/controller/editor'
 import { editorShell } from '../../src/dom/editor/editorShell'

@@ -3,7 +3,7 @@
  *
  * `kind` 가 Editor↔Viewer 계약이므로 편집기와 뷰어에 같은 배열을 넘긴다.
  */
-import { defineObjectType } from 'pdf-canvas-kit'
+import { defineObjectType } from '@h_domi/pdf-canvas-kit'
 
 export interface Answer {
   /** 정답. 뷰어에 나가면 안 된다. */

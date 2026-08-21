@@ -1,8 +1,11 @@
 {
-  "name": "pdf-canvas-kit",
+  "name": "@h_domi/pdf-canvas-kit",
   "version": "0.1.0",
   "description": "Framework-agnostic PDF worksheet editor — turn a PDF into page backgrounds with an interactive object layer. Vue and React wrappers included.",
   "license": "MIT",
+  "publishConfig": {
+    "access": "public"
+  },
   "type": "module",
   "keywords": [
     "pdf",
@@ -39,9 +42,6 @@
     },
     "./styles.css": "./dist/styles.css",
     "./package.json": "./package.json"
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "scripts": {
     "dev": "node scripts/dev-examples.mjs",

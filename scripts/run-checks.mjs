@@ -116,9 +116,9 @@ try {
     resolve: {
       // vite.demo.config.ts 와 같은 별칭. 데모는 빌드된 dist 가 아니라 소스를 직접 본다.
       alias: [
-        { find: 'pdf-canvas-kit/react', replacement: join(root, 'src/react/index.tsx') },
-        { find: 'pdf-canvas-kit/vue', replacement: join(root, 'src/vue/index.ts') },
-        { find: 'pdf-canvas-kit', replacement: join(root, 'src/index.ts') },
+        { find: '@h_domi/pdf-canvas-kit/react', replacement: join(root, 'src/react/index.tsx') },
+        { find: '@h_domi/pdf-canvas-kit/vue', replacement: join(root, 'src/vue/index.ts') },
+        { find: '@h_domi/pdf-canvas-kit', replacement: join(root, 'src/index.ts') },
       ],
     },
     build: {

@@ -33,7 +33,7 @@ createPDFCanvasEditor(el, { strings: { 'toolbar.text': 'Text' } })
 ## 앱 전체에 한 번만
 
 ```ts
-import { configureStrings } from 'pdf-canvas-kit'
+import { configureStrings } from '@h_domi/pdf-canvas-kit'
 
 configureStrings({ 'confirm.deletePage': 'Delete this page?' })
 ```
@@ -46,7 +46,7 @@ configureStrings({ 'confirm.deletePage': 'Delete this page?' })
 
 ```tsx
 import { useTranslation } from 'react-i18next'
-import { DEFAULT_STRINGS, type StringKey } from 'pdf-canvas-kit'
+import { DEFAULT_STRINGS, type StringKey } from '@h_domi/pdf-canvas-kit'
 
 function Editor() {
   const { t } = useTranslation('pdfCanvas')
@@ -136,7 +136,7 @@ configureStrings({ 'error.exportBlocked': '{count} items cannot be exported.' })
 ## 되돌리기
 
 ```ts
-import { resetStrings } from 'pdf-canvas-kit'
+import { resetStrings } from '@h_domi/pdf-canvas-kit'
 resetStrings()   // 기본 표로. 테스트에서 상태가 새는 것을 막는다
 ```
 

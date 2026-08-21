@@ -27,11 +27,11 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "pdf-canvas-kit": ["./src/index.ts"],
-      "pdf-canvas-kit/react": ["./src/react/index.tsx"],
-      "pdf-canvas-kit/styles.css": ["./src/styles.ts"],
-      "pdf-canvas-kit/vue": ["./src/vue/index.ts"],
-      "pdf-canvas-kit/*": ["./src/*"]
+      "@h_domi/pdf-canvas-kit": ["./src/index.ts"],
+      "@h_domi/pdf-canvas-kit/react": ["./src/react/index.tsx"],
+      "@h_domi/pdf-canvas-kit/styles.css": ["./src/styles.ts"],
+      "@h_domi/pdf-canvas-kit/vue": ["./src/vue/index.ts"],
+      "@h_domi/pdf-canvas-kit/*": ["./src/*"]
     },
 
     "skipLibCheck": true,

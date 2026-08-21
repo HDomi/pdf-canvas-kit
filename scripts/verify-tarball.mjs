@@ -8,6 +8,10 @@
  * 여기서 확인하는 것은 **정적으로 확인 가능한 것**뿐이다. 실제 React·Vue 앱 빌드는
  * 프레임워크 설치가 필요해 이 스크립트 범위 밖이다.
  *
+ * ⚠️ **`prepublishOnly` 에서 부르지 않는다.** 그 훅은 `npm publish` 가 부르고, 이 스크립트는
+ * `npm pack` 을 부른다 — `publish → prepublishOnly → pack → prepare` 로 npm 이 재귀 실행되며
+ * 출력이 섞여 tarball 이름을 못 찾는다. 배포 스크립트(`publish.sh`)가 publish **전에** 부른다.
+ *
  * 사용법: node scripts/verify-tarball.mjs
  */
 import { execFileSync } from 'node:child_process'

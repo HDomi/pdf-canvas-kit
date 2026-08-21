@@ -211,6 +211,8 @@ export {
   isCreationTool,
 } from './core/interaction/tools'
 export type { CreationToolId } from './core/interaction/tools'
+/* 휠 단위 정규화. 호스트가 자기 줌 UI 를 만들 때도 같은 함수를 써야 브라우저 차이가 안 생긴다. */
+export { normalizeWheelDelta } from './core/interaction/wheel'
 
 /* ------------------------------------------------------------------ ports -- */
 

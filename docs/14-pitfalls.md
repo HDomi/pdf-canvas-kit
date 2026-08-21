@@ -295,6 +295,41 @@ presigned `uploadUrl` 을 문서에 저장했다. 만료되는 서명 쿼리가 
 
 ---
 
+## 줌 · 스크롤
+
+### 줌 감도가 너무 느리다 / 너무 빠르다
+
+`EDITOR_DEFAULTS.zoom.wheelFactor` 다. `scale *= wheelFactor ** -deltaY` 이므로 **1 에 가까울수록
+느리다.** 지수를 쓰는 이유는 배율이 비율이기 때문이다 — 400% 에서의 한 틱과 25% 에서의 한 틱이
+같은 비율로 움직여야 한다.
+
+| 입력 | `1.0025`(현재) 에서의 변화 |
+| --- | --- |
+| 트랙패드 pinch (`deltaY` ≈ 5) | 1.2% |
+| 마우스 휠 한 틱 (`deltaY` 100) | 22% |
+
+한 이벤트당 변화는 `wheelMaxDelta`(120 → 26%)로 상한이 있다. 없으면 관성 스크롤 급발진 한 방에
+배율이 최소·최대로 튄다.
+
+### Firefox 에서 줌이 거의 안 움직인다
+
+`WheelEvent.deltaY` 의 **단위가 브라우저마다 다르다.** Chrome·Safari 는 픽셀
+(`deltaMode: 0`, 휠 한 틱 ≈ 100), Firefox 의 마우스 휠은 **줄 수**(`deltaMode: 1`, 한 틱 ≈ 3)다.
+줄 수를 픽셀로 읽으면 변화가 0.5% 도 안 된다.
+
+`0.1.0-beta.3` 까지 그 상태였다. 지금은 `normalizeWheelDelta()` 를 거친다. 호스트가 자기 줌 UI
+를 만든다면 같은 함수를 쓴다.
+
+```ts
+import { normalizeWheelDelta } from '@h_domi/pdf-canvas-kit'
+
+el.addEventListener('wheel', (e) => {
+  const dy = normalizeWheelDelta(e.deltaY, e.deltaMode)
+}, { passive: false })
+```
+
+---
+
 ## 좌표
 
 ### 확대하면 객체가 페이지에서 멀어진다

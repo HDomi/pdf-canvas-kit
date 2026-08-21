@@ -16,6 +16,7 @@ import {
   createPage,
   createPDFCanvasDoc,
   configureFonts,
+  EDITOR_DEFAULTS,
   defineObjectType,
   DEFAULT_FONTS,
   fontOptions,
@@ -24,6 +25,7 @@ import {
   isPolygonShape,
   lineShapeHeight,
   normalizeShapeRect,
+  normalizeWheelDelta,
   updateObject,
   LIMITS,
   polygonPoints,
@@ -183,6 +185,55 @@ export const GROUPS: CaseGroup[] = [
           isLineShape('doubleArrow'),
           isLineShape('ellipse'),
         ],
+      },
+    ],
+  },
+
+  {
+    title: '휠 단위 정규화 (2026.08.21) ★',
+    note: 'WheelEvent.deltaY 의 단위가 브라우저마다 다르다. 맞추지 않으면 Firefox 에서 줌이 거의 움직이지 않는다 — 브라우저를 띄우기 어려운 항목이라 여기서 고정한다.',
+    cases: [
+      {
+        name: 'DOM_DELTA_PIXEL(0) 은 그대로 (Chrome · Safari)',
+        expected: 100,
+        actual: () => normalizeWheelDelta(100, 0),
+      },
+      {
+        name: '★ DOM_DELTA_LINE(1) 은 줄 수 → 픽셀 (Firefox 마우스 휠 한 틱 ≈ 3)',
+        expected: 48,
+        actual: () => normalizeWheelDelta(3, 1),
+      },
+      {
+        name: 'DOM_DELTA_PAGE(2) 는 페이지 수 → 픽셀',
+        expected: 400,
+        actual: () => normalizeWheelDelta(1, 2),
+      },
+      {
+        name: '부호를 유지한다 — 방향이 뒤집히면 확대·축소가 반대가 된다',
+        expected: [-48, -100],
+        actual: () => [normalizeWheelDelta(-3, 1), normalizeWheelDelta(-100, 0)],
+      },
+      {
+        name: '규격 밖의 deltaMode 는 픽셀로 본다 — 모르는 값을 확대하는 쪽이 더 위험하다',
+        expected: 100,
+        actual: () => normalizeWheelDelta(100, 99),
+      },
+      {
+        /*
+         * 감도 자체는 눈으로 고른 값이라 케이스로 고정하지 않는다. 다만 **방향**과
+         * **비율 불변성**은 계약이다 — 지수를 쓰는 이유가 그것이다.
+         */
+        name: '★ 배율 변화는 비율이다 — 400% 와 25% 에서 같은 비율로 움직인다',
+        expected: true,
+        actual: () => {
+          const f = EDITOR_DEFAULTS.zoom.wheelFactor ** -100
+          return Math.abs((4 * f) / 4 - (0.25 * f) / 0.25) < 1e-12
+        },
+      },
+      {
+        name: '위로 굴리면(deltaY < 0) 확대된다',
+        expected: true,
+        actual: () => EDITOR_DEFAULTS.zoom.wheelFactor ** 100 > 1,
       },
     ],
   },

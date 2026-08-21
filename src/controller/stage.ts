@@ -162,8 +162,13 @@ export function createStage(options: StageOptions): Stage {
 
     zoomByWheel(deltaY, anchor) {
       fitMode.value = 'none'
-      const factor = EDITOR_DEFAULTS.zoom.wheelFactor ** -deltaY
-      applyScale(scale.value * factor, anchor)
+      const { wheelFactor, wheelMaxDelta } = EDITOR_DEFAULTS.zoom
+      /*
+       * 상한을 둔다. `deltaMode: PAGE` 나 관성 스크롤의 급발진 한 방에 배율이 최소·최대로
+       * 튀는 것을 막는다 — 정규화(`normalizeWheelDelta`)를 거쳐도 값 자체는 브라우저가 정한다.
+       */
+      const d = Math.max(-wheelMaxDelta, Math.min(wheelMaxDelta, deltaY))
+      applyScale(scale.value * wheelFactor ** -d, anchor)
     },
 
     canZoomIn: computed(() => scale.value < EDITOR_DEFAULTS.zoom.max - 0.001),

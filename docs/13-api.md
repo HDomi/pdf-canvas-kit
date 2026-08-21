@@ -196,6 +196,15 @@ marqueeHit(objects, rect)
 matchPaper(size)                  // pt → "A4 세로"
 ```
 
+### 휠
+
+```ts
+normalizeWheelDelta(deltaY, deltaMode)  // deltaY 를 픽셀로. 브라우저마다 단위가 다르다
+```
+
+호스트가 자기 줌 UI 를 만들 때도 같은 함수를 쓴다 — 안 쓰면 Firefox 에서 줌이 거의 움직이지
+않는다([함정 모음](14-pitfalls.md)).
+
 ### 도형 정점
 
 ```ts

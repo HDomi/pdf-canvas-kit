@@ -9,6 +9,7 @@
  *
  * 구 `src/vue/editor/CanvasStage.vue` 의 이식.
  */
+import { normalizeWheelDelta } from '../../core/interaction/wheel'
 import { el, when, type Child } from '../h'
 import { computed, type ReadSignal } from '../reactive'
 import type { PDFCanvasPage } from '../../core/model/types'
@@ -50,7 +51,14 @@ export function canvasStage(props: CanvasStageProps): HTMLElement {
     if (!e.ctrlKey && !e.metaKey) return
     // 이걸 막지 않으면 브라우저가 자기 페이지 줌을 적용한다.
     e.preventDefault()
-    props.onWheelZoom(e.deltaY, { x: e.clientX, y: e.clientY })
+    /*
+     * `deltaY` 의 단위가 브라우저마다 다르다. 정규화하지 않으면 Firefox(`deltaMode: LINE`,
+     * 한 틱 ≈ 3)에서 줌이 거의 움직이지 않는다.
+     */
+    props.onWheelZoom(normalizeWheelDelta(e.deltaY, e.deltaMode), {
+      x: e.clientX,
+      y: e.clientY,
+    })
   }
 
   return el(

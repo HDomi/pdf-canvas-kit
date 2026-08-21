@@ -66,6 +66,7 @@
 | 색·폰트·패널 폭·그림자 | [src/styles/tokens.css](src/styles/tokens.css) | CSS 변수. 호스트에서 오버라이드 가능(§3) |
 | 새 객체 기본 크기, 줌 단계, 스냅 그리드, undo 깊이 | [src/core/config/defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` | 제품별 조정 가능 |
 | 얇은 객체를 집을 수 있는 여유 | 같은 파일 → `EDITOR_DEFAULTS.minHitSize` | **히트 테스트만.** 객체 크기는 안 바뀐다(§21.1.1) |
+| 휠 줌 감도 | 같은 파일 → `EDITOR_DEFAULTS.zoom.wheelFactor` | 1 에 가까울수록 느리다. 단위 정규화는 `core/interaction/wheel.ts` 가 따로 한다 |
 | 글꼴 목록 | [src/core/config/fonts.ts](src/core/config/fonts.ts) → `configureFonts()` | **§21.3.** 웹폰트 파일은 호스트가 불러온다 |
 | 페이지 수·Answer Box 수·글자 수 한도 | 같은 파일 → `LIMITS` | **기획 스펙. 서버와 반드시 동일해야 함** |
 | 이미지 해상도·포맷·품질 | 같은 파일 → `RENDER_DEFAULTS` | 속도·용량 트레이드오프(§5) |
@@ -585,6 +586,7 @@ src/
 │ ├─ engine.ts ★ 문서·히스토리·import 파이프라인 (프레임워크 무관)
 │ ├─ interaction/
 │ │ tools.ts 도구 정의·도구별 객체 생성
+│ │ wheel.ts 휠 deltaY 단위 정규화 (브라우저마다 다르다)
 │ │ pointerMachine.ts ★ 드래그 상태 머신 (DOM 비의존)
 │ ├─ pdf/
 │ │ resources.ts ★ worker·CMap·wasm 설정

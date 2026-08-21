@@ -44,7 +44,8 @@
     "access": "public"
   },
   "scripts": {
-    "dev": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --strictPort",
+    "dev": "node scripts/dev-examples.mjs",
+    "dev:demo": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --strictPort",
     "dev:local": "node scripts/copy-pdfjs-assets.mjs && vite --config vite.demo.config.ts --host 127.0.0.1 --strictPort",
     "build": "vite build && vue-tsc -p tsconfig.build.json",
     "preview": "vite preview --config vite.demo.config.ts",
@@ -57,7 +58,8 @@
     "copy:pdfjs": "node scripts/copy-pdfjs-assets.mjs",
     "prepare": "node scripts/copy-pdfjs-assets.mjs",
     "verify:tarball": "node scripts/verify-tarball.mjs",
-    "prepublishOnly": "npm run typecheck && npm run lint && npm run checks && npm run build && npm run verify:tarball"
+    "prepublishOnly": "npm run typecheck && npm run lint && npm run checks && npm run build && npm run verify:tarball",
+    "examples:build": "npm run build --workspaces --if-present"
   },
   "dependencies": {
     "pdfjs-dist": "^6.2.108"
@@ -103,5 +105,8 @@
   },
   "engines": {
     "node": ">=20.19"
-  }
+  },
+  "workspaces": [
+    "examples/*"
+  ]
 }

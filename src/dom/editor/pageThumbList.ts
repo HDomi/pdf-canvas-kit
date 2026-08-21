@@ -4,6 +4,18 @@
  * 썸네일 클릭이 스테이지를 전환하고(PLAN 6.2), 위아래로 드래그하면 순서가 바뀐다.
  * 클릭과 드래그를 구분하는 임계값은 컨트롤러의 `pageReorder` 가 관리한다.
  *
+ * ## 객체는 위치·크기만 사각형으로 표시한다 (2026.08.21)
+ *
+ * 객체를 제대로 렌더하지 않는다. 썸네일에서 필요한 정보는 **어디에 뭐가 있는지**뿐이고,
+ * 텍스트 내용이나 도형 모양은 그 크기에서 읽히지 않는다. 실제 뷰를 재사용하면 커스텀 객체의
+ * 슬롯까지 객체당 한 번씩 더 불려 소비자 코드가 페이지 수만큼 중복 실행된다.
+ *
+ * 좌표는 **퍼센트**로 쓴다. 페이지 크기로 나누면 배율이 필요 없고, 크기가 섞인 문서에서도
+ * 각 썸네일이 자기 비율로 맞는다 (`aspect-ratio` 가 이미 그 비율을 잡고 있다).
+ *
+ * 비용은 문서 전체 객체 수에 비례한다 — `LIMITS.objectsPerDoc` 이 200 이므로 500페이지
+ * 문서에서도 span 이 200개 이하다.
+ *
  * ## 썸네일이 원본 배경을 그대로 쓴다
  *
  * 저해상도 이미지를 따로 렌더하지 않는다. 축소는 브라우저가 처리하고, 썸네일 전용 래스터화
@@ -100,6 +112,33 @@ function thumb(
                       loading: 'lazy',
                       decoding: 'async',
                       draggable: 'false',
+                    },
+                  }),
+              ),
+              /*
+               * 객체 자리 표시.
+               *
+               * 키가 `id` 라 객체를 옮기거나 크기를 바꿔도 노드가 재사용된다 — 목록 전체가
+               * 다시 만들어지면 500페이지 문서에서 스크롤이 튄다.
+               */
+              list(
+                () => page.value.objects,
+                (obj) => obj.id,
+                (obj) =>
+                  el('span', {
+                    class: 'pck-thumb-obj',
+                    attr: { 'data-type': () => obj.value.type },
+                    style: () => {
+                      const { width, height } = page.value.size
+                      const r = obj.value.rect
+                      return {
+                        left: `${(r.x / width) * 100}%`,
+                        top: `${(r.y / height) * 100}%`,
+                        width: `${(r.w / width) * 100}%`,
+                        height: `${(r.h / height) * 100}%`,
+                        // 회전은 중심 기준. 캔버스와 같은 규칙이다.
+                        transform: obj.value.rotation ? `rotate(${obj.value.rotation}deg)` : '',
+                      }
                     },
                   }),
               ),

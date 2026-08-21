@@ -10,10 +10,11 @@ export default tseslint.config(
       'dist/**',
       'dist-demo/**',
       'node_modules/**',
-      'examples/**',
       'demo/fixtures/**',
       // 복사된 pdf.js 런타임 자산(npm run copy:pdfjs). 우리 소스가 아니다.
       'demo/public/**',
+      'examples/*/public/**',
+      'examples/*/dist/**',
     ],
   },
 
@@ -148,7 +149,7 @@ export default tseslint.config(
    * 이 규칙들을 완화한다.
    */
   {
-    files: ['src/vue/**/*.ts', 'demo/**/*.ts'],
+    files: ['src/vue/**/*.ts', 'demo/**/*.ts', 'examples/**/*.ts'],
     rules: {
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/no-unsafe-assignment': 'off',

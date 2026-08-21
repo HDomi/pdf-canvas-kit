@@ -122,6 +122,8 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | [`/editor/`](http://localhost:3100/editor/) | `PDFCanvasEditor`. 상단 dev 바에서 픽스처를 바로 불러올 수 있다 |
 | [`/spike/`](http://localhost:3100/spike/) | PDF를 페이지 이미지로 변환. 페이지별 pt 크기·해상도·소요시간·폰트 진단 |
 | [`/viewer/`](http://localhost:3100/viewer/) | 편집기와 뷰어를 나란히 — `toPublicDoc()` 이 정답을 지우는 것을 확인한다 |
+| **[React 예제](http://localhost:3101/)** | **별칭 없이 설치된 `dist` 를 쓴다.** 공개 API 를 바꿨으면 여기서 확인한다 |
+| **[Vue 예제](http://localhost:3102/)** | 같음. `demo/` 는 별칭이라 export 누락을 보지 못한다 |
 | [`/checks/`](http://localhost:3100/checks/) | 순수 함수 · 반응성 · DOM · 컨트롤러 · 렌더 검증 — **283 케이스 / 41 그룹**, 불일치 행 강조. `npm run checks` 로 브라우저 없이도 돌린다 |
 
 `/editor/` 에서 [문서 불러오기] 로 PDF를 올리거나, dev 바의 픽스처 버튼을 쓴다.
@@ -164,7 +166,8 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 
 | 명령 | 하는 일 |
 | --- | --- |
-| `npm run dev` | pdf.js 자산 복사 + 데모 서버(:3100). **LAN에서도 접근 가능** |
+| `npm run dev` | **셋을 함께 띄운다** — 데모(:3100) + React 예제(:3101) + Vue 예제(:3102) |
+| `npm run dev:demo` | 데모만(:3100). **LAN에서도 접근 가능** |
 | `npm run dev:local` | 같지만 localhost만 바인딩 |
 | `npm run build` | 라이브러리 빌드 + `.d.ts` 생성 |
 | `npm run typecheck` | `vue-tsc` + node config 타입체크 |
@@ -175,6 +178,7 @@ npm run dev          # http://localhost:3100 + LAN 주소도 함께 출력
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |
 | `npm run verify:tarball` | **배포 산출물 검사** — 라이프사이클 훅 · `exports` 대상 · 불필요 파일 · peer 설정 |
+| `npm run examples:build` | **예제 앱 타입체크 + 빌드** (`skipLibCheck: false`). 소비 경로를 검증하는 자리다 |
 
 자동 테스트 러너는 없다. 대신 `npm run checks` 가 커밋 전 게이트다 — 이유와 한계는
 [PLAN D17](PLAN.md) · [ARCHITECTURE §11](ARCHITECTURE.md).

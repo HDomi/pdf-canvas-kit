@@ -262,6 +262,33 @@
   background: var(--pck-page-bg);
   border: 1px solid var(--pck-pagelist-thumb-border);
   overflow: hidden;
+  /* 객체 자리 표시가 퍼센트 좌표로 놓이는 기준이다. */
+  position: relative;
+}
+
+/**
+ * 썸네일의 객체 자리 표시 (2026.08.21).
+ *
+ * 내용을 그리지 않고 **어디에 뭐가 있는지**만 보여준다. 유형별로 색을 바꿔 텍스트와 도형과
+ * 커스텀 객체를 구분한다 — 썸네일 크기에서 읽히는 정보는 그 정도다.
+ */
+.pck-thumb-obj {
+  position: absolute;
+  box-sizing: border-box;
+  transform-origin: center;
+  border: 1px solid var(--pck-thumb-obj-stroke);
+  background: var(--pck-thumb-obj-fill);
+  /* 클릭은 썸네일 버튼이 받는다. */
+  pointer-events: none;
+}
+
+.pck-thumb-obj[data-type='custom'] {
+  border-color: var(--pck-thumb-obj-custom);
+  background: color-mix(in srgb, var(--pck-thumb-obj-custom) 22%, transparent);
+}
+
+.pck-thumb-obj[data-type='mask'] {
+  border-style: dashed;
 }
 
 .pck-thumb-paper img {

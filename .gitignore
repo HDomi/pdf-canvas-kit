@@ -16,3 +16,7 @@ temp.pdf
 
 # 데모 빌드 산출물
 dist-demo/
+
+# 예제 앱 — pdf.js 자산은 `npm run dev` 가 복사한다 (scripts/dev-examples.mjs)
+examples/*/public/pdfjs/
+examples/*/dist/

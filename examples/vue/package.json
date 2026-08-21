@@ -1,0 +1,21 @@
+{
+  "name": "@pck-example/vue",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --port 3102 --strictPort",
+    "build": "vue-tsc --noEmit && vite build",
+    "preview": "vite preview --port 3102 --strictPort"
+  },
+  "dependencies": {
+    "pdf-canvas-kit": "file:../..",
+    "vue": "^3.5.41"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.1",
+    "typescript": "^5.9.3",
+    "vite": "^8.2.1",
+    "vue-tsc": "^3.1.2"
+  }
+}

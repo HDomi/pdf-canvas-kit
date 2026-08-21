@@ -5,7 +5,7 @@
 
 | 항목 | 내용 |
 | --- | --- |
-| 문서 버전 | arch-2.9 |
+| 문서 버전 | arch-3.0 |
 | 최종 수정일 | 2026.08.21 |
 | 대응 코드 | M0~M7 + M8 부분 · **R 트랙 진행 중** (R0~R11 완료 — PLAN 20장) |
 | 대상 환경 | **프레임워크 무관** — vanilla DOM + Vue·React 래퍼 (PLAN D19) |
@@ -511,6 +511,21 @@ QR 인코더를 번들에 넣지 않는다 — QR 이미지 URL도 호스트가 
 `npm pack --dry-run` 은 **파일 목록만** 보여주고 설치를 실행하지 않는다. 이 종류는
 **tarball 을 실제 앱에 설치해야만** 잡힌다.
 
+### 패키징 경로를 검증하는 자리는 `examples/` 다
+
+| | `demo/` (:3100) | `examples/*` (:3101 · :3102) |
+| --- | --- | --- |
+| 해석 | 별칭 → `src/**` | `node_modules` → `exports` 맵 → `dist/**` |
+| 반영 | 즉시 | `npm run build` 후 |
+| 잡는 것 | 동작 | **`exports` 맵 · 진입점 · `.d.ts` · peer** |
+
+`npm run dev` 가 셋을 함께 띄운다(`scripts/dev-examples.mjs`). 공개 API 를 바꿨으면
+**`examples/` 를 열어 확인한다** — `demo/` 는 별칭 때문에 export 누락을 보지 못한다
+(PLAN 20.22 에 그렇게 새어 나간 버그 네 개가 있다).
+
+`npm run verify:tarball` 은 정적 검사이고, `npm run examples:build` 는 두 예제의
+타입체크(`skipLibCheck: false`)와 빌드를 돌린다.
+
 ## 8. 디렉토리
 
 ```
@@ -593,7 +608,10 @@ src/
    tokens.css                ★ CSS 변수
    editor.css                 레이아웃·크롬
 
-demo/          :3100 개발 서버 (spike / editor / react / vue / viewer / checks)
+demo/          :3100 개발 서버 — **별칭으로 소스를 본다** (spike / editor / react / vue / viewer / checks)
+examples/      :3101 :3102 소비자 예제 — **exports 맵으로 dist 를 본다** (§7.8)
+   react/      단일 index.tsx
+   vue/        App.vue + 슬롯 SFC
 scripts/       픽스처 생성 · pdf.js 자산 복사 · 헤드리스 검증(run-checks.mjs)
 ```
 

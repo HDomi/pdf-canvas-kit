@@ -7,6 +7,13 @@ const r = (p: string) => resolve(import.meta.dirname, p)
 /** 데모 dev 서버 (PLAN 14.1). */
 export default defineConfig({
   /*
+   * GitHub Pages 는 `/<repo>/` 서브패스에 올라간다.
+   *
+   * 워크플로가 `PAGES_BASE=/pdf-canvas-kit/` 를 주고, 로컬 dev 는 `/` 를 쓴다. 하드코딩하면
+   * dev 에서 자산 경로가 어긋나므로 환경변수로 받는다.
+   */
+  base: process.env.PAGES_BASE ?? '/',
+  /*
    * 여러 HTML 진입점을 가진 다중 페이지 앱이다.
    *
    * 명시하지 않으면 vite 가 SPA 로 보고 **없는 경로에 루트 index.html 을 준다** — 지워진

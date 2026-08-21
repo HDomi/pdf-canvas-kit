@@ -11,12 +11,7 @@
  * **커스텀 객체 레지스트리** (커스텀 객체는 소비자가 정의한다). 타입 정의는 `objectTypes.ts` 에 있다 — 그쪽이
  * "소비자가 라이브러리를 쓰는 법" 이고 이 파일은 마운트·dev 바를 다룬다.
  */
-import {
-  configurePdfResources,
-  createConsoleStoragePort,
-  type PDFCanvasDoc,
-  type SaveState,
-} from '@h_domi/pdf-canvas-kit'
+import { createConsoleStoragePort, type PDFCanvasDoc, type SaveState } from '@h_domi/pdf-canvas-kit'
 import { DEMO_OBJECT_TYPES } from './objectTypes'
 import { createEditorController } from '../../src/controller/editor'
 import { editorShell } from '../../src/dom/editor/editorShell'
@@ -25,18 +20,13 @@ import { onCleanup, scope, signal } from '../../src/dom/reactive'
 import '../../src/styles/tokens.css'
 import '../../src/styles/editor.css'
 import '../styles.css'
+import { configureDemoPdfAssets } from '../shared/pdfAssets'
 
 /**
  * pdf.js 가 런타임에 가져오는 자산들. `npm run copy:pdfjs` 가 자리를 잡아 준다.
  * `cMapUrl` 이 없으면 렌더된 페이지에서 한글이 조용히 사라진다 (ARCHITECTURE §4).
  */
-configurePdfResources({
-  workerSrc: '/pdfjs/pdf.worker.mjs',
-  cMapUrl: '/pdfjs/cmaps/',
-  standardFontDataUrl: '/pdfjs/standard_fonts/',
-  wasmUrl: '/pdfjs/wasm/',
-  iccUrl: '/pdfjs/iccs/',
-})
+configureDemoPdfAssets()
 
 /**
  * 저장 대체 구현.

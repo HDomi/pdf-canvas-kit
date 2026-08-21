@@ -24,10 +24,11 @@
   - tarball 을 실제 React·Vue 앱에 설치해 검증했다 (`examples/*` 가 그 경로를 계속 지킨다)
   - registry 설치는 `file:` 프로토콜과 tarball 해석이 같지만 **동일하다고 단정하지 않았다** —
     첫 배포 후 빈 프로젝트에서 `npm i @h_domi/pdf-canvas-kit` 로 한 번 확인한다
-- [ ] **GitHub Pages 로 예제 배포** (npm 배포와 별개)
-  - `examples/react` · `examples/vue` 를 정적 빌드해 올린다
-  - ⚠️ base path 가 `/` 가 아니므로 `vite.config.ts` 의 `base` 와 pdf.js 자산 경로
-    (`/pdfjs/...`)를 함께 맞춰야 한다. 지금은 절대 경로라 서브패스에서 깨진다
+- [x] **GitHub Pages 로 예제 배포** — `.github/workflows/pages.yml`
+  - 데모(`/`) + React 예제(`/react/`) + Vue 예제(`/vue/`)를 한 사이트로 합친다
+  - base 는 `PAGES_BASE` 환경변수로 주고 앱이 `import.meta.env.BASE_URL` 로 읽는다.
+    로컬에서 서브패스로 서빙해 라우트 7개·자산·번들 치환을 확인했다
+  - [ ] **실제 Actions 실행 확인** — 로컬 재현은 됐지만 CI 에서 돌려 보지 않았다
 - [ ] CHANGELOG 시작 — 0.1.0 부터
 
 ## 브라우저 확인이 남은 것

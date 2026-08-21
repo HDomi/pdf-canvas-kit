@@ -15,21 +15,15 @@ import {
   createPDFCanvasViewer,
   createPDFCanvasDoc,
   createPage,
-  configurePdfResources,
   A4_PT,
   type PublicPDFCanvasDoc,
 } from '@h_domi/pdf-canvas-kit'
 import { DEMO_VIEWER_TYPES } from './objectTypes'
 import '@h_domi/pdf-canvas-kit/styles.css'
 import '../styles.css'
+import { configureDemoPdfAssets } from '../shared/pdfAssets'
 
-configurePdfResources({
-  workerSrc: '/pdfjs/pdf.worker.mjs',
-  cMapUrl: '/pdfjs/cmaps/',
-  standardFontDataUrl: '/pdfjs/standard_fonts/',
-  wasmUrl: '/pdfjs/wasm/',
-  iccUrl: '/pdfjs/iccs/',
-})
+configureDemoPdfAssets()
 
 const editorHost = document.getElementById('editor')!
 const viewerHost = document.getElementById('viewer')!

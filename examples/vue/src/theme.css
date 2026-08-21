@@ -1,5 +1,5 @@
 /**
- * 호스트 테마 — `@layer` 오버라이드 시범 (커스터마이징은 토큰 → @layer → 다이얼로그 위임 3단계다).
+ * 호스트 테마 — `@layer` 오버라이드 시범 (Vue 예제).
  *
  * ## 이 파일이 증명하는 것
  *
@@ -7,23 +7,14 @@
  * 그런데도 패키지 규칙을 이긴다 — `editor.css` 전체가 `@layer pdf-canvas-kit` 안에 있고,
  * 레이어 규칙은 레이어 밖 규칙에게 특이도와 무관하게 지기 때문이다.
  *
- * 레이어가 없다면 이 규칙들은 패키지 선택자와 특이도 싸움을 해야 하고, 우리가 선택자를
- * 하나 늘리는 순간 조용히 깨진다.
+ * ## React 예제와 일부러 다르다
  *
- * ## 구성
+ * 같은 패키지가 전혀 다른 디자인 시스템 안에서 어떻게 보이는지가 이 예제 쌍의 요점이다.
+ * React 는 어두운 퍼플, 여기는 **밝은 틸**이다. 바꾼 것의 종류도 겹치지 않게 했다 —
+ * 한쪽에서 배치를, 다른 쪽에서 모양을 건드려 무엇까지 가능한지 함께 보이려는 것이다.
  *
- *   1. 토큰      — 값 단위. 대부분 여기서 끝난다
- *   2. 상단·툴바  — 배치처럼 값으로 표현할 수 없는 것
- *   3. 좌측 패널  — 페이지 목록
- *   4. 스테이지   — 페이지 뷰 영역
- *   5. 우측 패널  — 인스펙터
- *   6. 뷰어      — 뷰어 화면
- *
- * ## 왜 import 하지 않고 `?raw` 로 읽는가
- *
- * `useThemeToggle` 이 이 파일을 문자열로 받아 `<style>` 로 붙이고 뗀다. 토글로 켜고 끄면
- * 오버라이드가 실제로 먹는지 눈으로 확인된다. `import './theme.css'` 는 vite 가 자동 주입해서
- * 끌 수가 없고, 끄려고 `.plain` 같은 스코프를 만들면 **특이도가 올라가 증명이 약해진다.**
+ * `useThemeToggle` 이 이 파일을 `?raw` 문자열로 받아 `<style>` 로 붙이고 뗀다. 토글로 켜고
+ * 끄면 오버라이드가 실제로 먹는지 눈으로 확인된다.
  */
 
 /* ==== 1. 토큰 — 값 단위 커스터마이징 ==================================== */
@@ -31,201 +22,190 @@
 .pck-editor,
 .pck-viewer,
 .pck-modal-scrim {
-  --pck-accent: #6d4aff;
+  --pck-accent: #0f9b8e;
   --pck-accent-ink: #ffffff;
-  --pck-radius: 3px;
-  --pck-radius-sm: 3px;
+  --pck-radius: 10px;
+  --pck-radius-sm: 8px;
   --pck-font: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
 
-  /* 어두운 크롬 + 밝은 종이. 패키지 기본값은 전체가 밝다 */
-  --pck-bg: #17141f;
-  --pck-surface: #221d2e;
-  --pck-surface-sunken: #1b1725;
-  --pck-line: #352c47;
-  --pck-line-strong: #4b3f63;
-  --pck-ink: #ece7f7;
-  --pck-ink-muted: #9b91b0;
+  /* 전체가 밝다. 패키지 기본값보다 더 따뜻하게 */
+  --pck-bg: #f4f7f7;
+  --pck-surface: #ffffff;
+  --pck-surface-sunken: #e9f1f0;
+  --pck-line: #cfe0dd;
+  --pck-line-strong: #9dc0bb;
+  --pck-ink: #123330;
+  --pck-ink-muted: #5d7a76;
 
-  --pck-topbar-bg: #12101c;
-  --pck-topbar-ink: #efeaff;
-  --pck-topbar-border: #352c47;
+  --pck-topbar-bg: #0f3f3a;
+  --pck-topbar-ink: #e6f5f2;
+  --pck-topbar-border: #2a5c56;
 
-  --pck-pagelist-bg: #1b1725;
-  --pck-pagelist-width: 190px;
-  --pck-pagelist-thumb-border: #3d3350;
-  --pck-pagelist-thumb-active: #6d4aff;
+  --pck-pagelist-bg: #eef5f4;
+  --pck-pagelist-width: 210px;
+  --pck-pagelist-thumb-border: #cfe0dd;
+  --pck-pagelist-thumb-active: #0f9b8e;
 
-  --pck-stage-bg: #17141f;
+  --pck-stage-bg: #e4eeec;
   --pck-page-bg: #ffffff;
-  --pck-page-shadow: 0 2px 14px rgb(0 0 0 / 45%);
-  --pck-page-border: #4b3f63;
+  --pck-page-shadow: 0 4px 18px rgb(18 51 48 / 14%);
+  --pck-page-border: #cfe0dd;
 
-  --pck-inspector-bg: #1b1725;
-  --pck-inspector-width: 300px;
+  --pck-inspector-bg: #eef5f4;
+  --pck-inspector-width: 320px;
 
-  --pck-input-bg: #2a2338;
-  --pck-input-ink: #ece7f7;
-  --pck-input-border: #3d3350;
+  --pck-input-bg: #ffffff;
+  --pck-input-ink: #123330;
+  --pck-input-border: #cfe0dd;
+  --pck-input-radius: 8px;
 
-  --pck-modal-bg: #221d2e;
-  --pck-modal-radius: 10px;
-  --pck-modal-scrim-bg: rgb(10 8 18 / 62%);
+  --pck-modal-bg: #ffffff;
+  --pck-modal-radius: 14px;
+  --pck-modal-scrim-bg: rgb(15 63 58 / 42%);
+  --pck-btn-radius: 8px;
+  --pck-btn-padding: 9px 20px;
 }
 
 /* ==== 2. 상단 바 · 툴바 ================================================= */
 
 /*
- * 툴바를 가운데 정렬한다. **토큰으로는 불가능하다** — `justify-content` 는 값이 아니라
- * 배치다. 단일 클래스인데 패키지의 `flex-start` 를 이긴다.
+ * 툴바를 **오른쪽 정렬**한다. React 예제는 가운데 정렬이다 — 같은 속성으로 다른 배치가
+ * 가능하다는 것을 보이려고 일부러 다르게 뒀다. 토큰으로는 표현할 수 없는 종류다.
  */
 .pck-toolbar {
-  justify-content: center;
-  gap: 12px;
+  justify-content: flex-end;
+  gap: 10px;
+  padding-right: 18px;
 }
 
 .pck-topbar {
-  border-bottom: 2px solid #6d4aff;
+  border-bottom: none;
+  box-shadow: 0 2px 10px rgb(15 63 58 / 12%);
 }
 
-/* 도구 버튼을 알약 모양으로. 패키지는 각진 사각형이다 */
+/* 도구 버튼을 카드처럼. React 는 알약이었다 */
 .pck-tool {
-  border-radius: 999px;
-  padding: 5px 14px;
+  border-radius: 8px;
+  padding: 6px 14px;
+  box-shadow: 0 1px 3px rgb(18 51 48 / 10%);
 }
 
 /* ==== 3. 좌측 패널 (페이지 목록) ======================================== */
 
 /*
- * 패널 제목(PAGES · INSPECTOR)의 와이어프레임 스타일을 되돌린다.
- *
- * 패키지는 `text-transform: uppercase` + 자간 + 점선 밑줄을 준다. 그게 우리 앱과 안 맞으면
- * 여기서 되돌린다 — 토큰으로 표현할 수 없는 종류다.
+ * 패널 제목의 와이어프레임 스타일을 되돌린다. 패키지는 대문자 + 자간 + 점선 밑줄을 준다 —
+ * 토큰으로 표현할 수 없다.
  */
 .pck-panel-head {
   text-transform: none;
   letter-spacing: 0;
   font-size: 12px;
   font-weight: 700;
-  color: #b9aed0;
-  border-bottom: 1px solid #352c47;
-  background: #16121f;
+  color: #0f3f3a;
+  border-bottom: 1px solid #cfe0dd;
+  background: #e4eeec;
 }
 
 .pck-pagelist {
-  border-right: 1px solid #352c47;
+  border-right: 1px solid #cfe0dd;
 }
 
-/* 썸네일에 두께감과 라운드를 준다 */
+/* 썸네일을 카드로. 그림자와 라운드를 준다 */
 .pck-thumb-paper {
-  border-width: 2px;
-  border-radius: 4px;
-  box-shadow: 0 1px 6px rgb(0 0 0 / 35%);
-}
-
-.pck-thumb-no {
-  color: #9b91b0;
-  font-weight: 600;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgb(18 51 48 / 12%);
 }
 
 .pck-thumb.is-active .pck-thumb-paper {
-  box-shadow: 0 0 0 2px #6d4aff;
+  box-shadow: 0 0 0 2px #0f9b8e;
 }
 
-/* [+ 파일 추가] · [+ 빈 페이지] 를 실선으로 */
+/* [+ 파일 추가] 를 채워진 버튼으로 */
 .pck-dashed-btn {
   border-style: solid;
-  border-radius: 6px;
-  background: #241f31;
-}
-
-.pck-pagelist-actions {
-  gap: 8px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 1px 3px rgb(18 51 48 / 8%);
 }
 
 /* ==== 4. 스테이지 (페이지 뷰) =========================================== */
 
 /*
- * 종이 밖 여백에 격자를 깐다.
+ * 종이 밖 여백에 점 패턴을 깐다. React 는 격자였다.
  *
- * 배경 이미지는 토큰으로 넣을 수 없다 — `background-image` 와 `background-size` 두 값이
- * 함께 필요하다. 규칙 오버라이드가 필요한 대표적인 경우다.
+ * `background-image` + `background-size` 두 값이 함께 필요하므로 토큰으로는 못 한다.
  */
 .pck-stage {
-  background-image:
-    linear-gradient(rgb(255 255 255 / 4%) 1px, transparent 1px),
-    linear-gradient(90deg, rgb(255 255 255 / 4%) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(rgb(18 51 48 / 10%) 1px, transparent 1px);
+  background-size: 18px 18px;
 }
 
-/* 페이지 프레임에 테두리를 준다. 어두운 배경에서 종이 경계가 흐려진다 */
 .pck-page-frame {
-  outline: 1px solid #4b3f63;
+  border-radius: 4px;
 }
 
 .pck-pagemeta {
-  color: #9b91b0;
+  color: #5d7a76;
   font-variant-numeric: tabular-nums;
 }
 
-/* 줌 컨트롤을 떠 있는 알약으로 */
+/* 줌 컨트롤을 카드로 */
 .pck-stage-controls {
-  border-radius: 999px;
-  background: #221d2e;
-  border: 1px solid #3d3350;
-  box-shadow: 0 4px 16px rgb(0 0 0 / 40%);
+  border-radius: 10px;
+  background: #ffffff;
+  border: 1px solid #cfe0dd;
+  box-shadow: 0 4px 16px rgb(18 51 48 / 14%);
 }
 
 /* ==== 5. 우측 패널 (인스펙터) =========================================== */
 
 .pck-inspector {
-  border-left: 1px solid #352c47;
+  border-left: 1px solid #cfe0dd;
 }
 
 .pck-panel-empty {
-  color: #7d738f;
+  color: #7d968f;
   font-style: italic;
 }
 
-/* 섹션 사이를 선 대신 여백으로 나눈다 */
 .pck-panel-section + .pck-panel-section {
-  border-top: 1px solid #2b2439;
-  margin-top: 4px;
-  padding-top: 12px;
+  border-top: 1px solid #dcebe8;
+  margin-top: 6px;
+  padding-top: 14px;
 }
 
 .pck-field-label {
   text-transform: none;
   letter-spacing: 0;
-  color: #b9aed0;
+  color: #0f3f3a;
+  font-weight: 600;
 }
 
-/* 삭제 버튼을 눈에 띄게 */
 .pck-inspector-delete {
-  border-color: #7a2f2f;
-  color: #ff9f9a;
+  border-color: #d99a94;
+  color: #a3392f;
 }
 
-/* ==== 6. 뷰어 (뷰어 화면) ============================================== */
+/* ==== 6. 뷰어 ========================================================== */
 
 .pck-viewer {
-  background: #100e18;
+  background: #dfeae8;
 }
 
-/* 페이지 사이를 넓히고 위아래 여백을 준다 */
 .pck-viewer-pages {
-  gap: 28px;
-  padding: 28px 0;
+  gap: 24px;
+  padding: 24px 0;
 }
 
 .pck-viewer-empty {
-  color: #7d738f;
+  color: #7d968f;
   font-size: 14px;
 }
 
-/* 응답 폼에 강조 테두리 — 어디에 입력하는지 바로 보이게 */
+/* 응답 폼을 강조한다 — 어디에 입력하는지 바로 보이게 */
 .pck-viewer-custom {
   border-width: 2px;
-  border-color: #6d4aff;
-  border-radius: 4px;
-  background: rgb(109 74 255 / 8%);
+  border-color: #0f9b8e;
+  border-radius: 8px;
+  background: rgb(15 155 142 / 8%);
 }

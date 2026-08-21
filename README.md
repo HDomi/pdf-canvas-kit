@@ -241,7 +241,12 @@ npm run dev      # 3100 데모(레포 소스) · 3101 React 예제 · 3102 Vue �
 | [`/checks/`](http://localhost:3100/checks/) | 검증 케이스 **303건 / 45 그룹** |
 | [`/spike/`](http://localhost:3100/spike/) | PDF 변환 진단 (페이지 크기·폰트) |
 | [React 예제](http://localhost:3101/) | **테마 토글 · 호스트 모달 · 아이콘 3경로** |
-| [Vue 예제](http://localhost:3102/) | 같은 것의 SFC 판 |
+| [Vue 예제](http://localhost:3102/) | 같은 것의 SFC 판. **다른 디자인**이 적용돼 있다 |
+
+두 예제는 각 부분에 **`</>` 배지**가 있다 — 누르면 그 UI 가 어떻게 구현됐는지 코드가 나온다.
+
+`main` 에 push 하면 [Pages 워크플로](.github/workflows/pages.yml)가 세 사이트를 하나로 합쳐
+배포한다 (`/` · `/react/` · `/vue/`).
 
 ## 스크립트
 

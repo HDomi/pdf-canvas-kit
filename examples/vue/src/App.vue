@@ -43,7 +43,9 @@ import AnswerInput from './slots/AnswerInput.vue'
 import ConfirmDialog from './components/ConfirmDialog.vue'
 import UploadDialog from './components/UploadDialog.vue'
 import DevBar from './components/DevBar.vue'
+import CodeHint from './components/CodeHint.vue'
 import { useThemeToggle } from './useThemeToggle'
+import { demoHomeUrl, siblingExampleUrl } from './links'
 import BackIcon from './icons/BackIcon.vue'
 import UndoIcon from './icons/UndoIcon.vue'
 import RedoIcon from './icons/RedoIcon.vue'
@@ -73,6 +75,115 @@ const STRINGS = {
 const ICONS = { close: closeIconNode }
 
 /** 프레임워크 컴포넌트 경로. 아이콘 라이브러리를 그대로 쓸 수 있다. */
+/*
+ * 코드 힌트 본문.
+ *
+ * 템플릿이 아니라 script 에 둔다 — 템플릿 속성에 여러 줄 백틱 문자열을 넣으면 들여쓰기가
+ * 섞여 읽기 어렵고, prettier 가 줄을 다시 접으면서 코드 모양이 깨진다.
+ */
+const CODE_EDITOR = `import { PDFCanvasEditor } from '@h_domi/pdf-canvas-kit/vue'
+
+<PDFCanvasEditor
+  ref="editor"
+  :initial-doc="initialDoc"       <!-- 최초 1회만 읽는다. 교체는 key 로 -->
+  :object-types="OBJECT_TYPES"    <!-- 툴바가 이 목록에서 나온다 -->
+  :render-object="{ 'example.shortAnswer': AnswerBadge }"
+  :render-inspector="{ 'example.shortAnswer': AnswerFields }"
+  :strings="STRINGS"
+  :icons="ICONS"
+  :render-icon="RENDER_ICON"
+  :on-request-upload="() => (uploadOpen = true)"
+  :on-request-confirm="(req) => (confirmReq = req)"
+  @change="(d) => (doc = d)"
+/>
+
+// ⚠️ ref 타입을 명시한다 — Vue 의 expose 는 .d.ts 에 타입을 남기지 않는다
+const editor = ref<PDFCanvasEditorRef | null>(null)`
+
+const CODE_VIEWER = `import { PDFCanvasViewer } from '@h_domi/pdf-canvas-kit/vue'
+
+<PDFCanvasViewer
+  :doc="publicDoc"                <!-- controlled — 편집기와 반대다 -->
+  :object-types="OBJECT_TYPES"    <!-- 편집기와 같은 배열. kind 가 계약이다 -->
+  :render-object="{ 'example.shortAnswer': AnswerInput }"
+  @change-data="onChangeData"
+/>
+
+// 뷰어는 문서를 소유하지 않는다. 호스트가 고쳐 다시 내려 준다
+function onChangeData(objectId: string, next: unknown) {
+  publicDoc.value = patch(publicDoc.value, objectId, next)
+}`
+
+const CODE_HANDLE = `// ⚠️ 타입을 명시한다. Vue 의 expose 는 런타임 API 라 자동 추론되지 않는다
+const editor = ref<PDFCanvasEditorRef | null>(null)
+
+// 검증 게이트 — 실패하면 편집기가 문제 객체로 데려간다
+if (!editor.value?.handle?.checkBeforeExport()) return
+publicDoc.value = editor.value.handle.toPublicDoc()
+
+// 그 밖에 쓸 수 있는 것
+editor.value?.handle?.importFile(file)
+editor.value?.handle?.confirmPending()
+editor.value?.handle?.cancelPending()
+editor.value?.handle?.requestUpload()`
+
+const CODE_THEME = `/* theme.css — 특이도를 올리지 않았고 !important 도 없다 */
+.pck-toolbar { justify-content: flex-end; }   /* 배치는 토큰으로 못 한다 */
+.pck-panel-head { text-transform: none; }
+.pck-stage {
+  background-image: radial-gradient(...);     /* 두 값이 함께 필요하다 */
+  background-size: 18px 18px;
+}
+
+/* 토큰만 바꾸는 것으로 끝나는 경우가 대부분이다 */
+.pck-editor { --pck-accent: #0f9b8e; --pck-radius: 10px; }
+
+/* 토글: import 하면 끌 수 없어 ?raw 로 읽어 <style> 로 넣는다 */
+import themeCss from './theme.css?raw'`
+
+const CODE_SLOTS = `// 1. 타입 선언 — 프레임워크 무관. 제네릭이 둘인 이유는 toPublic 때문이다
+const shortAnswer = defineObjectType<Answer, PublicAnswer>({
+  kind: 'example.shortAnswer',   // Editor ↔ Viewer 계약
+  label: '단답형',                // 툴바 버튼 이름
+  defaultSize: { w: 160, h: 44 },
+  defaultData: () => ({ answers: [], points: 1 }),
+  validate: (d) => (d.answers.some((a) => a.trim()) ? null : ['정답을 입력하세요']),
+  toPublic: ({ answers: _a, ...rest }) => rest,
+})
+
+// 2. SFC 를 붙인다
+:render-object="{ 'example.shortAnswer': AnswerBadge }"
+:render-inspector="{ 'example.shortAnswer': AnswerFields }"
+
+// 3. 슬롯 SFC 가 받는 것
+const props = defineProps<{ objectId: string; data: Answer }>()
+const emit = defineEmits<{ change: [next: Answer] }>()`
+
+const CODE_DIALOG = `<PDFCanvasEditor
+  :on-request-upload="() => (uploadOpen = true)"
+  :on-request-confirm="(req) => (confirmReq = req)"
+  :on-import-state-change="(st) => (importing = st)"
+/>
+
+// 내 모달에서 결과를 알려준다
+editor.value?.handle?.importFile(file)
+editor.value?.handle?.confirmPending()
+editor.value?.handle?.cancelPending()
+
+// ⚠️ 둘 중 하나를 반드시 부른다. 안 부르면 그 동작은 대기 상태로 남는다`
+
+const CODE_STRINGS = `<PDFCanvasEditor
+  :strings="{ 'toolbar.duplicate': '복사', 'icon.caret': '⌄' }"
+  :icons="{ close: closeIconNode }"
+  :render-icon="{ undo: UndoIcon, redo: RedoIcon }"
+/>
+
+/* 아이콘 세 번째 경로 — CSS. 버튼에 data-icon 이 붙어 있다 */
+.pck-icon-btn[data-icon='undo'] {
+  font-size: 0;
+  background: url(undo.svg) center / 16px no-repeat;
+}`
+
 const RENDER_ICON = {
   back: BackIcon,
   undo: UndoIcon,
@@ -85,12 +196,22 @@ const RENDER_ICON = {
  * ⚠️ `workerSrc` 만 주면 PDF 는 열리지만 **한국어 글자가 조용히 사라진다.**
  * 자산 복사는 `scripts/dev-examples.mjs` 가 해 준다.
  */
+/*
+ * 자산 경로의 기준.
+ *
+ * `import.meta.env.BASE_URL` 은 vite 가 빌드 시점의 `base` 로 치환한다 — dev 는 `/`,
+ * GitHub Pages 는 `/pdf-canvas-kit/react/` 다. 절대 경로로 하드코딩하면 Pages 에서 전부
+ * 404 가 되고, 증상이 "PDF 는 열리는데 한글만 사라진다" 라 원인을 찾기 어렵다.
+ */
+const base = import.meta.env.BASE_URL
+
 configurePdfResources({
-  workerSrc: '/pdfjs/pdf.worker.mjs',
-  cMapUrl: '/pdfjs/cmaps/',
-  standardFontDataUrl: '/pdfjs/standard_fonts/',
-  wasmUrl: '/pdfjs/wasm/',
-  iccUrl: '/pdfjs/iccs/',
+  workerSrc: `${base}pdfjs/pdf.worker.mjs`,
+  // ⚠️ 아래 넷을 빠뜨리면 한국어 PDF 에서 글자가 조용히 사라진다
+  cMapUrl: `${base}pdfjs/cmaps/`,
+  standardFontDataUrl: `${base}pdfjs/standard_fonts/`,
+  wasmUrl: `${base}pdfjs/wasm/`,
+  iccUrl: `${base}pdfjs/iccs/`,
 })
 
 // ⚠️ 타입을 명시한다. Vue 의 expose 는 런타임 API 라 자동 추론되지 않는다 (ARCHITECTURE §17.2).
@@ -163,23 +284,68 @@ function onChangeData(objectId: string, next: unknown) {
 
 <template>
   <div class="ex-root">
-    <DevBar>
-      <strong>Vue 예제</strong>
-      <span
-        >객체 {{ objectCount }} · 페이지 {{ doc?.pages.length ?? 0 }}/{{ LIMITS.pagesPerDoc }}</span
+    <div class="hint-wrap is-inline">
+      <CodeHint
+        corner="br"
+        label="호스트 UI · handle"
+        note="devbar 는 패키지와 무관한 내 UI 다. 편집기 조작은 ref 로 받은 handle 을 부른다."
+        :code="CODE_HANDLE"
       >
-      <button @click="uploadOpen = true">문서 불러오기</button>
-      <button @click="send">뷰어로 보내기</button>
-      <button :disabled="tab === 'editor'" @click="tab = 'editor'">편집기</button>
-      <button :disabled="tab === 'viewer'" @click="tab = 'viewer'">뷰어</button>
-      <!-- 이 토글이 @layer 오버라이드를 눈으로 확인하는 장치다 -->
-      <button :class="themeOn ? 'is-on' : ''" @click="toggleTheme">
-        테마 {{ themeOn ? 'ON' : 'OFF' }}
-      </button>
-      <span v-if="note" class="ex-note">{{ note }}</span>
-      <span v-if="importing?.error" class="ex-err">{{ importing.error }}</span>
-      <span class="ex-spacer"><a href="http://localhost:3101/">React 예제 →</a></span>
-    </DevBar>
+        <DevBar>
+          <strong>Vue 예제</strong>
+          <span
+            >객체 {{ objectCount }} · 페이지 {{ doc?.pages.length ?? 0 }}/{{
+              LIMITS.pagesPerDoc
+            }}</span
+          >
+          <button @click="uploadOpen = true">문서 불러오기</button>
+          <button @click="send">뷰어로 보내기</button>
+          <button :disabled="tab === 'editor'" @click="tab = 'editor'">편집기</button>
+          <button :disabled="tab === 'viewer'" @click="tab = 'viewer'">뷰어</button>
+          <!-- 이 토글이 @layer 오버라이드를 눈으로 확인하는 장치다 -->
+          <CodeHint
+            corner="br"
+            label="@layer 오버라이드"
+            note="theme.css 를 <style> 로 붙였다 뗀다. 단일 클래스 선택자인데 패키지 규칙을 이긴다."
+            :code="CODE_THEME"
+          >
+            <button :class="themeOn ? 'is-on' : ''" @click="toggleTheme">
+              테마 {{ themeOn ? 'ON' : 'OFF' }}
+            </button>
+          </CodeHint>
+          <span v-if="note" class="ex-note">{{ note }}</span>
+          <span v-if="importing?.error" class="ex-err">{{ importing.error }}</span>
+          <CodeHint
+            corner="br"
+            label="커스텀 객체 슬롯"
+            note="패키지는 기본 틀만 그린다. 그 안을 내 SFC 가 채운다 — Teleport 라 v-for·v-if 가 그대로 동작한다."
+            :code="CODE_SLOTS"
+          >
+            <span class="hint-chip">슬롯</span>
+          </CodeHint>
+          <CodeHint
+            corner="br"
+            label="다이얼로그 위임"
+            note="콜백을 주는 것만으로 내장 팝업이 꺼진다. 별도 플래그가 없다."
+            :code="CODE_DIALOG"
+          >
+            <span class="hint-chip">다이얼로그</span>
+          </CodeHint>
+          <CodeHint
+            corner="br"
+            label="문구 · 아이콘"
+            note="아이콘은 icons → renderIcon → 글리프 순으로 이긴다."
+            :code="CODE_STRINGS"
+          >
+            <span class="hint-chip">문구·아이콘</span>
+          </CodeHint>
+          <span class="ex-spacer">
+            <a :href="demoHomeUrl()">← 데모</a>
+            <a :href="siblingExampleUrl('react')">React 예제 →</a>
+          </span>
+        </DevBar>
+      </CodeHint>
+    </div>
 
     <ConfirmDialog
       v-if="confirmReq"
@@ -198,28 +364,42 @@ function onChangeData(objectId: string, next: unknown) {
 
     <div class="ex-stack">
       <div class="ex-pane" :hidden="tab !== 'editor'">
-        <PDFCanvasEditor
-          ref="editor"
-          :initial-doc="initialDoc"
-          :object-types="OBJECT_TYPES"
-          :render-object="{ 'example.shortAnswer': AnswerBadge }"
-          :render-inspector="{ 'example.shortAnswer': AnswerFields }"
-          :strings="STRINGS"
-          :icons="ICONS"
-          :render-icon="RENDER_ICON"
-          :on-request-upload="() => (uploadOpen = true)"
-          :on-request-confirm="(req) => (confirmReq = req)"
-          :on-import-state-change="(st) => (importing = st)"
-          @change="(d) => (doc = d)"
-        />
+        <CodeHint
+          corner="tr"
+          label="PDFCanvasEditor"
+          note="편집기 전체가 패키지가 그린 DOM 이다. 커스텀 객체 자리에만 내 SFC 가 Teleport 로 들어간다."
+          :code="CODE_EDITOR"
+        >
+          <PDFCanvasEditor
+            ref="editor"
+            :initial-doc="initialDoc"
+            :object-types="OBJECT_TYPES"
+            :render-object="{ 'example.shortAnswer': AnswerBadge }"
+            :render-inspector="{ 'example.shortAnswer': AnswerFields }"
+            :strings="STRINGS"
+            :icons="ICONS"
+            :render-icon="RENDER_ICON"
+            :on-request-upload="() => (uploadOpen = true)"
+            :on-request-confirm="(req) => (confirmReq = req)"
+            :on-import-state-change="(st) => (importing = st)"
+            @change="(d) => (doc = d)"
+          />
+        </CodeHint>
       </div>
       <div class="ex-pane" :hidden="tab !== 'viewer'">
-        <PDFCanvasViewer
-          :doc="publicDoc"
-          :object-types="OBJECT_TYPES"
-          :render-object="{ 'example.shortAnswer': AnswerInput }"
-          @change-data="onChangeData"
-        />
+        <CodeHint
+          corner="tr"
+          label="PDFCanvasViewer"
+          note="doc 이 controlled 다. 응답은 호스트가 소유하고 change-data 로 올라온다."
+          :code="CODE_VIEWER"
+        >
+          <PDFCanvasViewer
+            :doc="publicDoc"
+            :object-types="OBJECT_TYPES"
+            :render-object="{ 'example.shortAnswer': AnswerInput }"
+            @change-data="onChangeData"
+          />
+        </CodeHint>
       </div>
     </div>
   </div>

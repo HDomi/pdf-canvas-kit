@@ -51,8 +51,13 @@ const skipResources = params.get('resources') === 'off'
  */
 const fontFaceOff = params.get('fontface') === 'off'
 
-// CMap 누락 버그를 재현할 때조차 worker는 항상 필요하다.
-configurePdfResources({ workerSrc: '/pdfjs/pdf.worker.mjs' })
+/*
+ * CMap 누락 버그를 재현할 때조차 worker 는 항상 필요하다.
+ *
+ * `BASE_URL` 로 만드는 이유: Pages 는 `/<repo>/` 서브패스에 올라가고, 절대 경로면 worker 가
+ * 404 → "MIME type text/html" 로 죽는다.
+ */
+configurePdfResources({ workerSrc: `${import.meta.env.BASE_URL}pdfjs/pdf.worker.mjs` })
 
 if (!skipResources) {
   configurePdfResources({

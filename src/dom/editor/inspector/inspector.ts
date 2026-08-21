@@ -43,6 +43,8 @@ export interface InspectorProps {
    * 언마운트 시 `null` 로 한 번 더 불린다.
    */
   onMountInspector?: (objectId: string, el: HTMLElement | null) => void
+  /** 슬롯 코드의 예외를 호스트에 올린다 (D33). */
+  reportError: (error: unknown, context: 'slot') => void
 }
 
 /** 텍스트의 글자색은 필수 필드다. 지정을 지우면 이 값으로 되돌린다. */
@@ -160,6 +162,8 @@ export function inspector(props: InspectorProps): HTMLElement {
           const c = current?.type === 'custom' ? current : obj
           return { data: c.data, rect: c.rect, selected: true }
         },
+        // 인스펙터 슬롯도 소비자 코드다. 예외를 격리해 편집기를 살린다 (D33)
+        onError: (err) => props.reportError(err, 'slot'),
       })
     } else if (props.onMountInspector) {
       const id = obj.id

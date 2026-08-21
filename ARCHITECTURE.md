@@ -1561,3 +1561,78 @@ D27 이 headless 를 미룬 그 비용이다.
 
 그런데 실제 수요("우리 앱 모달과 생김새가 다르다")는 §19.1·§19.2 로 **전부 해결된다.**
 구조가 다른 UI 를 넣어야 하는 요구가 실제로 오면 그때 슬롯을 만든다.
+
+---
+
+## 20. 호스트 앱과의 경계 ★ (D33)
+
+편집기는 `window` 와 `document` 에 리스너를 붙이고, 렌더 층이 vanilla DOM 이라 프레임워크의
+안전망 밖에 있다. 그 두 사실이 통합에서 부딪히는 지점을 만든다.
+
+| 부딪히는 것 | 어디 | 제어 |
+| --- | --- | --- |
+| 단축키 (`Cmd+Z` · `Delete` · Space) | `createEditor.ts` · `controller/pan.ts` | `shortcuts` + 활성 스코프 |
+| 예외 (error boundary 밖) | 전역 | `onError` |
+| 이탈 확인 (`beforeunload`) | `controller/editor.ts` | `warnOnUnload` · `isDirty()` |
+| OS 다크 모드 | `tokens.css` | `color-scheme` (표준 속성) |
+
+## 20.1 단축키 스코프
+
+`shortcutsActive` 가 셋을 함께 본다.
+
+```
+shortcuts !== false  &&  편집기 안을 마지막으로 클릭  &&  offsetParent !== null
+```
+
+**`document.activeElement` 를 쓰지 않는다.** 캔버스와 오버레이가 포커스를 받지 않는 `div` 라서
+객체를 클릭해도 `activeElement` 는 `body` 에 남는다. 대신 `pointerdown` 을 **capture 로** 듣고
+루트 포함 여부를 기록한다 — 편집기가 그 이벤트에서 `preventDefault()` 를 부르는 경로가 있어
+버블 단계에서는 document 까지 오지 않는 경우가 있다.
+
+`offsetParent` 검사가 필요한 이유: `visibility: hidden` 으로 숨긴 탭에서도 `contains` 는
+참이므로 클릭 기록만으로는 부족하다.
+
+**Space 팬도 같은 스코프를 탄다** (`createPan` 의 `disabled`). 그러지 않으면 스코프 밖에서
+Space 를 눌렀을 때 페이지 스크롤이 막힌다 — 편집기를 건드리지도 않았는데 브라우저 기본
+동작이 사라지는 것이라 원인을 짐작하기 어렵다.
+
+## 20.2 예외 경로
+
+```
+reportError(err, ctx)
+   ├─ console.error   항상. 삼키지 않는다
+   └─ props.onError   있으면. 그 콜백이 던져도 편집기는 계속 동작한다
+```
+
+슬롯(`mountRenderSlot`)은 **소비자 코드**라 따로 격리한다. 첫 렌더가 던지면 그 객체 내용만
+비고, `onUpdate` 콜백은 하나가 던져도 나머지를 계속 돌린다 — 루프 밖에서 감싸면 첫 실패가
+뒤의 콜백을 건너뛰어 같은 객체의 다른 부분이 낡은 값을 보여준다.
+
+## 20.3 다크 모드 — `light-dark()`
+
+```css
+.pck-editor { color-scheme: light dark; }
+--pck-bg: #f4f4f2;                        /* fallback */
+--pck-bg: light-dark(#f4f4f2, #17171a);
+```
+
+미디어 쿼리로 블록을 복제하지 않는다. 그러면 값이 두 벌이 되고, 강제 모드까지 넣으면 세 벌이
+된다. `light-dark()` 는 한 줄에 두 값을 담고 `color-scheme` 이 고른다 — **호스트는 표준 속성
+하나로 강제**할 수 있어 우리 전용 attribute 를 배울 필요가 없다.
+
+각 토큰이 두 줄인 이유는 fallback 이다. 미지원 브라우저는 뒷줄을 무시한다.
+
+**`--pck-page-bg` 는 예외다.** 배경이 PDF 를 래스터화한 흰 종이 이미지이므로 프레임만
+어둡게 하면 경계가 어긋나 보인다.
+
+### ⚠️ 토큰 블록에 일반 속성을 두지 않는다
+
+토큰 선언은 `@layer` **밖**이다(§19.1). 거기에 일반 속성을 넣으면 소비자가 단일 클래스로
+이길 수 없고, 계약이 그 속성에만 조용히 적용되지 않는다. `font-family` 와 `color` 가 실제로
+그렇게 섞여 있었고 `editor.css` 로 옮겼다.
+
+`color-scheme` 은 예외다 — `light-dark()` 가 그 값을 보므로 토큰과 같은 곳에 있어야 하고,
+소비자는 그 속성 자체를 덮어써서 모드를 강제한다.
+
+`npm run verify:tarball` 이 이 구조를 검사한다. 허용하는 것은 `--pck-*` · `--lightningcss-*`
+(minifier 폴리필) · `color-scheme` 뿐이다.

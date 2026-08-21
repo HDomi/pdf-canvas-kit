@@ -40,6 +40,8 @@ export interface ObjectViewProps {
   onChangeData?: (next: unknown) => void
   /** 커스텀 객체의 콘텐츠 컨테이너를 알린다. 프레임워크 래퍼가 portal 한다. */
   onMountCustom?: (objectId: string, el: HTMLElement | null) => void
+  /** 슬롯 코드가 던졌을 때 (D33). */
+  onError?: (error: unknown) => void
 }
 
 export function objectView(props: ObjectViewProps): HTMLElement {
@@ -110,6 +112,7 @@ function inner(type: PDFCanvasObject['type'], props: ObjectViewProps): Child {
         // 슬롯의 ctx.rect() 가 드래그 중에도 맞아야 한다.
         previewRect: props.previewRect,
         ...(props.onMountCustom ? { onMount: props.onMountCustom } : {}),
+        ...(props.onError ? { onError: props.onError } : {}),
       })
   }
 }

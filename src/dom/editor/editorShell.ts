@@ -163,6 +163,7 @@ export function editorShell(c: EditorController): HTMLElement {
           onUpdate: c.updateObject,
           onRemove: (id) => c.deleteSelection([id]),
           onRotate: c.rotateObject,
+          reportError: c.reportError,
         }),
       ],
     ),

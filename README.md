@@ -93,6 +93,7 @@ html, body, #app { height: 100%; margin: 0; }
 | [스타일 오버라이드](docs/09-styling.md) | 토큰 75개 + **`@layer`** — 특이도 싸움이 없다 |
 | [문구 · 번역](docs/10-strings.md) · [아이콘](docs/11-icons.md) | 모든 텍스트·아이콘을 교체 |
 | [다이얼로그 위임](docs/12-dialogs.md) | 우리 팝업 대신 **내 모달** |
+| [호스트 앱에 녹이기](docs/15-integration.md) | 단축키 충돌 · 예외 · 이탈 확인 · **다크 모드** |
 | [API 레퍼런스](docs/13-api.md) · [함정 모음](docs/14-pitfalls.md) | prop·handle·타입 / 실제로 겪은 문제 |
 | [TODO](docs/TODO.md) | 남은 일 |
 

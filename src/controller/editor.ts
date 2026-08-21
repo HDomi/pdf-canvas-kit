@@ -205,7 +205,57 @@ export interface EditorProps {
    * 내장 팝업을 끈 호스트가 진행률과 오류를 자기 UI 에 보여줄 수 있어야 한다.
    */
   onImportStateChange?: (state: ImportState) => void
+
+  /* --------------------------------------------- 호스트 앱과의 경계 (D33) -- */
+
+  /**
+   * 키보드 단축키를 켠다. 기본 `true`.
+   *
+   * `false` 면 키보드 이벤트를 **전혀 듣지 않는다** — 호스트가 자기 단축키 체계를 쓰거나
+   * 편집기를 읽기 전용 프리뷰로 둘 때다.
+   *
+   * `true` 여도 **편집기가 활성일 때만** 동작한다. 편집기 안을 마지막으로 클릭했을 때가
+   * 활성이다. 그렇게 하지 않으면 `Cmd+Z` · `Cmd+D` · `Cmd+0` · `Delete` 가 호스트 단축키와
+   * 충돌하고, 탭으로 숨긴 편집기가 뒤에서 undo 를 실행한다.
+   */
+  shortcuts?: boolean
+  /**
+   * 저장하지 않은 변경이 있을 때 페이지를 떠나려 하면 브라우저 확인창을 띄운다. 기본 `true`.
+   *
+   * `false` 면 `beforeunload` 를 붙이지 않는다 — 호스트가 라우터 가드나 자기 확인 모달을 쓸
+   * 때다. 그때 `handle.isDirty()` 로 상태를 읽는다. 둘 다 켜 두면 사용자가 두 번 확인한다.
+   *
+   * ⚠️ 대기 중인 저장 flush 는 이 값과 무관하게 계속 동작한다 — 그건 확인이 아니라
+   * 데이터 보전이다.
+   */
+  warnOnUnload?: boolean
+  /**
+   * 편집기 내부에서 예외가 났을 때.
+   *
+   * 렌더 층이 vanilla DOM 이라 **React error boundary 가 잡지 못한다.** 주지 않으면
+   * `console.error` 로만 남고 화면이 조용히 깨진 상태가 된다.
+   *
+   * ```ts
+   * onError: (err, ctx) => Sentry.captureException(err, { tags: { ctx } })
+   * ```
+   */
+  onError?: (error: unknown, context: ErrorContext) => void
 }
+
+/**
+ * 예외가 난 자리 (D33).
+ *
+ * 호스트가 로그를 분류하는 데 쓴다. 값이 늘어날 수 있으므로 소비자는 `default` 를 둔다.
+ */
+export type ErrorContext =
+  /** 문서 불러오기·변환 */
+  | 'import'
+  /** 저장 (`ports.storage`) */
+  | 'save'
+  /** 커스텀 객체의 vanilla 렌더 슬롯 */
+  | 'slot'
+  /** 그 밖의 편집기 내부 */
+  | 'editor'
 
 /** 호스트가 확인을 받아야 하는 동작. 문구는 이미 번역된 상태로 온다. */
 export interface ConfirmRequest {
@@ -374,6 +424,19 @@ export interface EditorController {
   flushSave: () => Promise<void>
   /** 승격된 배경이 있었으면 `true`. 저장 전에 호스트가 부를 수 있다 (ARCHITECTURE §7.1). */
   promoteBackgrounds: () => Promise<boolean>
+  /**
+   * 편집기 루트 엘리먼트를 받는다 (D33).
+   *
+   * 단축키 스코프 판정에 쓴다 — 이 요소 안을 마지막으로 클릭했으면 활성이다.
+   * facade 가 셸을 만든 직후 넘긴다.
+   */
+  setRootEl: (el: HTMLElement | null) => void
+  /** 단축키가 지금 동작해야 하는지. `shortcuts` prop 과 활성 상태를 함께 본다. */
+  shortcutsActive: ReadSignal<boolean>
+  /** 저장되지 않은 변경이 있는지. 호스트가 자기 라우터 가드에 쓴다. */
+  isDirty: () => boolean
+  /** 예외를 호스트에 알린다. 내부에서도 쓰고 렌더 층도 쓴다. */
+  reportError: (error: unknown, context: ErrorContext) => void
   /** 키보드 핸들러. 렌더 층이 `window` 에 붙인다. */
   onKeyDown: (e: KeyboardEvent) => void
   /** 스테이지 리사이즈 시 맞춤 배율을 다시 적용한다. */
@@ -408,6 +471,65 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    *
    * ⚠️ 전역 표에 병합된다. 한 페이지에 언어가 다른 편집기 둘은 지원하지 않는다.
    */
+  /* ----------------------------------------- 호스트 앱과의 경계 (D33) -- */
+
+  /**
+   * 예외를 호스트에 알린다.
+   *
+   * `onError` 를 주지 않으면 `console.error` 로만 남는다 — 삼키지 않는다. 렌더 층이 vanilla
+   * DOM 이라 프레임워크의 error boundary 가 잡지 못하므로, 이 통로가 유일한 관측 지점이다.
+   *
+   * 콜백 자체가 던지는 경우를 막는다. 로깅 코드의 버그가 편집기를 죽이면 안 된다.
+   */
+  function reportError(error: unknown, context: ErrorContext): void {
+    console.error(`[pdf-canvas-kit] ${context}:`, error)
+    const handler = props.value.onError
+    if (!handler) return
+    try {
+      handler(error, context)
+    } catch (inner) {
+      console.error('[pdf-canvas-kit] onError handler threw:', inner)
+    }
+  }
+
+  /**
+   * 편집기가 활성인지 — 단축키 스코프 (D33).
+   *
+   * "편집기 안을 마지막으로 클릭했다" 를 활성으로 본다. 포커스(`document.activeElement`)를
+   * 쓰지 않는 이유: 캔버스와 오버레이가 포커스를 받지 않는 `div` 라서, 객체를 클릭해도
+   * `activeElement` 는 `body` 에 남는다.
+   *
+   * 처음에는 `false` 다. 마운트만 하고 건드리지 않은 편집기가 키보드를 먹으면 안 된다 —
+   * 탭으로 숨긴 편집기가 그 상태다.
+   */
+  const rootEl = signal<HTMLElement | null>(null)
+  const focused = signal(false)
+
+  /*
+   * capture 로 받는다. 편집기가 `pointerdown` 에서 `preventDefault()` 를 부르고 전파를
+   * 멈추는 경로가 있어, 버블 단계에서는 document 까지 오지 않는 경우가 있다.
+   */
+  const onDocPointerDown = (e: Event) => {
+    const root = rootEl.value
+    if (!root) return
+    focused.value = root.contains(e.target as Node)
+  }
+  document.addEventListener('pointerdown', onDocPointerDown, true)
+  onCleanup(() => document.removeEventListener('pointerdown', onDocPointerDown, true))
+
+  const shortcutsActive = computed(() => {
+    if (props.value.shortcuts === false) return false
+    if (!focused.value) return false
+    /*
+     * 화면에 없으면 듣지 않는다.
+     *
+     * `visibility: hidden` 으로 숨긴 탭에서도 `contains` 는 참이므로 클릭 기록만으로는
+     * 부족하다. `offsetParent` 가 `null` 이면 렌더 트리에서 빠진 상태다.
+     */
+    const root = rootEl.value
+    return root !== null && root.offsetParent !== null
+  })
+
   if (initialProps.strings) configureStrings(initialProps.strings)
   if (initialProps.icons) configureIcons(initialProps.icons)
 
@@ -498,7 +620,17 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     ...(initialProps.initialScale !== undefined ? { initialScale: initialProps.initialScale } : {}),
   })
 
-  const { panning } = createPan({ stageEl, panArmed, disabled: modalOpen })
+  /*
+   * 팬도 단축키 스코프를 탄다 (D33).
+   *
+   * Space 팬이 `window` 에 붙어 있어, 스코프 밖에서 Space 를 누르면 **페이지 스크롤이 막힌다** —
+   * 편집기를 건드리지도 않았는데 브라우저 기본 동작이 사라지는 것이라 원인을 짐작하기 어렵다.
+   */
+  const { panning } = createPan({
+    stageEl,
+    panArmed,
+    disabled: computed(() => modalOpen.value || !shortcutsActive.value),
+  })
 
   /* ------------------------------------------------------- 좌표계·포인터 -- */
 
@@ -778,9 +910,17 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   function onBeforeUnload(e: BeforeUnloadEvent) {
     flushOnLeave()
     // 저장이 끝나지 않았으면 사용자에게 알린다. 문구는 브라우저가 정한다.
-    if (engine.isDirty()) e.preventDefault()
+    // 확인창은 호스트가 끌 수 있다. 기본은 켜져 있다.
+    if (props.value.warnOnUnload !== false && engine.isDirty()) e.preventDefault()
   }
 
+  /*
+   * `beforeunload` 는 두 일을 한다 — 대기 중인 저장 flush 와 확인창.
+   *
+   * `warnOnUnload: false` 는 **확인창만** 끈다 (`onBeforeUnload` 안에서 판단). flush 를 함께
+   * 끄면 호스트가 라우터 가드를 쓰겠다고 했을 뿐인데 저장 대기분이 사라진다 — 그건 확인이
+   * 아니라 데이터 보전이다.
+   */
   window.addEventListener('beforeunload', onBeforeUnload)
   document.addEventListener('visibilitychange', flushOnLeave)
   onCleanup(() => {
@@ -797,6 +937,13 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
    * 타이핑이 깨진다.
    */
   function onKeyDown(e: KeyboardEvent) {
+    /*
+     * 스코프 밖이면 아무것도 하지 않는다 (D33).
+     *
+     * 편집기를 클릭하지 않았거나 화면에 없으면 호스트의 단축키다. 여기서 걸러야 `Cmd+Z` ·
+     * `Cmd+D` · `Delete` 가 호스트와 충돌하지 않는다.
+     */
+    if (!shortcutsActive.value) return
     // 인라인 편집 중에는 Esc 만 처리한다. 나머지를 가로채면 타이핑이 불가능해진다.
     if (editingObjectId.value) {
       if (e.key === 'Escape') {
@@ -941,7 +1088,13 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
       uploadOpen.value = false
     } catch (err) {
       importError.value = describeImportError(err)
-      if (!(err instanceof ConvertError) && !(err instanceof PageLimitError)) console.error(err)
+      /*
+       * 예상된 실패(변환 거부·페이지 한도)는 UI 문구로 끝난다 — 사용자가 고칠 수 있는 일이라
+       * 로그를 남기지 않는다. 그 밖의 예외는 버그이므로 호스트에 올린다.
+       */
+      if (!(err instanceof ConvertError) && !(err instanceof PageLimitError)) {
+        reportError(err, 'import')
+      }
     } finally {
       importProgress.value = null
     }
@@ -1206,7 +1359,7 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
       // 저장한 것이 아니므로 dirty 를 지우지 않는다. 배지가 거짓말을 하면 안 된다.
     } catch (err) {
       toolError.value = err instanceof Error ? err.message : String(err)
-      console.error(err)
+      reportError(err, 'save')
     } finally {
       manualSaving.value = false
     }
@@ -1368,6 +1521,10 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     },
     flushSave: () => engine.flushSave(),
     promoteBackgrounds: () => engine.promoteBackgrounds(),
+    setRootEl: (el) => (rootEl.value = el),
+    shortcutsActive,
+    isDirty: () => engine.isDirty(),
+    reportError,
     onKeyDown,
     applyFit: stage.applyFit,
   }

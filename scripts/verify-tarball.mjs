@@ -119,11 +119,40 @@ try {
   check('레이어 이름이 pdf-canvas-kit', layerName === 'pdf-canvas-kit', layerName)
   const tokenAt = css.indexOf('--pck-bg')
   check('토큰이 레이어 밖(앞)에 있다', tokenAt >= 0 && tokenAt < layerAt)
+  /*
+   * 레이어 밖에는 **토큰 선언만** 있어야 한다.
+   *
+   * 허용하는 것 셋:
+   *   `--pck-*`           우리 토큰
+   *   `--lightningcss-*`  minifier 가 `light-dark()` 를 폴리필하며 만드는 헬퍼
+   *   `color-scheme`      `light-dark()` 가 이 값을 보고 팔레트를 고른다. 토큰과 함께 있어야
+   *                       하고, 소비자는 이 속성을 덮어써서 모드를 강제한다
+   *
+   * 그 밖의 속성이 있으면 실패다 — 레이어 밖이라 소비자가 단일 클래스로 이길 수 없고,
+   * §19.1 의 계약이 그 속성에만 조용히 적용되지 않는다. `font-family` 와 `color` 가 실제로
+   * 그렇게 섞여 있었다.
+   *
+   * `}` 로 자르므로 `@media` 블록은 조각이 된다. 선택자가 남아 있는 조각(`{` 를 다시 포함)은
+   * 선언을 온전히 읽을 수 없으니 건너뛴다 — 그 안의 규칙은 다음 조각에서 검사된다.
+   */
+  const ALLOWED_PLAIN = new Set(['color-scheme'])
   const outside = css
     .slice(0, layerAt < 0 ? css.length : layerAt)
     .split('}')
-    .filter((r) => r.includes('.pck-') && !r.includes('--pck-'))
-  check('레이어 밖에 규칙이 없다', outside.length === 0, `${outside.length}개`)
+    .filter((block) => {
+      if (!block.includes('.pck-')) return false
+      const open = block.indexOf('{')
+      if (open < 0) return false
+      const body = block.slice(open + 1)
+      // 중첩 블록의 조각. 선언을 온전히 읽을 수 없으므로 다음 조각에 맡긴다
+      if (body.includes('{')) return false
+      const decls = body
+        .split(';')
+        .map((d) => d.trim())
+        .filter(Boolean)
+      return decls.some((d) => !d.startsWith('--') && !ALLOWED_PLAIN.has(d.split(':')[0].trim()))
+    })
+  check('레이어 밖에 규칙이 없다 (토큰 선언만 허용)', outside.length === 0, `${outside.length}개`)
 
   console.log('\n[의존성]')
   check(

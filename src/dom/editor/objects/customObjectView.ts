@@ -59,6 +59,8 @@ export interface CustomObjectViewProps {
    * 드래그 중 옛 값을 읽는다 — `shapeObjectView` 와 같은 종류의 버그다 (2026.08.21).
    */
   previewRect?: () => Rect | null
+  /** 슬롯 코드가 던졌을 때. 컨트롤러의 `reportError` 로 이어진다 (D33). */
+  onError?: (error: unknown) => void
 }
 
 export function customObjectView(props: CustomObjectViewProps): HTMLElement {
@@ -105,6 +107,7 @@ export function customObjectView(props: CustomObjectViewProps): HTMLElement {
         rect: props.previewRect?.() ?? props.object.value.rect,
         selected: props.selected(),
       }),
+      ...(props.onError ? { onError: props.onError } : {}),
     })
   } else if (props.onMount) {
     /*

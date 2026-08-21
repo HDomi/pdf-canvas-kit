@@ -33,21 +33,57 @@
 .pck-editor,
 .pck-viewer,
 .pck-modal-scrim {
+  /*
+   * 다크 모드 (D33).
+   *
+   * `color-scheme: light dark` 가 **OS 설정에 자동으로 대응한다.** 아래 팔레트는 `light-dark()`
+   * 로 두 값을 한 줄에 담는다 — 미디어 쿼리로 블록을 복제하면 값이 두 벌이 되고, 강제 모드까지
+   * 넣으면 세 벌이 된다.
+   *
+   * 각 토큰이 **두 줄**인 이유: 앞줄이 fallback 이다. `light-dark()` 를 모르는 브라우저는
+   * 뒷줄 선언을 무시하고 앞줄을 쓴다. 한 줄만 쓰면 변수가 비어 화면이 깨진다.
+   *
+   * ## 호스트가 강제하는 방법
+   *
+   * 표준 속성 하나로 끝난다 — 우리 전용 attribute 가 필요하지 않다.
+   *
+   *   .my-app .pck-editor { color-scheme: light; }   OS 가 어둡든 밝게
+   *   .my-app .pck-editor { color-scheme: dark; }    항상 어둡게
+   *
+   * ## 종이는 흰색이다
+   *
+   * `--pck-page-bg` 는 `light-dark()` 를 쓰지 않는다. 배경이 PDF 를 래스터화한 이미지이고
+   * 그건 흰 종이다 — 프레임만 어둡게 하면 이미지와 경계가 어긋나 보인다.
+   */
+  color-scheme: light dark;
+
   /* ---- 색 팔레트 -------------------------------------------------------- */
   --pck-bg: #f4f4f2;
+  --pck-bg: light-dark(#f4f4f2, #17171a);
   --pck-surface: #ffffff;
+  --pck-surface: light-dark(#ffffff, #1f1f23);
   --pck-surface-sunken: #eeeeeb;
+  --pck-surface-sunken: light-dark(#eeeeeb, #191a1d);
   --pck-line: #dcdcd6;
+  --pck-line: light-dark(#dcdcd6, #33333a);
   --pck-line-strong: #b9b9b1;
+  --pck-line-strong: light-dark(#b9b9b1, #4a4a54);
   --pck-ink: #1c1c1a;
+  --pck-ink: light-dark(#1c1c1a, #ececea);
   --pck-ink-muted: #77776f;
+  --pck-ink-muted: light-dark(#77776f, #97979f);
   --pck-accent: #4b4b46;
+  --pck-accent: light-dark(#4b4b46, #8a8a94);
   --pck-accent-ink: #ffffff;
+  --pck-accent-ink: light-dark(#ffffff, #131316);
 
   /* 피드백. --pck-state-danger 는 인스펙터 검증 색으로도 쓰인다. */
   --pck-state-danger: #b4342b;
+  --pck-state-danger: light-dark(#b4342b, #ff8a80);
   --pck-state-ok: #2f7a4a;
+  --pck-state-ok: light-dark(#2f7a4a, #6ddba0);
   --pck-state-warn: #a86a1f;
+  --pck-state-warn: light-dark(#a86a1f, #f0c063);
 
   /* ---- 타이포그래피 ----------------------------------------------------- */
   --pck-font: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans KR', sans-serif;
@@ -139,9 +175,12 @@
 
   /* ---- 선택 오버레이 (줌 transform 밖에 그린다) ------------------------- */
   --pck-select-stroke: #2b6cb0;
+  --pck-select-stroke: light-dark(#2b6cb0, #6aa9e9);
   --pck-select-fill: rgb(43 108 176 / 8%);
   --pck-handle-bg: #ffffff;
+  --pck-handle-bg: light-dark(#ffffff, #1f1f23);
   --pck-handle-stroke: #2b6cb0;
+  --pck-handle-stroke: light-dark(#2b6cb0, #6aa9e9);
   /* 내보내기를 막는 객체(정답 미지정, 보기 부족)의 외곽선. */
   --pck-invalid-stroke: var(--pck-state-danger);
 
@@ -154,6 +193,13 @@
   --pck-inspector-bg: var(--pck-surface);
   --pck-inspector-border: var(--pck-line);
 
-  font-family: var(--pck-font);
-  color: var(--pck-ink);
+  /*
+   * ⚠️ 여기에는 **커스텀 프로퍼티만** 둔다.
+   *
+   * 이 블록은 레이어 밖이라(§19.1) 일반 속성을 넣으면 소비자가 단일 클래스로 이길 수 없다 —
+   * `font-family` 와 `color` 가 그렇게 섞여 있었고 `editor.css` 로 옮겼다.
+   *
+   * `color-scheme` 은 예외다. `light-dark()` 가 그 값을 보고 팔레트를 고르므로 토큰 선언과
+   * 같은 곳에 있어야 하고, 소비자는 이 속성 자체를 덮어써서 모드를 강제한다.
+   */
 }

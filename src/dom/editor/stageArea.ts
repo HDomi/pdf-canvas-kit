@@ -39,6 +39,8 @@ export function stageArea(c: EditorController): HTMLElement {
         },
         editing: () => c.editingObjectId.value === object.value.id,
         onEditText: (value) => c.editText(object.value.id, value),
+        // 슬롯 코드의 예외를 호스트에 올린다. 객체 하나의 버그가 화면을 죽이면 안 된다 (D33)
+        onError: (err) => c.reportError(err, 'slot'),
         ...(c.objectTypes ? { types: c.objectTypes } : {}),
         onChangeData: (next) => c.updateObject(object.value.id, { data: next }),
         ...(c.onMountCustom ? { onMountCustom: c.onMountCustom } : {}),

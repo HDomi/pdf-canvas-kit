@@ -23,6 +23,9 @@
 | `onRequestUpload` | `() => void` | 매번 | **주면 내장 업로드 팝업이 꺼진다** |
 | `onRequestConfirm` | `(req: ConfirmRequest) => void` | 매번 | **주면 내장 확인 팝업이 꺼진다** |
 | `onImportStateChange` | `(state: ImportState) => void` | 매번 | 진행률·오류 |
+| `shortcuts` | `boolean` | 매번 | 기본 `true`. **활성일 때만 동작한다** |
+| `warnOnUnload` | `boolean` | 매번 | 기본 `true`. 브라우저 이탈 확인창 |
+| `onError` | `(err, ctx: ErrorContext) => void` | 매번 | **error boundary 가 못 잡는다** |
 
 **래퍼 전용**
 
@@ -68,6 +71,7 @@
 | | |
 | --- | --- |
 | `checkBeforeExport(): boolean` | 게이트. 실패 시 문제 객체로 이동 |
+| `isDirty(): boolean` | 저장되지 않은 변경. 호스트 라우터 가드용 |
 | `validate(): ValidationResult` | 게이트를 열지 않고 상태만 |
 
 ### 불러오기
@@ -258,7 +262,7 @@ EditorViewState · FitMode · ToolId · SaveState · PageViewport
 
 ```ts
 AssetPort · StoragePort · ConverterPort · EnginePorts
-ImportProgress · ImportState · ConfirmRequest
+ImportProgress · ImportState · ConfirmRequest · ErrorContext
 ```
 
 ### 검증

@@ -52,6 +52,13 @@ export interface EditorHandle {
    */
   updateObjectData(objectId: string, data: unknown): void
 
+  /**
+   * 저장하지 않은 변경이 있는지 (D33).
+   *
+   * `warnOnUnload: false` 로 브라우저 확인창을 끈 호스트가 자기 라우터 가드에서 쓴다.
+   */
+  isDirty(): boolean
+
   /** 검증 게이트. 실패하면 문제 객체로 데려가고 `false`. */
   checkBeforeExport(): boolean
   /** 문서 전체 검증 결과. 게이트를 열지 않고 상태만 볼 때. */
@@ -128,7 +135,16 @@ export function createPDFCanvasEditor(
 
     const root = editorShell(c)
     container.append(root)
-    onCleanup(() => root.remove())
+    /*
+     * 루트를 컨트롤러에 알린다 — 단축키 스코프 판정에 쓴다 (D33).
+     *
+     * 셸을 만든 **뒤**에 넘긴다. 그전에는 요소가 없다.
+     */
+    c.setRootEl(root)
+    onCleanup(() => {
+      c.setRootEl(null)
+      root.remove()
+    })
 
     return c
   })
@@ -149,6 +165,7 @@ export function createPDFCanvasEditor(
 
     updateObjectData: (objectId, data) => inner.updateObject(objectId, { data }),
 
+    isDirty: () => inner.isDirty(),
     checkBeforeExport: () => inner.checkBeforeExport(),
     validate: () => inner.validation.value,
     toPublicDoc: () => inner.toPublicDoc(),

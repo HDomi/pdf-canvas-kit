@@ -1053,4 +1053,104 @@ export const SHELL_GROUPS: CaseGroup[] = [
       },
     ],
   },
+
+  {
+    title: 'shell — 호스트 앱과의 경계 (D33) ★',
+    note: '전역 리스너·예외·확인창은 호스트 앱과 부딪히는 지점이다. 편집기가 화면에 없는데 Cmd+Z 를 먹으면 원인을 짐작하기 어렵다.',
+    cases: [
+      {
+        /*
+         * ★ 편집기를 클릭하지 않았으면 단축키가 동작하지 않는다.
+         *
+         * 마운트만 하고 두면 호스트의 Cmd+Z 다. 탭으로 숨긴 편집기가 그 상태다.
+         */
+        name: '★ 클릭 전에는 단축키가 비활성',
+        expected: false,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const c = createEditorController({ initialDoc: docWithPages(1) })
+          const [, dispose] = scope(() => {
+            const root = editorShell(c)
+            host.append(root)
+            c.setRootEl(root)
+          })
+          const active = c.shortcutsActive.value
+          dispose()
+          host.remove()
+          return active
+        },
+      },
+      {
+        name: '★ shortcuts: false 면 클릭해도 비활성',
+        expected: false,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const c = createEditorController({
+            initialDoc: docWithPages(1),
+            shortcuts: false,
+          })
+          const [, dispose] = scope(() => {
+            const root = editorShell(c)
+            host.append(root)
+            c.setRootEl(root)
+            // 편집기 안을 클릭한 것으로 만든다
+            root.dispatchEvent(new Event('pointerdown', { bubbles: true }))
+          })
+          const active = c.shortcutsActive.value
+          dispose()
+          host.remove()
+          return active
+        },
+      },
+      {
+        /*
+         * ★ 예외를 삼키지 않는다.
+         *
+         * 렌더 층이 vanilla DOM 이라 프레임워크의 error boundary 가 잡지 못한다 — 이 콜백이
+         * 유일한 관측 지점이다.
+         */
+        name: '★ onError 가 컨텍스트와 함께 불린다',
+        expected: ['slot', true],
+        actual: () => {
+          const seen: unknown[] = []
+          const c = createEditorController({
+            initialDoc: docWithPages(1),
+            onError: (err, ctx) => seen.push(ctx, err instanceof Error),
+          })
+          c.reportError(new Error('boom'), 'slot')
+          return seen
+        },
+      },
+      {
+        name: 'onError 핸들러가 던져도 편집기가 죽지 않는다',
+        expected: true,
+        actual: () => {
+          const c = createEditorController({
+            initialDoc: docWithPages(1),
+            onError: () => {
+              throw new Error('logger bug')
+            },
+          })
+          // 던지면 이 케이스가 실패한다
+          c.reportError(new Error('boom'), 'editor')
+          return true
+        },
+      },
+      {
+        name: 'isDirty 가 저장 상태를 알려준다 (호스트 라우터 가드용)',
+        expected: false,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, { initialDoc: docWithPages(1) })
+          const dirty = editor.isDirty()
+          editor.destroy()
+          host.remove()
+          return dirty
+        },
+      },
+    ],
+  },
 ]

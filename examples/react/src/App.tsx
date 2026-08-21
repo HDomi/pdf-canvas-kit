@@ -258,6 +258,31 @@ editor.current?.cancelPending()       // [취소]·닫기
             >
               <span className="hint-chip">문구·아이콘</span>
             </CodeHint>
+            <CodeHint
+              corner="br"
+              label="도형 · 글꼴"
+              note="도형은 11종이고 정점 계산이 core 에 있다. 글꼴은 목록만 패키지가 갖고 웹폰트 파일은 호스트가 불러온다 — 이 예제는 index.html 에서 Google Fonts 를 받는다."
+              code={`import { configureFonts, polygonPoints } from '@h_domi/pdf-canvas-kit'
+
+/* 앱이 실제로 불러오는 폰트만 남긴다. 병합이 아니라 교체다 */
+configureFonts([
+  { stack: '"Noto Sans KR", sans-serif', label: '본문' },
+  { stack: '"Nanum Myeongjo", serif', label: '제목' },
+  { stack: 'monospace', label: '코드' },
+])
+configureFonts([])   // 빈 배열 = 인스펙터에서 글꼴 항목이 사라진다
+
+/* 다각형 정점은 순수 함수로 열려 있다. 단위는 pt — 배율을 곱하지 않는다 */
+polygonPoints('diamond', 100, 60)      // '50,0 100,30 50,60 0,30'
+
+/* 선택기 버튼에 data-shape 가 있어 CSS 로 아이콘화할 수 있다 */
+.pck-segmented button[data-shape='star'] {
+  font-size: 0;
+  background: url(/icons/star.svg) center / 16px no-repeat;
+}`}
+            >
+              <span className="hint-chip">도형·글꼴</span>
+            </CodeHint>
             {note && <span className="ex-note">{note}</span>}
             {importing?.error && <span className="ex-err">{importing.error}</span>}
             <span className="ex-spacer">

@@ -196,6 +196,15 @@ marqueeHit(objects, rect)
 matchPaper(size)                  // pt → "A4 세로"
 ```
 
+### 도형 정점
+
+```ts
+polygonPoints(shape, w, h, inset?)  // '<polygon points>' 문자열. 단위는 pt
+isPolygonShape(shape) · isLineShape(shape)
+```
+
+[도형](17-shapes.md) 참고.
+
 ### PDF
 
 ```ts
@@ -223,12 +232,16 @@ promoteBackgrounds(doc, asset)
 createDebouncedSaver(opts)
 ```
 
-### 문구 · 아이콘
+### 문구 · 아이콘 · 글꼴
 
 ```ts
 configureStrings(overrides) · resetStrings() · text(key, vars) · DEFAULT_STRINGS
 configureIcons(overrides) · resetIcons()
+configureFonts(list) · resetFonts() · fontOptions() · DEFAULT_FONTS
 ```
+
+`configureFonts` 는 **교체**다(병합이 아니다). 패키지는 웹폰트 파일을 싣지 않는다 —
+[글꼴](16-fonts.md) 참고.
 
 ### 상수
 
@@ -250,6 +263,14 @@ A4_PT             // { width: 595.28, height: 841.89 }
 PDFCanvasDoc · PublicPDFCanvasDoc · PDFCanvasPage · PDFCanvasObject
 TextObject · ShapeObject · MaskObject · CustomObject
 Rect · Size · Pt · PageBackground · BoxStyle
+
+// 도형 11종. 추가만 한다 — 지우면 기존 문서가 해석되지 않는다
+ShapeKind =
+  | 'rect' | 'ellipse'
+  | 'triangle' | 'diamond' | 'pentagon' | 'hexagon' | 'star' | 'cross'
+  | 'line' | 'arrow' | 'doubleArrow'
+PolygonShape   // 위 중 <polygon> 으로 그리는 것
+FontOption     // { stack, label }
 ```
 
 ### 뷰 상태

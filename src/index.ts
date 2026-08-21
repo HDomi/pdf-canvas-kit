@@ -78,6 +78,9 @@ export {
 } from './core/geometry/handles'
 export type { HandleId, ResizeOptions } from './core/geometry/handles'
 
+export { isPolygonShape, isLineShape, polygonPoints } from './core/geometry/shapes'
+export type { PolygonShape } from './core/geometry/shapes'
+
 export {
   hitTestObject,
   pickObject,
@@ -181,6 +184,9 @@ export { DEFAULT_STRINGS, configureStrings, resetStrings, text } from './core/co
 /* 아이콘 교체 (D32). 글리프는 `strings` 의 `icon.*`, 노드는 여기, 컴포넌트는 래퍼의 renderIcon. */
 export { configureIcons, resetIcons } from './core/config/icons'
 export type { IconName, IconFactory } from './core/config/icons'
+/* 글꼴 목록 (2026.08.21). 패키지는 웹폰트를 싣지 않는다 — `core/config/fonts.ts` 참고. */
+export { DEFAULT_FONTS, configureFonts, resetFonts, fontOptions } from './core/config/fonts'
+export type { FontOption } from './core/config/fonts'
 export type { StringKey } from './core/config/strings'
 
 export { createPointerMachine } from './core/interaction/pointerMachine'

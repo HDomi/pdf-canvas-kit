@@ -7,6 +7,16 @@
  * ⚠️ **자식도 `svg()` 로 만들어야 한다.** `el()` 로 만들면 HTML 네임스페이스가 되어 에러 없이
  * 안 보인다 (ARCHITECTURE §13.4).
  *
+ * ## ⚠️ `shape` 은 `keyed` 로 갈아탄다 (2026.08.21)
+ *
+ * 예전에는 `const shape = o().shape` 로 **한 번 읽고** `when(() => shape === 'rect', …)` 로
+ * 분기했다. `shape` 이 반응형 읽기가 아니므로 인스펙터에서 모양을 바꿔도 조건이 다시 평가되지
+ * 않았고, 캔버스는 처음 모양에 굳어 있었다. 뷰어에서는 문서가 교체될 때 노드가 새로 만들어져
+ * 정상으로 보였고, 그래서 "편집기만 안 바뀐다" 로 나타났다.
+ *
+ * `when` 은 **불리언 전용**이라 값 변화를 못 잡는다. 값에 따라 다른 노드를 그리는 자리는
+ * `keyed` 다 (ARCHITECTURE §13.5).
+ *
  * ## ⚠️ 크기를 `previewRect` 에서 읽는다
  *
  * SVG 의 `viewBox` · `width` · `height` 를 직접 계산하는 유일한 뷰다. 다른 유형은 컨테이너를
@@ -17,9 +27,10 @@
  *
  * 구 `src/vue/editor/objects/ShapeObjectView.vue` 의 이식.
  */
-import { svg, when } from '../../h'
+import { keyed, svg } from '../../h'
 import type { ReadSignal } from '../../reactive'
-import type { Rect, ShapeObject } from '../../../core/model/types'
+import { isPolygonShape, polygonPoints } from '../../../core/geometry/shapes'
+import type { Rect, ShapeKind, ShapeObject } from '../../../core/model/types'
 
 export interface ShapeObjectViewProps {
   object: ReadSignal<ShapeObject>
@@ -39,11 +50,110 @@ export function shapeObjectView(props: ShapeObjectViewProps): SVGElement {
   const h = () => rect().h
   const st = () => o().style
   const dash = () => st().dash?.join(' ') ?? null
+  /** 테두리가 박스 밖으로 새지 않도록 경로를 안으로 민다. */
+  const inset = () => st().strokeWidth / 2
 
   /** 화살촉 크기. 선 두께에 비례하되 객체 크기를 넘지 않게 제한한다. */
   const arrowHead = () => Math.min(st().strokeWidth * 4, w() / 2, h() / 2 + 4)
 
-  const shape = o().shape
+  /** 모든 도형이 공유하는 페인트 속성. */
+  const paint = () => ({
+    fill: st().fill ?? 'none',
+    stroke: st().stroke,
+    'stroke-width': st().strokeWidth,
+    'stroke-dasharray': dash(),
+  })
+
+  /**
+   * 모양별 노드.
+   *
+   * `keyed` 의 렌더는 키가 바뀔 때 한 번만 돈다 — 안쪽 속성은 각자 effect 로 계속 갱신된다.
+   */
+  const geometry = (shape: ShapeKind): SVGElement | SVGElement[] => {
+    if (shape === 'rect') {
+      return svg('rect', {
+        attr: {
+          x: inset,
+          y: inset,
+          width: () => Math.max(w() - st().strokeWidth, 0),
+          height: () => Math.max(h() - st().strokeWidth, 0),
+          fill: () => paint().fill,
+          stroke: () => paint().stroke,
+          'stroke-width': () => st().strokeWidth,
+          'stroke-dasharray': dash,
+        },
+      })
+    }
+
+    if (shape === 'ellipse') {
+      return svg('ellipse', {
+        attr: {
+          cx: () => w() / 2,
+          cy: () => h() / 2,
+          rx: () => Math.max(w() / 2 - inset(), 0),
+          ry: () => Math.max(h() / 2 - inset(), 0),
+          fill: () => paint().fill,
+          stroke: () => paint().stroke,
+          'stroke-width': () => st().strokeWidth,
+          'stroke-dasharray': dash,
+        },
+      })
+    }
+
+    if (isPolygonShape(shape)) {
+      return svg('polygon', {
+        attr: {
+          points: () => polygonPoints(shape, w(), h(), inset()),
+          fill: () => paint().fill,
+          stroke: () => paint().stroke,
+          'stroke-width': () => st().strokeWidth,
+          'stroke-dasharray': dash,
+          /*
+           * 뾰족한 꼭짓점에서 miter 가 길게 튀어나온다 — 별의 다섯 끝이 특히 심하다.
+           * `round` 는 두께와 무관하게 박스 안에 머문다.
+           */
+          'stroke-linejoin': 'round',
+        },
+      })
+    }
+
+    // 선 계열. rect 의 좌측 중앙에서 우측 중앙으로 그린다.
+    const heads = shape === 'arrow' ? 1 : shape === 'doubleArrow' ? 2 : 0
+    /** 화살촉이 있는 쪽은 선을 촉만큼 물러서게 한다 — 촉 안에서 선이 비쳐 보이지 않게. */
+    const x1 = () => (heads === 2 ? arrowHead() : 0)
+    const x2 = () => (heads >= 1 ? Math.max(w() - arrowHead(), x1()) : w())
+
+    /** 한쪽 화살촉. `dir` 은 `1` 이면 오른쪽(x = w), `-1` 이면 왼쪽(x = 0) 을 가리킨다. */
+    const head = (dir: 1 | -1) =>
+      svg('polygon', {
+        attr: {
+          points: () => {
+            const a = arrowHead()
+            const mid = h() / 2
+            const tip = dir === 1 ? w() : 0
+            const back = tip - dir * a
+            return `${tip},${mid} ${back},${mid - a / 2} ${back},${mid + a / 2}`
+          },
+          fill: () => st().stroke,
+        },
+      })
+
+    return [
+      svg('line', {
+        attr: {
+          x1,
+          y1: () => h() / 2,
+          x2,
+          y2: () => h() / 2,
+          stroke: () => st().stroke,
+          'stroke-width': () => st().strokeWidth,
+          'stroke-dasharray': dash,
+        },
+      }),
+      ...(heads >= 1 ? [head(1)] : []),
+      ...(heads === 2 ? [head(-1)] : []),
+    ]
+  }
 
   return svg(
     'svg',
@@ -56,70 +166,6 @@ export function shapeObjectView(props: ShapeObjectViewProps): SVGElement {
         preserveAspectRatio: 'none',
       },
     },
-    [
-      when(
-        () => shape === 'rect',
-        () =>
-          svg('rect', {
-            attr: {
-              x: () => st().strokeWidth / 2,
-              y: () => st().strokeWidth / 2,
-              width: () => Math.max(w() - st().strokeWidth, 0),
-              height: () => Math.max(h() - st().strokeWidth, 0),
-              fill: () => st().fill ?? 'none',
-              stroke: () => st().stroke,
-              'stroke-width': () => st().strokeWidth,
-              'stroke-dasharray': dash,
-            },
-          }),
-      ),
-      when(
-        () => shape === 'ellipse',
-        () =>
-          svg('ellipse', {
-            attr: {
-              cx: () => w() / 2,
-              cy: () => h() / 2,
-              rx: () => Math.max(w() / 2 - st().strokeWidth / 2, 0),
-              ry: () => Math.max(h() / 2 - st().strokeWidth / 2, 0),
-              fill: () => st().fill ?? 'none',
-              stroke: () => st().stroke,
-              'stroke-width': () => st().strokeWidth,
-              'stroke-dasharray': dash,
-            },
-          }),
-      ),
-      // 선과 화살표는 rect 의 좌측 중앙에서 우측 중앙으로 그린다.
-      when(
-        () => shape === 'line' || shape === 'arrow',
-        () => [
-          svg('line', {
-            attr: {
-              x1: 0,
-              y1: () => h() / 2,
-              x2: () => (shape === 'arrow' ? Math.max(w() - arrowHead(), 0) : w()),
-              y2: () => h() / 2,
-              stroke: () => st().stroke,
-              'stroke-width': () => st().strokeWidth,
-              'stroke-dasharray': dash,
-            },
-          }),
-          ...(shape === 'arrow'
-            ? [
-                svg('polygon', {
-                  attr: {
-                    points: () => {
-                      const a = arrowHead()
-                      const mid = h() / 2
-                      return `${w()},${mid} ${w() - a},${mid - a / 2} ${w() - a},${mid + a / 2}`
-                    },
-                    fill: () => st().stroke,
-                  },
-                }),
-              ]
-            : []),
-        ],
-      ),
-    ],
+    [keyed(() => o().shape, geometry)],
   )
 }

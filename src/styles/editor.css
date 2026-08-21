@@ -1108,8 +1108,25 @@
     align-self: center;
   }
 
+  /**
+ * 선택 버튼 묶음.
+ *
+ * ## 구분선을 `gap` 으로 낸다 (2026.08.21)
+ *
+ * 예전에는 버튼마다 `border-right` 를 주고 마지막만 지웠다. 도형이 4종에서 11종으로 늘면서
+ * 인스펙터 폭(280px)을 넘겨 줄바꿈이 필요해졌고, 그 방식으로는 **줄 사이 구분선과 마지막 줄의
+ * 남는 테두리**를 동시에 처리할 수 없었다.
+ *
+ * 컨테이너 배경을 선 색으로 두고 버튼 사이를 `gap: 1px` 로 벌리면 가로·세로 구분선이 같은
+ * 규칙에서 나온다. 버튼이 `flex-grow: 1` 이라 마지막 줄의 남는 폭도 항목들이 채우므로
+ * 선 색 바탕이 드러나지 않는다.
+ */
   .pck-segmented {
-    display: inline-flex;
+    display: flex;
+    /* 항목 수가 유형마다 다르다 — 정렬 3개, 도형 11개. 넘치면 줄을 바꾼다. */
+    flex-wrap: wrap;
+    gap: 1px;
+    background: var(--pck-line);
     border: 1px solid var(--pck-line);
     border-radius: var(--pck-radius-sm);
     overflow: hidden;
@@ -1117,22 +1134,31 @@
 
   .pck-segmented button {
     font: inherit;
+    /* 기준 폭 32px, 남는 폭은 나눠 갖는다 — 마지막 줄에 빈칸이 남지 않게. */
+    flex: 1 1 32px;
     min-width: 32px;
     padding: 5px 0;
     background: var(--pck-surface);
     border: none;
-    border-right: 1px solid var(--pck-line);
     cursor: pointer;
     color: var(--pck-ink-muted);
-  }
-
-  .pck-segmented button:last-child {
-    border-right: none;
   }
 
   .pck-segmented button.is-active {
     background: var(--pck-accent);
     color: var(--pck-accent-ink);
+  }
+
+  /**
+ * 드롭다운. `.pck-input` 과 같은 테두리를 쓰되 네이티브 화살표를 남긴다.
+ *
+ * `appearance: none` 으로 지우지 않는 이유: 직접 그린 화살표는 다크 모드·고대비 모드에서
+ * 따로 관리해야 하고, OS 별 드롭다운 열림 위치도 브라우저 것이 낫다.
+ */
+  .pck-select {
+    /* 긴 글꼴 이름이 인스펙터 폭을 밀어내지 못하게. */
+    max-width: 100%;
+    padding-right: var(--pck-space-1);
   }
 
   .pck-inspector-delete {
@@ -1404,6 +1430,14 @@
     background: var(--pck-stage-bg);
     /* 모바일에서 관성 스크롤. 긴 문서를 훑는 화면이다. */
     -webkit-overflow-scrolling: touch;
+    /*
+   * flex·grid 자식으로 놓였을 때 줄어들 수 있어야 한다 (2026.08.21).
+   *
+   * flex 자식의 기본 `min-width` 는 `auto` — 즉 콘텐츠의 min-content 폭이다. 페이지 프레임은
+   * 폭이 px 로 고정돼 있으므로 그 값이 하한이 되어 **컨테이너가 좁아져도 뷰어가 줄지 않고**
+   * 호스트 레이아웃을 가로로 밀어낸다. 그러면 폭 측정값이 굳어 배율도 그대로 남는다.
+   */
+    min-width: 0;
   }
 
   /**
@@ -1437,7 +1471,17 @@
   .pck-viewer-pages {
     display: flex;
     flex-direction: column;
+    /*
+   * `center` 가 아니라 `safe center` 다 (2026.08.21).
+   *
+   * 페이지가 컨테이너보다 넓어지는 순간(측정과 렌더 사이의 한 프레임, 또는 `maxScale` 이
+   * 없는 상태에서 반올림 1px) `center` 는 넘치는 절반을 **왼쪽으로** 밀어낸다. `overflow-x`
+   * 가 hidden 이라 그쪽은 스크롤로도 되돌릴 수 없어 페이지 왼쪽이 잘린 채 남는다.
+   * `safe` 는 그 경우에만 `start` 로 떨어진다. 지원하지 않는 브라우저는 뒤 줄의 `center` 를
+   * 쓴다 — 그래서 두 줄을 같이 적는다.
+   */
     align-items: center;
+    align-items: safe center;
     /* 페이지 경계가 보이도록 간격을 준다. 편집기는 한 페이지뿐이라 이 규칙이 없다. */
     gap: var(--pck-viewer-page-gap);
   }

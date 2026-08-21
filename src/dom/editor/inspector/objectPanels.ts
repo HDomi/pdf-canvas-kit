@@ -11,8 +11,8 @@
  *
  * | | 항목 |
  * | --- | --- |
- * | 지금 편집 가능 | 내용 · 글자 크기 · 정렬 · 굵게 (색은 공용 `boxStylePanel`) |
- * | 모델엔 있고 UI 없음 | `italic` · `underline` · `fontFamily` · `lineHeight` — 렌더는 이미 지원한다 |
+ * | 지금 편집 가능 | 내용 · 글자 크기 · **글꼴** · 정렬 · 굵게 (색은 공용 `boxStylePanel`) |
+ * | 모델엔 있고 UI 없음 | `italic` · `underline` · `lineHeight` — 렌더는 이미 지원한다 |
  * | 모델에도 없음 | 자간 · 문단 간격 · 리스트 · **부분 서식**(한 객체 안에서 일부만 굵게) |
  *
  * 부분 서식은 `text: string` 을 리치 텍스트 구조로 바꿔야 하므로 모델 변경이 따른다.
@@ -21,9 +21,9 @@
  *
  * | | 항목 |
  * | --- | --- |
- * | 지금 편집 가능 | 모양 · 채움 색 · 테두리 색 · 테두리 두께 |
+ * | 지금 편집 가능 | 모양 11종 · 채움 색 · 테두리 색 · 테두리 두께 |
  * | 모델엔 있고 UI 없음 | `dash`(점선 패턴) |
- * | 모델에도 없음 | 모서리 반경 · 그림자 · 그라디언트 · 화살촉 방향 · 다각형 · 자유 곡선 |
+ * | 모델에도 없음 | 모서리 반경 · 그림자 · 그라디언트 · 화살촉 방향 · 자유 곡선 |
  *
  * 채움은 `null` 이 "없음" 이다. `transparent` 문자열을 쓰면 색 선택기 값과 구분되지 않는다.
  *
@@ -41,8 +41,10 @@ import {
   numberInput,
   panelSection,
   segmented,
+  selectInput,
   textArea,
 } from './fields'
+import { fontOptions } from '../../../core/config/fonts'
 
 type Patch = (p: Partial<PDFCanvasObject>) => void
 
@@ -77,6 +79,26 @@ export function textPanel(object: ReadSignal<TextObject>, patch: Patch): HTMLEle
       }),
     ),
 
+    /*
+     * 글꼴. 목록이 비면 항목 자체를 그리지 않는다 — `configureFonts([])` 로 선택을 막을 수 있다.
+     *
+     * 값은 CSS `font-family` 스택 문자열 그대로다. 현재 값이 목록에 없으면 빈 선택으로 남는다
+     * (`selectInput` 주석) — 다른 앱에서 온 문서라는 사실이 보여야 한다.
+     */
+    ...(fontOptions().length > 0
+      ? [
+          field(
+            text('inspector.fontFamily'),
+            selectInput({
+              items: fontOptions().map((f) => ({ id: f.stack, label: f.label })),
+              value: () => object.value.style.fontFamily,
+              onPick: (fontFamily) => patchStyle({ fontFamily }),
+            }),
+            text('inspector.fontFamilyNote'),
+          ),
+        ]
+      : []),
+
     field(
       text('inspector.align'),
       segmented({
@@ -96,12 +118,36 @@ export function textPanel(object: ReadSignal<TextObject>, patch: Patch): HTMLEle
   ])
 }
 
-const KINDS: readonly { id: ShapeKind; label: string }[] = [
-  { id: 'rect', label: '▭' },
-  { id: 'ellipse', label: '◯' },
-  { id: 'line', label: '╱' },
-  { id: 'arrow', label: '→' },
+/**
+ * 도형 선택기 항목.
+ *
+ * 순서는 렌더 방식대로 묶었다 — 면(사각·타원), 다각형, 선. 사용자가 "비슷한 것끼리 붙어 있다"
+ * 로 읽는 순서이기도 하다.
+ *
+ * 글리프와 이름 모두 문구다 (D32) — `text()` 로 뽑으므로 호스트가 번역하거나 커버리지가 없는
+ * 글리프를 바꿀 수 있다. 라벨은 `title` 로도 들어가 글리프뿐인 버튼에 접근 가능한 이름을 준다.
+ */
+const SHAPE_KINDS: readonly ShapeKind[] = [
+  'rect',
+  'ellipse',
+  'triangle',
+  'diamond',
+  'pentagon',
+  'hexagon',
+  'star',
+  'cross',
+  'line',
+  'arrow',
+  'doubleArrow',
 ]
+
+function shapeItems(): readonly { id: ShapeKind; label: string; title: string }[] {
+  return SHAPE_KINDS.map((id) => ({
+    id,
+    label: text(`icon.shape.${id}`),
+    title: text(`shape.${id}`),
+  }))
+}
 
 export function shapePanel(object: ReadSignal<ShapeObject>, patch: Patch): HTMLElement {
   const patchStyle = (p: Partial<ShapeObject['style']>) =>
@@ -113,9 +159,11 @@ export function shapePanel(object: ReadSignal<ShapeObject>, patch: Patch): HTMLE
     field(
       text('inspector.shapeKind'),
       segmented({
-        items: KINDS,
+        items: shapeItems(),
         active: () => object.value.shape,
         onPick: (shape) => patch({ shape }),
+        // 호스트가 글리프 대신 CSS 아이콘을 붙일 수 있게 하는 갈고리.
+        dataKey: 'shape',
       }),
     ),
 

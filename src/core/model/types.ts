@@ -165,7 +165,26 @@ export interface TextObject extends ObjectBase {
   }
 }
 
-export type ShapeKind = 'rect' | 'ellipse' | 'line' | 'arrow'
+/**
+ * 도형 종류.
+ *
+ * 렌더 방식으로 세 무리다 — 전용 SVG 요소(`rect` · `ellipse`), `<polygon>`
+ * (`src/core/geometry/shapes.ts` 가 정점을 만든다), 선 계열(`line` · `arrow` · `doubleArrow`).
+ *
+ * 값을 **추가만** 한다. 지우면 그 도형으로 저장된 기존 문서가 해석되지 않는다.
+ */
+export type ShapeKind =
+  | 'rect'
+  | 'ellipse'
+  | 'triangle'
+  | 'diamond'
+  | 'pentagon'
+  | 'hexagon'
+  | 'star'
+  | 'cross'
+  | 'line'
+  | 'arrow'
+  | 'doubleArrow'
 
 export interface ShapeObject extends ObjectBase {
   type: 'shape'

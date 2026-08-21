@@ -201,3 +201,19 @@ SVG 스프라이트를 내장하면 소비자가 그것을 교체할 수단이 *
 [examples/react/src/components/Icons.tsx](../examples/react/src/components/Icons.tsx) —
 `renderIcon` 으로 undo·redo·zoom·back 을, `icons` 로 close 를, `strings` 로 caret 을 각각 써서
 셋을 한 화면에서 비교한다.
+
+---
+
+## 도형 선택기
+
+인스펙터 [모양] 의 11개 버튼은 위 세 경로를 쓰지 않는다. 라벨이 `icon.shape.*` **문구**이고,
+버튼에 `data-shape` 속성이 있어 CSS 로 아이콘화한다.
+
+```css
+.pck-segmented button[data-shape='star'] {
+  font-size: 0;
+  background: url(/icons/star.svg) center / 16px no-repeat;
+}
+```
+
+자세한 것은 [도형](17-shapes.md).

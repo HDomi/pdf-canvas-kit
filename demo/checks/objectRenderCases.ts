@@ -539,6 +539,113 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
   },
 
   {
+    title: 'render — 도형 모양 전환 (2026.08.21) ★',
+    note: '인스펙터에서 모양을 바꿔도 캔버스가 안 바뀌던 버그의 회귀 케이스. shape 를 한 번만 읽고 when() 으로 분기하면 값 변화를 못 잡는다 — keyed 여야 한다.',
+    cases: [
+      {
+        name: '★ rect → star 로 바꾸면 polygon 으로 교체된다',
+        expected: ['rect', 'polygon'],
+        actual: () => {
+          const obj = signal<PDFCanvasObject>(shapeObj('rect'))
+          const tagOf = (n: HTMLElement) =>
+            n.querySelector('svg')?.firstElementChild?.tagName ?? null
+          const [res, dispose] = scope(() => {
+            const node = objectView({
+              object: obj,
+              selected: () => false,
+              invalid: () => false,
+              previewRect: () => null,
+              previewRotation: () => null,
+              editing: () => false,
+              onEditText: () => {},
+            })
+            const before = tagOf(node)
+            obj.value = { ...(obj.value as ShapeObject), shape: 'star' }
+            return [before, tagOf(node)]
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        name: '★ arrow → line 으로 바꾸면 화살촉이 사라진다',
+        expected: [true, false],
+        actual: () => {
+          const obj = signal<PDFCanvasObject>(shapeObj('arrow'))
+          const [res, dispose] = scope(() => {
+            const node = objectView({
+              object: obj,
+              selected: () => false,
+              invalid: () => false,
+              previewRect: () => null,
+              previewRotation: () => null,
+              editing: () => false,
+              onEditText: () => {},
+            })
+            const before = node.querySelector('polygon') !== null
+            obj.value = { ...(obj.value as ShapeObject), shape: 'line' }
+            return [before, node.querySelector('polygon') !== null]
+          })
+          dispose()
+          return res
+        },
+      },
+      {
+        name: '다각형 도형은 polygon 하나 (별)',
+        expected: ['polygon', 10],
+        actual: () =>
+          render(shapeObj('star'), (n) => {
+            const poly = n.querySelector('polygon')
+            return [poly?.tagName ?? null, poly?.getAttribute('points')?.split(' ').length ?? 0]
+          }),
+      },
+      {
+        name: '마름모의 정점이 pt 좌표 그대로 들어간다 (배율 이중 적용 없음)',
+        expected: '50,1 99,30 50,59 1,30',
+        actual: () =>
+          render(
+            shapeObj('diamond'),
+            (n) => n.querySelector('polygon')?.getAttribute('points') ?? null,
+          ),
+      },
+      {
+        name: '별의 miter 가 튀지 않게 stroke-linejoin=round',
+        expected: 'round',
+        actual: () =>
+          render(
+            shapeObj('star'),
+            (n) => n.querySelector('polygon')?.getAttribute('stroke-linejoin') ?? null,
+          ),
+      },
+      {
+        name: 'doubleArrow 는 화살촉 둘 + 선 하나',
+        expected: [1, 2],
+        actual: () =>
+          render(shapeObj('doubleArrow'), (n) => [
+            n.querySelectorAll('line').length,
+            n.querySelectorAll('polygon').length,
+          ]),
+      },
+      {
+        name: '다각형도 SVG 네임스페이스 (§13.4)',
+        expected: 'http://www.w3.org/2000/svg',
+        actual: () =>
+          render(shapeObj('hexagon'), (n) => n.querySelector('polygon')?.namespaceURI ?? null),
+      },
+      {
+        name: '미리보기 rect 가 다각형 정점에도 반영된다 (드래그 중 도형이 제자리에 남지 않게)',
+        expected: '100,1 199,60 100,119 1,60',
+        actual: () =>
+          render(
+            shapeObj('diamond'),
+            (n) => n.querySelector('polygon')?.getAttribute('points') ?? null,
+            { previewRect: { x: 0, y: 0, w: 200, h: 120 } },
+          ),
+      },
+    ],
+  },
+
+  {
     title: 'render — 텍스트 · contenteditable',
     note: 'IME 조합 처리는 브라우저에서만 확인 가능하다. 여기서는 편집 상태 전환과 문서→DOM 반영만 고정한다.',
     cases: [

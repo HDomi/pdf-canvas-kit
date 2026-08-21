@@ -69,6 +69,13 @@
   display: flex;
   gap: 10px;
   align-items: center;
+  /*
+   * 좁은 폭에서 줄을 바꾼다 (2026.08.21).
+   *
+   * 버튼이 열 개를 넘어 650px 아래에서 가로로 넘쳤다. flex 는 기본이 한 줄이라 넘친 항목이
+   * 바 배경 밖으로 삐져나가고 `<body>` 에 가로 스크롤이 생겨 "뷰어가 깨진" 것처럼 보였다.
+   */
+  flex-wrap: wrap;
   padding: 7px 12px;
   background: var(--host-bar);
   color: var(--host-bar-ink);

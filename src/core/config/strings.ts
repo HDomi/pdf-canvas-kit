@@ -94,6 +94,28 @@ export const DEFAULT_STRINGS = {
   'inspector.noCustomEditor': '이 객체는 편집할 속성이 없습니다.',
   'inspector.rotation': '회전',
   'inspector.noFill': '없음',
+  'inspector.fontFamily': '글꼴',
+  /*
+   * 웹폰트를 패키지가 싣지 않는다는 사실을 UI 에서도 알린다 (`core/config/fonts.ts`).
+   * 호스트가 폰트를 불러오지 않으면 목록에서 골라도 폴백으로 그려진다.
+   */
+  'inspector.fontFamilyNote': '앱이 불러온 폰트만 실제로 적용됩니다',
+
+  /*
+   * 도형 이름. 선택기 버튼의 접근 가능한 이름(`title` · `aria-label`)으로 쓴다 —
+   * 라벨이 글리프뿐이라 이것이 없으면 스크린리더가 읽을 것이 없다.
+   */
+  'shape.rect': '사각형',
+  'shape.ellipse': '원',
+  'shape.triangle': '삼각형',
+  'shape.diamond': '마름모',
+  'shape.pentagon': '오각형',
+  'shape.hexagon': '육각형',
+  'shape.star': '별',
+  'shape.cross': '십자',
+  'shape.line': '선',
+  'shape.arrow': '화살표',
+  'shape.doubleArrow': '양쪽 화살표',
 
   'stage.zoomOut': '축소',
   'stage.zoomIn': '확대',
@@ -179,6 +201,26 @@ export const DEFAULT_STRINGS = {
   'icon.unknown': '?',
   /** 드롭다운 캐럿. */
   'icon.caret': '▾',
+
+  /*
+   * 도형 종류 글리프 (2026.08.21).
+   *
+   * 인스펙터의 [모양] 선택기에 그대로 들어간다. `⬠` · `⬡` 처럼 커버리지가 넓지 않은 글리프가
+   * 섞여 있으므로 **덮어쓸 수 있어야 한다** — 폰트가 없으면 두부(□)로 보인다. SVG 로 바꾸려면
+   * 위 `data-icon` 방식이 아니라 이 문구를 빈 문자열로 두고 `.pck-segmented button` 을 CSS 로
+   * 그리는 편이 낫다. 선택기 버튼에는 `data-shape` 속성이 있다.
+   */
+  'icon.shape.rect': '▭',
+  'icon.shape.ellipse': '◯',
+  'icon.shape.triangle': '△',
+  'icon.shape.diamond': '◇',
+  'icon.shape.pentagon': '⬠',
+  'icon.shape.hexagon': '⬡',
+  'icon.shape.star': '☆',
+  'icon.shape.cross': '✚',
+  'icon.shape.line': '╱',
+  'icon.shape.arrow': '→',
+  'icon.shape.doubleArrow': '↔',
 } as const
 
 export type StringKey = keyof typeof DEFAULT_STRINGS

@@ -4,6 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>PDFCanvasEditor — PDF Canvas Kit</title>
+    <!--
+      글꼴 확인용 웹폰트 (2026.08.21).
+
+      **패키지는 웹폰트를 싣지 않는다** (ARCHITECTURE §21.3). 인스펙터에서 글꼴을 고르면
+      실제로 모양이 바뀌는지 보려면 호스트가 이렇게 불러와야 한다. 실서비스라면 서브셋을
+      만들어 자체 호스팅하는 편이 낫다 — docs/16-fonts.md 참고.
+    -->
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;700&family=Noto+Serif+KR:wght@400;700&family=Nanum+Gothic:wght@400;700&family=Nanum+Myeongjo:wght@400;700&family=Gowun+Dodum&display=swap"
+      rel="stylesheet"
+    />
     <style>
       html,
       body,
@@ -23,6 +35,8 @@
         display: flex;
         gap: 10px;
         align-items: center;
+        /* 좁은 폭에서 줄을 바꾼다. 한 줄로 두면 넘쳐서 body 에 가로 스크롤이 생긴다. */
+        flex-wrap: wrap;
         padding: 6px 12px;
         background: #26262a;
         color: #e8e8e4;

@@ -15,8 +15,15 @@ import {
   createObjectTypeRegistry,
   createPage,
   createPDFCanvasDoc,
+  configureFonts,
   defineObjectType,
+  DEFAULT_FONTS,
+  fontOptions,
+  isLineShape,
+  isPolygonShape,
   LIMITS,
+  polygonPoints,
+  resetFonts,
   UNKNOWN_KIND_ISSUE,
   validateDoc,
   formatPaperLabel,
@@ -84,6 +91,131 @@ function customBox(over: Partial<CustomObject> = {}): CustomObject {
 }
 
 export const GROUPS: CaseGroup[] = [
+  {
+    title: '도형 정점 (2026.08.21)',
+    note: '다각형 도형은 정점이 순수 계산이다. 브라우저 없이 여기서 고정한다.',
+    cases: [
+      {
+        name: '마름모는 네 변의 중점',
+        expected: '50,0 100,30 50,60 0,30',
+        actual: () => polygonPoints('diamond', 100, 60),
+      },
+      {
+        name: '삼각형은 위 꼭짓점 + 아래 변',
+        expected: '50,0 100,60 0,60',
+        actual: () => polygonPoints('triangle', 100, 60),
+      },
+      {
+        name: '별은 정점 10개 (꼭짓점 5 + 골 5)',
+        expected: 10,
+        actual: () => polygonPoints('star', 100, 100).split(' ').length,
+      },
+      {
+        name: '별의 첫 정점은 위쪽 꼭짓점',
+        expected: '50,0',
+        actual: () => polygonPoints('star', 100, 100).split(' ')[0],
+      },
+      {
+        name: '십자는 정점 12개',
+        expected: 12,
+        actual: () => polygonPoints('cross', 90, 90).split(' ').length,
+      },
+      {
+        name: '오각형·육각형은 변 수만큼',
+        expected: [5, 6],
+        actual: () => [
+          polygonPoints('pentagon', 100, 100).split(' ').length,
+          polygonPoints('hexagon', 100, 100).split(' ').length,
+        ],
+      },
+      {
+        name: 'inset 은 바운딩 박스를 양쪽에서 줄인다 (테두리가 박스 밖으로 새지 않게)',
+        expected: '50,1 99,30 50,59 1,30',
+        actual: () => polygonPoints('diamond', 100, 60, 1),
+      },
+      {
+        name: 'inset 이 박스보다 크면 0 으로 접는다 — 음수 크기로 뒤집히지 않게',
+        expected: '50,50 50,50 50,50 50,50',
+        actual: () => polygonPoints('diamond', 20, 20, 50),
+      },
+      {
+        name: '좌표는 소수 3자리까지 — 부동소수 잔재가 속성에 새지 않게',
+        expected: true,
+        actual: () =>
+          polygonPoints('pentagon', 100, 100)
+            .split(/[ ,]/)
+            .every((v) => /^-?\d+(\.\d{1,3})?$/.test(v)),
+      },
+      {
+        name: '분류: 다각형 계열',
+        expected: [true, true, false, false],
+        actual: () => [
+          isPolygonShape('star'),
+          isPolygonShape('cross'),
+          isPolygonShape('rect'),
+          isPolygonShape('arrow'),
+        ],
+      },
+      {
+        name: '분류: 선 계열 (doubleArrow 포함)',
+        expected: [true, true, true, false],
+        actual: () => [
+          isLineShape('line'),
+          isLineShape('arrow'),
+          isLineShape('doubleArrow'),
+          isLineShape('ellipse'),
+        ],
+      },
+    ],
+  },
+
+  {
+    title: '글꼴 목록 (2026.08.21)',
+    note: '패키지는 웹폰트를 싣지 않는다. 저장되는 값은 CSS font-family 스택 문자열이다.',
+    cases: [
+      {
+        name: '기본 목록의 첫 스택은 새 텍스트 객체의 기본값과 같다',
+        expected: 'sans-serif',
+        actual: () => DEFAULT_FONTS[0]?.stack ?? null,
+      },
+      {
+        name: '모든 스택에 제네릭 폴백이 있다 — 폰트가 없으면 두부(□)가 되지 않게',
+        expected: true,
+        actual: () =>
+          DEFAULT_FONTS.every((f) => /(sans-serif|serif|monospace)$/.test(f.stack.trim())),
+      },
+      {
+        name: 'configureFonts 는 병합이 아니라 교체다',
+        expected: [1, 'Inter, sans-serif'],
+        actual: () => {
+          configureFonts([{ stack: 'Inter, sans-serif', label: 'Inter' }])
+          const out = [fontOptions().length, fontOptions()[0]?.stack ?? null]
+          resetFonts()
+          return out
+        },
+      },
+      {
+        name: '빈 배열이면 인스펙터에서 글꼴 항목이 사라진다',
+        expected: 0,
+        actual: () => {
+          configureFonts([])
+          const n = fontOptions().length
+          resetFonts()
+          return n
+        },
+      },
+      {
+        name: 'resetFonts 로 기본 목록이 돌아온다',
+        expected: DEFAULT_FONTS.length,
+        actual: () => {
+          configureFonts([])
+          resetFonts()
+          return fontOptions().length
+        },
+      },
+    ],
+  },
+
   {
     title: '좌표 왕복',
     note: 'clientToPage → pageToFrame 왕복이 원래 값으로 돌아와야 한다. 배율·오프셋과 무관하다.',

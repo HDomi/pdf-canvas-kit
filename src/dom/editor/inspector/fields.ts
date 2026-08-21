@@ -48,6 +48,31 @@ export function textInput(opts: {
   })
 }
 
+/**
+ * 드롭다운. 항목이 많아 `segmented` 로는 넘치는 경우에 쓴다 — 글꼴 목록이 그렇다.
+ *
+ * ⚠️ **`prop.value` 로 값을 준다.** `<option selected>` 를 그리면 사용자가 한 번 고른 뒤에는
+ * 브라우저가 DOM 속성을 무시하므로 외부 변경(undo 등)이 반영되지 않는다.
+ *
+ * 현재 값이 목록에 없으면 빈 선택으로 남는다 — 없는 항목을 몰래 추가하지 않는다. 문서가 다른
+ * 앱에서 왔거나 `configureFonts()` 목록이 바뀐 경우이고, 그 사실이 보여야 한다.
+ */
+export function selectInput<T extends string>(opts: {
+  items: readonly { id: T; label: string }[]
+  value: () => T
+  onPick: (id: T) => void
+}): HTMLElement {
+  return el(
+    'select',
+    {
+      class: 'pck-input pck-select',
+      prop: { value: opts.value },
+      on: { change: (e) => opts.onPick((e.target as HTMLSelectElement).value as T) },
+    },
+    opts.items.map((item) => el('option', { attr: { value: item.id } }, [item.label])),
+  )
+}
+
 export function numberInput(opts: {
   value: () => number | string
   min?: number
@@ -124,10 +149,17 @@ export function colorInput(opts: {
 }
 
 /** 배타 선택 버튼 묶음. 정렬·도형 종류가 쓴다. */
-export function segmented<T>(opts: {
-  items: readonly { id: T; label: string }[]
+/**
+ * 선택 버튼 묶음.
+ *
+ * @param dataKey 각 버튼에 `data-<dataKey>="<id>"` 를 붙인다. 라벨이 글리프뿐인 선택기를
+ *   호스트가 CSS 로 아이콘화할 수 있게 하는 갈고리다 — 도형 선택기가 그 경우다.
+ */
+export function segmented<T extends string>(opts: {
+  items: readonly { id: T; label: string; title?: string }[]
   active: () => T
   onPick: (id: T) => void
+  dataKey?: string
 }): HTMLElement {
   return el(
     'div',
@@ -137,7 +169,16 @@ export function segmented<T>(opts: {
         'button',
         {
           class: { 'is-active': () => opts.active() === item.id },
-          attr: { type: 'button', 'aria-pressed': () => opts.active() === item.id },
+          attr: {
+            type: 'button',
+            'aria-pressed': () => opts.active() === item.id,
+            /*
+             * 라벨이 글리프뿐이면 스크린리더가 읽을 것이 없다. `title` 이 있으면 접근 가능한
+             * 이름으로도 쓰인다.
+             */
+            ...(item.title ? { title: item.title, 'aria-label': item.title } : {}),
+            ...(opts.dataKey ? { [`data-${opts.dataKey}`]: item.id } : {}),
+          },
           on: { click: () => opts.onPick(item.id) },
         },
         [item.label],

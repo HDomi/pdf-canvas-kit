@@ -89,6 +89,7 @@ html, body, #app { height: 100%; margin: 0; }
 | [React](docs/02-react.md) · [Vue](docs/03-vue.md) · [프레임워크 없이](docs/04-vanilla.md) | 환경별 적용법 |
 | [커스텀 객체](docs/05-custom-objects.md) | PDF 위에 **내 컴포넌트**를 올린다 |
 | [뷰어](docs/06-viewer.md) | 읽기 전용 렌더 + 응답 받기 |
+| [도형](docs/17-shapes.md) · [글꼴](docs/16-fonts.md) | 도형 11종 / **웹폰트는 호스트가 불러온다** |
 | [저장 · 업로드](docs/07-storage.md) · [내보내기](docs/08-export.md) | 포트 주입, 검증 게이트 |
 | [스타일 오버라이드](docs/09-styling.md) | 토큰 75개 + **`@layer`** — 특이도 싸움이 없다 |
 | [문구 · 번역](docs/10-strings.md) · [아이콘](docs/11-icons.md) | 모든 텍스트·아이콘을 교체 |

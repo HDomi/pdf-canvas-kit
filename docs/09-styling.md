@@ -214,3 +214,30 @@ import { LIMITS, EDITOR_DEFAULTS, RENDER_DEFAULTS } from '@h_domi/pdf-canvas-kit
 ```
 
 SVG·컴포넌트로 교체하는 다른 경로는 [아이콘](11-icons.md).
+
+---
+
+## ⚠️ 밝은 팔레트로 고정하면 `color-scheme` 도 고정한다
+
+패키지 기본값은 `color-scheme: light dark` 라 OS 다크 모드를 따라간다
+([호스트 앱에 녹이기](15-integration.md)). 토큰을 밝은 값으로 하드코딩하면 짝이 맞지 않는다.
+
+```css
+.pck-editor,
+.pck-viewer,
+.pck-modal-scrim {
+  color-scheme: light;   /* ← 함께 준다 */
+
+  --pck-bg: #f4f7f7;
+  --pck-surface: #ffffff;
+  --pck-ink: #123330;
+}
+```
+
+체크박스 · 드롭다운 · 색 선택기처럼 **브라우저가 직접 그리는** 컨트롤은 CSS 로 색을 줄 수
+없다. `color-scheme` 만이 그것을 정한다. 이 속성을 빠뜨리면 밝은 편집기 안에서 체크박스만
+어둡게 남는다.
+
+> 패키지의 버튼·입력은 전부 `color` 를 우리 토큰으로 명시한다. UA 스타일시트가 `<button>` 에
+> 주는 `color: ButtonText` 는 상속이 아니라 **시스템 색**이라, 그것에 의존하면 다크 모드에서
+> 흰 버튼에 흰 글자가 된다. `npm run verify:tarball` 이 이 규칙을 검사한다.

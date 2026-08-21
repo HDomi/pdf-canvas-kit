@@ -14,6 +14,7 @@ import type { Pt, Rect, Size, PDFCanvasObject } from '../model/types'
 import { rectFromPoints } from '../geometry/constrain'
 import { moveRect, resizeRect, rotationFromPointer, type HandleId } from '../geometry/handles'
 import { pickObject, rectCenter } from '../geometry/hitTest'
+import { normalizeShapeRect } from '../geometry/shapes'
 import type { CreationToolId } from './tools'
 
 /** pt 좌표의 포인터 입력. 수정자 키를 함께 담는다. */
@@ -215,19 +216,28 @@ export function createPointerMachine(getContext: () => MachineContext): PointerM
           if (!obj) break
           phase = {
             ...current,
-            rect: resizeRect(
-              current.start,
-              current.handle,
-              deltaOf(current.origin, input),
-              ctx.page,
-              obj.type,
-              {
-                keepAspect: input.shiftKey,
-                fromCenter: input.altKey,
-                grid,
-                // 회전을 빼먹으면 회전된 객체의 리사이즈가 앵커를 중심으로 미끄러진다.
-                rotation: obj.rotation ?? 0,
-              },
+            /*
+             * 미리보기 단계에서 정규화한다 (2026.08.21).
+             *
+             * 커밋에서만 하면 선·화살표의 박스가 손을 뗀 순간 갑자기 얇아진다. 드래그 중
+             * 보이는 것과 결과가 달라지는 종류의 버그다.
+             */
+            rect: normalizeShapeRect(
+              obj,
+              resizeRect(
+                current.start,
+                current.handle,
+                deltaOf(current.origin, input),
+                ctx.page,
+                obj.type,
+                {
+                  keepAspect: input.shiftKey,
+                  fromCenter: input.altKey,
+                  grid,
+                  // 회전을 빼먹으면 회전된 객체의 리사이즈가 앵커를 중심으로 미끄러진다.
+                  rotation: obj.rotation ?? 0,
+                },
+              ),
             ),
           }
           break

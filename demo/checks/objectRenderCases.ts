@@ -618,6 +618,16 @@ export const OBJECT_RENDER_GROUPS: CaseGroup[] = [
           ),
       },
       {
+        name: '화살촉이 박스 높이를 넘지 않는다 — svg 는 overflow: hidden 이라 잘린다',
+        expected: true,
+        actual: () =>
+          render({ ...shapeObj('arrow'), rect: { x: 0, y: 0, w: 200, h: 8 } }, (n) => {
+            const pts = n.querySelector('polygon')?.getAttribute('points') ?? ''
+            const ys = pts.split(' ').map((p) => Number(p.split(',')[1]))
+            return ys.every((y) => y >= 0 && y <= 8)
+          }),
+      },
+      {
         name: 'doubleArrow 는 화살촉 둘 + 선 하나',
         expected: [1, 2],
         actual: () =>

@@ -126,12 +126,32 @@
 
   /* ---------------------------------------------------------------- 버튼 -- */
 
+  /**
+ * 버튼 공통 (2026.08.21 — `color` 추가).
+ *
+ * ## ⚠️ `<button>` 은 색을 상속하지 않는다 ★
+ *
+ * UA 스타일시트가 `color: ButtonText` 를 준다. 부모의 `color` 를 상속하는 것이 아니라
+ * **시스템 색**을 쓴다는 뜻이고, `color-scheme: light dark` (§20.3) 를 켠 뒤로는 OS 가
+ * 다크 모드면 `ButtonText` 가 흰색 계열이 된다.
+ *
+ * 그래서 팔레트를 밝은 값으로 하드코딩한 호스트 테마에서 **흰 버튼에 흰 글자**가 됐다.
+ * 2026.08.21 에 예제 앱에서 툴바와 아이콘 버튼의 글자가 통째로 사라진 원인이 이것이다.
+ * 인스펙터 라벨(`<span>`)은 정상이었는데 버튼만 비어 보여서 증상이 갈렸다.
+ *
+ * 시스템 색에 의존하지 않는다 — 우리 토큰으로 못 박는다. 아래 개별 규칙(`--primary` ·
+ * `--ghost` · `--dashed`)이 자기 색을 다시 주므로 순서상 그쪽이 이긴다.
+ *
+ * 밝은 팔레트로 고정하는 호스트는 `color-scheme: light` 도 함께 주는 것이 좋다. 체크박스·
+ * 드롭다운처럼 **브라우저가 직접 그리는** 컨트롤은 CSS 로 색을 줄 수 없다.
+ */
   .pck-icon-btn,
   .pck-primary-btn,
   .pck-ghost-btn,
   .pck-tool,
   .pck-dashed-btn {
     font: inherit;
+    color: var(--pck-ink);
     cursor: pointer;
     border-radius: var(--pck-radius-sm);
     transition:

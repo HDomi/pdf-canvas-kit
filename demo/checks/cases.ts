@@ -19,8 +19,12 @@ import {
   defineObjectType,
   DEFAULT_FONTS,
   fontOptions,
+  arrowHeadSize,
   isLineShape,
   isPolygonShape,
+  lineShapeHeight,
+  normalizeShapeRect,
+  updateObject,
   LIMITS,
   polygonPoints,
   resetFonts,
@@ -40,6 +44,9 @@ import {
   type CustomObject,
   type PageViewport,
   type PDFCanvasObject,
+  type Pt,
+  type ShapeKind,
+  type ShapeObject,
 } from '@h_domi/pdf-canvas-kit'
 
 /**
@@ -87,6 +94,17 @@ function customBox(over: Partial<CustomObject> = {}): CustomObject {
     rect: { x: 0, y: 0, w: 160, h: 40 },
     data: {},
     ...over,
+  }
+}
+
+/** 도형 객체. `strokeWidth` 가 선 계열 박스 높이를 정하므로 인자로 받는다. */
+function shapeObj(shape: ShapeKind, strokeWidth: Pt): ShapeObject {
+  return {
+    id: 'shape-1',
+    type: 'shape',
+    shape,
+    rect: { x: 0, y: 0, w: 100, h: 60 },
+    style: { fill: null, stroke: '#000', strokeWidth },
   }
 }
 
@@ -165,6 +183,109 @@ export const GROUPS: CaseGroup[] = [
           isLineShape('doubleArrow'),
           isLineShape('ellipse'),
         ],
+      },
+    ],
+  },
+
+  {
+    title: '선 계열 도형의 박스 크기 (2026.08.21) ★',
+    note: '선·화살표는 박스 높이가 그림에 영향을 주지 않는다. 그대로 두면 얇은 선 하나가 큰 빈 상자 안에 남고 핸들·썸네일이 그 상자를 따라간다.',
+    cases: [
+      {
+        name: 'line 의 높이는 선 두께 그대로',
+        expected: 2,
+        actual: () => lineShapeHeight('line', 2, 100),
+      },
+      {
+        name: 'arrow 의 높이는 화살촉 높이 (두께 × 4)',
+        expected: 8,
+        actual: () => lineShapeHeight('arrow', 2, 100),
+      },
+      {
+        name: '폭이 짧으면 화살촉이 폭의 절반으로 줄고 박스도 따라 줄어든다',
+        expected: 5,
+        actual: () => lineShapeHeight('arrow', 4, 10),
+      },
+      {
+        name: '아주 짧아도 선 두께는 확보한다 — 박스가 선보다 얇으면 선이 잘린다',
+        expected: 4,
+        actual: () => lineShapeHeight('arrow', 4, 2),
+      },
+      {
+        name: '화살촉은 박스 높이를 넘지 않는다 (svg 는 overflow: hidden 이라 잘린다)',
+        expected: [8, 6],
+        actual: () => [arrowHeadSize(100, 40, 2), arrowHeadSize(100, 6, 2)],
+      },
+      {
+        name: '★ 정규화는 세로 중심을 유지한다 — 그림이 제자리에 남아야 한다',
+        expected: { x: 10, y: 118, w: 100, h: 4 },
+        actual: () => normalizeShapeRect(shapeObj('arrow', 1), { x: 10, y: 60, w: 100, h: 120 }),
+      },
+      {
+        name: '면 도형은 손대지 않는다 (박스를 꽉 채우므로)',
+        expected: { x: 10, y: 60, w: 100, h: 120 },
+        actual: () => normalizeShapeRect(shapeObj('star', 1), { x: 10, y: 60, w: 100, h: 120 }),
+      },
+      {
+        name: '바꿀 것이 없으면 원본 참조를 그대로 돌려준다',
+        expected: true,
+        actual: () => {
+          const rect = { x: 0, y: 0, w: 100, h: 4 }
+          return normalizeShapeRect(shapeObj('arrow', 1), rect) === rect
+        },
+      },
+      {
+        name: '★ 인스펙터에서 rect → arrow 로 바꾸면 박스가 따라 얇아진다',
+        expected: { x: 0, y: 28, w: 100, h: 4 },
+        actual: () => {
+          const obj = shapeObj('rect', 1)
+          const doc = createPDFCanvasDoc({
+            pages: [createPage({ size: A4, objects: [obj] })],
+          })
+          const next = updateObject(0, obj.id, { shape: 'arrow' })(doc)
+          return next?.pages[0]?.objects[0]?.rect ?? null
+        },
+      },
+      {
+        name: '테두리를 두껍게 하면 박스도 함께 커진다',
+        expected: 16,
+        actual: () => {
+          const obj = shapeObj('arrow', 1)
+          const doc = createPDFCanvasDoc({
+            pages: [createPage({ size: A4, objects: [obj] })],
+          })
+          const next = updateObject(0, obj.id, {
+            style: { fill: null, stroke: '#000', strokeWidth: 4 },
+          })(doc)
+          return next?.pages[0]?.objects[0]?.rect.h ?? null
+        },
+      },
+      {
+        name: '★ 얇은 객체는 히트 테스트에 여유를 준다 (1pt 선을 집을 수 있어야 한다)',
+        expected: [true, true, false],
+        actual: () => {
+          const arrow = { ...shapeObj('arrow', 1), rect: { x: 100, y: 100, w: 200, h: 4 } }
+          return [
+            // 박스 안
+            hitTestObject({ x: 150, y: 102 }, arrow),
+            // 박스 위쪽 2pt — 여유 안 (8pt 기준이므로 위아래 2pt 씩)
+            hitTestObject({ x: 150, y: 98 }, arrow),
+            // 여유를 넘은 지점
+            hitTestObject({ x: 150, y: 90 }, arrow),
+          ]
+        },
+      },
+      {
+        name: '충분히 큰 객체에는 여유가 붙지 않는다',
+        expected: false,
+        actual: () =>
+          hitTestObject(
+            { x: 150, y: 99 },
+            {
+              ...shapeObj('star', 1),
+              rect: { x: 100, y: 100, w: 200, h: 200 },
+            },
+          ),
       },
     ],
   },

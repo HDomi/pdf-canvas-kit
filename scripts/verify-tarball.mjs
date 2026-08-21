@@ -154,6 +154,42 @@ try {
     })
   check('레이어 밖에 규칙이 없다 (토큰 선언만 허용)', outside.length === 0, `${outside.length}개`)
 
+  /*
+   * 폼 컨트롤은 **색을 명시해야 한다.**
+   *
+   * UA 스타일시트가 `<button>` 에 `color: ButtonText` 를, 입력에 `color: FieldText` 를 준다.
+   * 부모의 `color` 를 상속하는 것이 아니라 **시스템 색**을 쓴다는 뜻이다. `color-scheme:
+   * light dark` (§20.3) 를 켜면 OS 다크 모드에서 그 값이 흰색 계열이 되고, 팔레트를 밝은 값으로
+   * 하드코딩한 호스트 테마에서 흰 버튼에 흰 글자가 된다 — 2026.08.21 에 예제 앱에서 툴바
+   * 글자가 통째로 사라진 원인이다.
+   *
+   * 선택자별 규칙을 파싱하지 않고 "그 클래스를 포함한 어떤 블록이 `color` 를 선언한다" 만
+   * 본다. 정확한 캐스케이드 판정은 브라우저의 일이고, 여기서 잡고 싶은 것은 **선언을 아예
+   * 빠뜨린 경우**다.
+   */
+  const CONTROL_CLASSES = [
+    'pck-tool',
+    'pck-icon-btn',
+    'pck-primary-btn',
+    'pck-ghost-btn',
+    'pck-dashed-btn',
+    'pck-zoom-btn',
+    'pck-input',
+  ]
+  const blocks = [...css.matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+  for (const cls of CONTROL_CLASSES) {
+    const colored = blocks.some(
+      (m) =>
+        /*
+         * 뒤에 `.` · `:` 가 붙은 것은 세지 않는다. `.pck-tool.is-active` 나
+         * `.pck-tool:hover` 가 `color` 를 주는 것으로는 기본 상태가 덮이지 않는다 —
+         * 그걸 통과로 세면 검사가 아무것도 잡지 못한다.
+         */
+        new RegExp(`\\.${cls}(?![\\w\\-.:])`).test(m[1]) && /(^|;)\s*color\s*:/.test(m[2]),
+    )
+    check(`.${cls} 이 color 를 명시한다 (시스템 색 의존 금지)`, colored)
+  }
+
   console.log('\n[의존성]')
   check(
     'dependencies 는 pdfjs-dist 하나',

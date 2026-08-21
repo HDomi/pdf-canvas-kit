@@ -78,7 +78,14 @@ export {
 } from './core/geometry/handles'
 export type { HandleId, ResizeOptions } from './core/geometry/handles'
 
-export { isPolygonShape, isLineShape, polygonPoints } from './core/geometry/shapes'
+export {
+  isPolygonShape,
+  isLineShape,
+  polygonPoints,
+  arrowHeadSize,
+  lineShapeHeight,
+  normalizeShapeRect,
+} from './core/geometry/shapes'
 export type { PolygonShape } from './core/geometry/shapes'
 
 export {

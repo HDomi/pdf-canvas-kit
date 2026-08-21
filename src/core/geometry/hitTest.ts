@@ -5,6 +5,7 @@
  * 회전한 사각형과 점을 직접 비교하는 것보다 계산이 단순하고, 리사이즈 로직도 같은 변환을 쓴다.
  */
 import type { Pt, Rect, PDFCanvasObject } from '../model/types'
+import { EDITOR_DEFAULTS } from '../config/defaults'
 
 /** rect의 중심점. */
 export function rectCenter(r: Rect): { x: Pt; y: Pt } {
@@ -29,11 +30,33 @@ export function rotatePoint(
   }
 }
 
-/** 회전을 고려해 점이 객체 안에 있는지. */
+/**
+ * 회전을 고려해 점이 객체 안에 있는지.
+ *
+ * ## 얇은 객체에는 여유를 준다 (2026.08.21)
+ *
+ * 선·화살표의 박스는 실제로 얇다(`normalizeShapeRect`). 두께 1pt 선의 박스는 1pt 이고,
+ * 그것을 마우스로 정확히 집는 것은 사실상 불가능하다. `EDITOR_DEFAULTS.minHitSize` 보다 얇은
+ * 축만 그 값까지 **양쪽으로 벌려** 판정한다.
+ *
+ * 객체 크기를 바꾸는 것이 아니라 판정만 넓힌다. 그래서 선택 테두리·핸들·썸네일은 그대로
+ * 실제 크기를 보여 준다 — 보이는 것과 집히는 것이 다른 편이, 빈 상자가 그려지는 것보다 낫다.
+ *
+ * 마퀴 선택(`pickObjectsInRect`)에는 이 여유가 없다. 교차 판정이라 얇아도 걸리고, 여유를 주면
+ * 스치지도 않은 객체가 잡힌다.
+ */
 export function hitTestObject(point: { x: Pt; y: Pt }, obj: PDFCanvasObject): boolean {
   const r = obj.rect
   const local = obj.rotation ? rotatePoint(point, rectCenter(r), -obj.rotation) : point
-  return local.x >= r.x && local.x <= r.x + r.w && local.y >= r.y && local.y <= r.y + r.h
+  const pad = EDITOR_DEFAULTS.minHitSize
+  const padX = Math.max((pad - r.w) / 2, 0)
+  const padY = Math.max((pad - r.h) / 2, 0)
+  return (
+    local.x >= r.x - padX &&
+    local.x <= r.x + r.w + padX &&
+    local.y >= r.y - padY &&
+    local.y <= r.y + r.h + padY
+  )
 }
 
 /**

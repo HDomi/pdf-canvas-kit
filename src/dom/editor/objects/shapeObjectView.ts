@@ -29,7 +29,7 @@
  */
 import { keyed, svg } from '../../h'
 import type { ReadSignal } from '../../reactive'
-import { isPolygonShape, polygonPoints } from '../../../core/geometry/shapes'
+import { arrowHeadSize, isPolygonShape, polygonPoints } from '../../../core/geometry/shapes'
 import type { Rect, ShapeKind, ShapeObject } from '../../../core/model/types'
 
 export interface ShapeObjectViewProps {
@@ -53,8 +53,11 @@ export function shapeObjectView(props: ShapeObjectViewProps): SVGElement {
   /** 테두리가 박스 밖으로 새지 않도록 경로를 안으로 민다. */
   const inset = () => st().strokeWidth / 2
 
-  /** 화살촉 크기. 선 두께에 비례하되 객체 크기를 넘지 않게 제한한다. */
-  const arrowHead = () => Math.min(st().strokeWidth * 4, w() / 2, h() / 2 + 4)
+  /**
+   * 화살촉 크기. 계산은 core 가 갖는다 — 박스 높이를 정하는 `lineShapeHeight` 와 **같은 식**을
+   * 써야 촉이 박스에 정확히 들어찬다. 두 곳에 적으면 한쪽만 고쳐 촉이 잘린다.
+   */
+  const arrowHead = () => arrowHeadSize(w(), h(), st().strokeWidth)
 
   /** 모든 도형이 공유하는 페인트 속성. */
   const paint = () => ({

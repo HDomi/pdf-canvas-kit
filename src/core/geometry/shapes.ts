@@ -23,8 +23,8 @@
  * 정확한 오프셋 곡선(각 변을 법선 방향으로 밀기)이 아니라 **바운딩 박스를 줄이는** 방식이다.
  * 뾰족한 꼭짓점에서는 두 결과가 다르지만, 이 편이 박스 안에 확실히 들어가고 계산이 한 줄이다.
  */
-import type { Pt } from '../model/types'
-import type { ShapeKind } from '../model/types'
+import type { PDFCanvasObject, Pt, Rect, ShapeKind } from '../model/types'
+import { round2 } from './units'
 
 /** `<polygon>` 으로 그리는 도형. */
 export type PolygonShape = 'triangle' | 'diamond' | 'pentagon' | 'hexagon' | 'star' | 'cross'
@@ -151,4 +151,58 @@ export function polygonPoints(shape: PolygonShape, w: Pt, h: Pt, inset: Pt = 0):
  */
 function round3(n: number): number {
   return Math.round(n * 1000) / 1000
+}
+
+/* --------------------------------------------------- 선 계열의 박스 크기 -- */
+
+/** 화살촉 한 변 / 선 두께. 실측이 아니라 눈으로 고른 비율이다. */
+const ARROW_HEAD_RATIO = 4
+
+/**
+ * 화살촉 크기(pt) — 정삼각형에 가까운 촉의 한 변.
+ *
+ * 선 두께에 비례시킨다. 두께 1pt 선에 20pt 촉이 붙으면 촉만 보이고, 두께 8pt 선에 4pt 촉은
+ * 촉이 없는 것처럼 보인다. 박스를 넘지 않도록 폭·높이로도 조인다 — `<svg>` 의 기본
+ * `overflow` 는 hidden 이라 넘치면 **잘려서** 화살표가 뭉툭해 보인다.
+ */
+export function arrowHeadSize(w: Pt, h: Pt, strokeWidth: Pt): Pt {
+  return Math.min(strokeWidth * ARROW_HEAD_RATIO, w / 2, h)
+}
+
+/**
+ * 선 계열 도형이 **실제로 차지하는** 높이(pt).
+ *
+ * 선은 박스의 좌측 중앙 → 우측 중앙에 그려지므로 박스 높이가 그림에 아무 영향을 주지 않는다.
+ * 그대로 두면 200pt 높이 박스 안에 1pt 선 하나가 떠 있고, 선택 핸들과 썸네일 자리 표시가
+ * 그 빈 박스를 따라간다 — 2026.08.21 에 실제로 그렇게 보였다.
+ *
+ * | | 높이 |
+ * | --- | --- |
+ * | `line` | 선 두께 그대로 |
+ * | `arrow` · `doubleArrow` | 화살촉 높이 (선보다 두꺼운 쪽이 박스를 정한다) |
+ */
+export function lineShapeHeight(shape: ShapeKind, strokeWidth: Pt, w: Pt): Pt {
+  if (shape === 'line') return strokeWidth
+  /*
+   * 촉 크기가 폭에 걸려 줄어들 수 있으므로 최소한 선 두께는 확보한다. 아주 짧은 화살표에서
+   * 박스가 선보다 얇아지면 선이 잘린다.
+   */
+  return Math.max(arrowHeadSize(w, Number.POSITIVE_INFINITY, strokeWidth), strokeWidth)
+}
+
+/**
+ * 도형의 rect 를 **실제로 그려지는 크기**에 맞춘다.
+ *
+ * 선 계열의 높이만 조인다. 나머지 도형은 박스를 꽉 채우므로 손댈 것이 없다.
+ *
+ * 세로 중심을 유지한다 — 높이만 줄이면 선이 위로 튀어 올라 "핸들을 놨는데 도형이 움직였다"
+ * 가 된다. 중심을 고정하면 그림은 제자리에 남고 박스만 달라붙는다.
+ *
+ * ⚠️ 원본을 그대로 돌려줄 수 있다. 호출자가 참조 비교로 변경 여부를 판단해도 된다.
+ */
+export function normalizeShapeRect(obj: PDFCanvasObject, rect: Rect): Rect {
+  if (obj.type !== 'shape' || !isLineShape(obj.shape)) return rect
+  const h = round2(lineShapeHeight(obj.shape, obj.style.strokeWidth, rect.w))
+  if (h === rect.h) return rect
+  return { x: rect.x, y: round2(rect.y + (rect.h - h) / 2), w: rect.w, h }
 }

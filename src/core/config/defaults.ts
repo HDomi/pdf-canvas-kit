@@ -49,6 +49,14 @@ export const EDITOR_DEFAULTS = {
   newObjectSize: { w: 160 as Pt, h: 40 as Pt },
   /** 텍스트·도형의 최소 크기. Answer Box는 `LIMITS.minAnswerBoxSize` 를 쓴다. */
   minObjectSize: { w: 8 as Pt, h: 8 as Pt },
+  /**
+   * 히트 테스트에만 주는 최소 집기 두께(pt). **객체 크기는 바꾸지 않는다.**
+   *
+   * 선·화살표는 박스가 실제로 얇다(2026.08.21 부터 — `normalizeShapeRect`). 1pt 두께 선의
+   * 박스는 1pt 라 마우스로 정확히 집는 것이 사실상 불가능하다. 8pt 는 `minObjectSize` 와 같은
+   * 값으로, "가장 작은 객체만큼은 집을 수 있다" 는 기준을 히트 테스트에도 맞춘 것이다.
+   */
+  minHitSize: 8 as Pt,
   /** 붙여넣기·복제한 객체가 원본을 가리지 않도록 주는 오프셋. */
   duplicateOffset: 8 as Pt,
   /** 방향키 이동 거리, 그리고 Shift를 누른 경우의 거리. */

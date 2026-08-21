@@ -10,6 +10,7 @@
 import { createId } from '../util/id'
 import { EDITOR_DEFAULTS, LIMITS } from '../config/defaults'
 import { clampIntoPage } from '../geometry/constrain'
+import { normalizeShapeRect } from '../geometry/shapes'
 import type { Rect, PDFCanvasDoc, PDFCanvasObject } from '../model/types'
 import { replacePage, touch, type Command } from './index'
 
@@ -86,7 +87,12 @@ export function transformObjects(pageIndex: number, rects: ReadonlyMap<string, R
           return o
         }
         changed = true
-        return { ...o, rect }
+        /*
+         * 선·화살표는 박스 높이가 그림에 영향을 주지 않으므로 실제 크기로 조인다
+         * (`normalizeShapeRect`). 미리보기에서도 같은 함수를 쓰지만 여기서도 부른다 —
+         * 방향키 이동·정렬처럼 포인터를 거치지 않는 경로가 있다.
+         */
+        return { ...o, rect: normalizeShapeRect(o, rect) }
       })
       return changed ? { ...page, objects } : page
     })
@@ -113,7 +119,14 @@ export function updateObject(
       if (!target) return page
       const objects = [...page.objects]
       // 스프레드가 유니온 판별자를 넓히므로 대상 유형으로 되돌린다.
-      objects[index] = { ...target, ...patch } as typeof target
+      const merged = { ...target, ...patch } as typeof target
+      /*
+       * 도형 종류나 테두리 두께를 바꾸면 박스도 따라와야 한다 (2026.08.21).
+       *
+       * 사각형을 화살표로 바꾸는 것이 인스펙터의 주 경로이고, 그때 박스가 그대로면 얇은
+       * 화살표 하나가 큰 빈 상자 안에 남는다 — 핸들과 썸네일이 그 상자를 따라간다.
+       */
+      objects[index] = { ...merged, rect: normalizeShapeRect(merged, merged.rect) }
       return { ...page, objects }
     })
     return next ? touch(next) : null

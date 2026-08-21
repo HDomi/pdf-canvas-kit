@@ -65,6 +65,33 @@ export interface EditorHandle {
    * 실패는 편집기 안의 오류 문구로 표시되므로 던지지 않는다.
    */
   importFile(file: File): Promise<void>
+  /** 진행 중인 import 를 중단한다. 유휴 상태에서 불러도 안전하다. */
+  cancelImport(): void
+
+  /**
+   * 대기 중인 확인 동작을 수행한다 (PLAN D31).
+   *
+   * `onRequestConfirm` 으로 확인을 위임한 호스트가 자기 모달의 [확인] 에 연결한다.
+   * 대기 중인 것이 없으면 아무 일도 하지 않는다.
+   */
+  confirmPending(): void
+  /** 대기 중인 확인 동작을 취소한다. 호스트 모달의 [취소]·닫기에 연결한다. */
+  cancelPending(): void
+  /**
+   * 페이지 삭제를 요청한다.
+   *
+   * 객체가 있는 페이지면 확인이 필요하므로 곧바로 지우지 않는다 — `onRequestConfirm` 을 준
+   * 호스트에게는 그 콜백이 불리고, 주지 않았으면 내장 확인 팝업이 뜬다. 비어 있으면 즉시
+   * 지운다.
+   */
+  requestRemovePage(index: number): void
+  /**
+   * 문서 불러오기를 요청한다.
+   *
+   * `onRequestUpload` 를 줬으면 그 콜백이 불리고, 주지 않았으면 내장 팝업이 열린다.
+   * 호스트가 자기 [파일 열기] 버튼을 편집기 밖에 두고 싶을 때 쓴다.
+   */
+  requestUpload(): void
 
   zoomTo(scale: number): void
   fitWidth(): void
@@ -116,6 +143,11 @@ export function createPDFCanvasEditor(
     validate: () => inner.validation.value,
     toPublicDoc: () => inner.toPublicDoc(),
     importFile: (file) => inner.pickFile(file),
+    cancelImport: () => inner.cancelImport(),
+    confirmPending: () => inner.confirmRemovePage(),
+    cancelPending: () => inner.cancelRemovePage(),
+    requestUpload: () => inner.openUpload(),
+    requestRemovePage: (index) => inner.requestRemovePage(index),
 
     zoomTo: (scale) => inner.zoomTo(scale),
     fitWidth: () => inner.fitWidth(),

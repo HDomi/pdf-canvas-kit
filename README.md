@@ -634,8 +634,116 @@ export const shortAnswer = defineObjectType<{ answers: string[]; points: number 
 
 ## 커스터마이징
 
+세 단계다. 위에서부터 시도하면 대부분 첫 단계에서 끝난다.
+
+| 원하는 것 | 방법 |
+| --- | --- |
+| 색·폰트·간격·패널 폭 | **토큰** — `--pck-*` 를 덮어쓴다 |
+| 구조가 다른 스타일 (배치·정렬·모양) | **CSS 규칙을 그대로 쓴다.** 특이도 싸움이 없다 |
+| 우리 앱 모달을 쓰고 싶다 | **다이얼로그 위임** — 동작만 함수로 받는다 |
+
+### 1. 토큰 (75개)
+
+```css
+/* 감싸는 요소나 :root 어디든 */
+.my-app .pck-editor {
+  --pck-accent: #3b82f6;
+  --pck-topbar-bg: #101014;
+  --pck-pagelist-width: 200px;
+  --pck-modal-radius: 0;
+  --pck-btn-padding: 10px 24px;
+}
+```
+
+영역별 접두사: `topbar` · `pagelist` · `stage` · `inspector` · `toolbar` · `obj`(캔버스 객체) ·
+`modal` · `btn` · `input` · `menu` · `state`(피드백 색) · `viewer`.
+전체 목록은 [src/styles/tokens.css](src/styles/tokens.css).
+
+### 2. CSS 규칙 — `@layer` 라서 특이도 싸움이 없다 ★
+
+패키지 스타일 전체가 `@layer pdf-canvas-kit` 안에 있다. **레이어 규칙은 레이어 밖 규칙에게
+항상 진다 — 특이도와 무관하게.**
+
+```css
+/* 이 한 줄이 이긴다. !important 도, .my-app .pck-x 도 필요 없다 */
+.pck-modal {
+  border-radius: 0;
+  box-shadow: none;
+}
+.pck-toolbar {
+  justify-content: center;
+}
+```
+
+이게 없으면 호스트는 우리보다 특이도를 높여야 하고, 우리가 선택자를 하나 늘리는 순간 조용히
+깨진다. 레이어 순서를 직접 정하고 싶으면 `@layer` 로 선언하면 된다.
+
+```css
+/* 호스트 레이어를 패키지 뒤에 두면 그 안의 규칙도 이긴다 */
+@layer pdf-canvas-kit, my-app;
+```
+
+주요 클래스: `.pck-editor` `.pck-topbar` `.pck-toolbar` `.pck-pagelist` `.pck-thumb`
+`.pck-stage` `.pck-page-frame` `.pck-inspector` `.pck-modal` `.pck-viewer`.
+**클래스 이름은 공개 계약으로 취급한다** — 바뀌면 breaking change다.
+
+### 3. 다이얼로그 위임 — 우리 팝업을 아예 안 쓴다 ★
+
+패키지가 만드는 팝업(문서 불러오기, 삭제 확인)을 **끄고 동작만 함수로 받는다.** 호스트 앱에는
+이미 자기 디자인 시스템 모달이 있으니까.
+
+```tsx
+<PDFCanvasEditor
+  ref={editor}
+  // 콜백을 주면 내장 팝업을 띄우지 않는다
+  onRequestUpload={() => setMyUploadOpen(true)}
+  onRequestConfirm={(req) => setMyConfirm(req)}   // { message, danger }
+  onImportStateChange={(st) => setImporting(st)}  // { progress, error }
+/>
+```
+
+호스트 UI에서 결과를 알려준다.
+
+| 호스트가 부르는 것 | 언제 |
+| --- | --- |
+| `handle.importFile(file)` | 파일을 골랐을 때 |
+| `handle.cancelImport()` | 불러오는 중 취소 |
+| `handle.confirmPending()` | 확인 모달의 [확인] |
+| `handle.cancelPending()` | 확인 모달의 [취소]·닫기 |
+| `handle.requestUpload()` | 호스트가 만든 [파일 열기] 버튼 |
+| `handle.requestRemovePage(i)` | 호스트가 만든 [페이지 삭제] |
+
+> ⚠️ `onRequestConfirm` 을 주고 `confirmPending()`·`cancelPending()` 을 **부르지 않으면 그 동작은
+> 대기 상태로 남는다.** 조용히 취소하지 않는다 — 사용자가 [삭제]를 눌렀는데 아무 일도 없는
+> 것과, 확인 없이 지워지는 것 중 어느 쪽도 낫지 않으므로 결정을 호스트에 남긴다.
+
+Vue도 같다. 예제는 [examples/react/src/index.tsx](examples/react/src/index.tsx) ·
+[examples/vue/src/App.vue](examples/vue/src/App.vue) — 둘 다 자기 모달로 대체해 뒀다.
+
+### 문구 바꾸기
+
+UI 문구는 전부 `strings.ts` 를 거친다. 하드코딩이 없다.
+
+```ts
+import { configureStrings } from 'pdf-canvas-kit'
+configureStrings({ 'confirm.deletePage': '이 페이지를 지울까요?' })
+```
+
+반응형이 아니다 — 앱 부팅 때 한 번 설정한다.
+
+### 코드 상수
+
 | 대상 | 위치 |
 | --- | --- |
+| 새 객체 기본 크기, 줌 단계, 스냅 | [defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
+| 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |
+| 페이지·객체 한도 | 같은 파일 → `LIMITS` (**서버와 동일해야 함**) |
+
+기준과 주의점은 [ARCHITECTURE §2~3](ARCHITECTURE.md).
+
+---
+
+| --- |
 | 색·폰트·패널 기본 폭 | [src/styles/tokens.css](src/styles/tokens.css) — `--pck-*` CSS 변수 오버라이드 |
 | 새 객체 기본 크기, 줌 단계, 스냅 | [src/core/config/defaults.ts](src/core/config/defaults.ts) → `EDITOR_DEFAULTS` |
 | 이미지 해상도·포맷 | 같은 파일 → `RENDER_DEFAULTS` |

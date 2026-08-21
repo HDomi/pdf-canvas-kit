@@ -192,8 +192,12 @@ export function editorShell(c: EditorController): HTMLElement {
       },
     ),
 
+    /*
+     * 내장 확인 팝업. 호스트가 `onRequestConfirm` 을 주면 그리지 않는다 (D31) —
+     * 그리면 호스트 모달과 두 겹이 된다.
+     */
     when(
-      () => c.pendingPageDelete.value !== null,
+      () => c.pendingPageDelete.value !== null && !c.dialogsDelegated.value.confirm,
       () =>
         confirmDialog({
           message: text('confirm.deletePage'),
@@ -205,8 +209,9 @@ export function editorShell(c: EditorController): HTMLElement {
         }),
     ),
 
+    // 내장 업로드 팝업. 위와 같은 이유로 위임 시 그리지 않는다.
     when(
-      () => c.uploadOpen.value,
+      () => c.uploadOpen.value && !c.dialogsDelegated.value.upload,
       () =>
         uploadDialog({
           progress: c.importProgress,

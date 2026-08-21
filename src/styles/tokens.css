@@ -10,7 +10,17 @@
  * 레이아웃 코드와 검증이 숫자로 필요하므로 `src/core/config/defaults.ts` 에 둔다.
  *
  * 이름 규칙: --pck-<영역>-<역할>. 영역은 topbar, pagelist, stage, inspector,
- * toolbar, obj(캔버스 객체), state(피드백 색).
+ * toolbar, obj(캔버스 객체), modal(팝업), btn(버튼), input, menu, state(피드백 색).
+ *
+ * ## 토큰으로 안 되는 것은 규칙을 직접 덮어쓴다
+ *
+ * `editor.css` 전체가 `@layer pdf-canvas-kit` 안에 있다. **레이어 규칙은 레이어 밖 규칙에게
+ * 항상 진다 — 특이도와 무관하게.** 그래서 구조가 다른 커스터마이징(패딩 배치, 정렬)은
+ * 평범한 선택자 한 줄로 이긴다.
+ *
+ *   .pck-modal { border-radius: 0; box-shadow: none; }
+ *
+ * `!important` 도 `.my-app .pck-x` 같은 특이도 올리기도 필요 없다.
  */
 
 /*
@@ -87,6 +97,38 @@
   --pck-page-shadow: 0 1px 4px rgb(0 0 0 / 12%);
   /* 뷰어의 페이지 간 간격 (R11). 편집기는 한 페이지뿐이라 쓰지 않는다. */
   --pck-viewer-page-gap: 16px;
+
+  /* ---- 팝업 (R12) ------------------------------------------------------- */
+  /*
+   * 내장 팝업의 모양. 호스트가 자기 다이얼로그를 쓰려면 토큰이 아니라 `onRequestUpload` ·
+   * `onRequestConfirm` 으로 위임한다 (PLAN D31) — 이 토큰들은 내장 팝업을 **그대로 쓰면서**
+   * 색만 맞추려는 경우를 위한 것이다.
+   */
+  --pck-modal-scrim-bg: rgb(0 0 0 / 32%);
+  --pck-modal-bg: var(--pck-surface);
+  --pck-modal-width: 520px;
+  --pck-modal-radius: var(--pck-radius);
+  --pck-modal-shadow: 0 8px 30px rgb(0 0 0 / 18%);
+  --pck-modal-z: 40;
+
+  /* ---- 버튼 · 입력 (R12) ----------------------------------------------- */
+  --pck-btn-radius: var(--pck-radius-sm);
+  --pck-btn-padding: 8px 18px;
+  --pck-btn-ghost-padding: 6px 14px;
+  --pck-btn-primary-bg: var(--pck-accent);
+  --pck-btn-primary-ink: var(--pck-accent-ink);
+  --pck-btn-font-weight: 600;
+  --pck-input-bg: var(--pck-surface);
+  --pck-input-ink: var(--pck-ink);
+  --pck-input-border: var(--pck-line);
+  --pck-input-padding: 6px 8px;
+  --pck-input-radius: var(--pck-radius-sm);
+
+  /* ---- 컨텍스트 메뉴 (R12) --------------------------------------------- */
+  --pck-menu-bg: var(--pck-surface);
+  --pck-menu-border: var(--pck-line);
+  --pck-menu-shadow: var(--pck-shadow);
+  --pck-menu-radius: var(--pck-radius-sm);
   /* 썸네일의 객체 자리 표시. 내용이 아니라 위치만 보여주는 용도다. */
   --pck-thumb-obj-stroke: color-mix(in srgb, var(--pck-accent) 55%, transparent);
   --pck-thumb-obj-fill: color-mix(in srgb, var(--pck-accent) 14%, transparent);

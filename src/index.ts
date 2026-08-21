@@ -148,6 +148,8 @@ export { asPublicDoc } from './core/model/types'
  */
 export { createPDFCanvasEditor } from './dom/createEditor'
 export type { EditorHandle, EditorProps } from './dom/createEditor'
+/* 다이얼로그 위임 (D31). 호스트가 자기 모달을 쓰려면 이 두 타입이 필요하다. */
+export type { ConfirmRequest, ImportState } from './controller/editor'
 export { createPDFCanvasViewer } from './dom/createViewer'
 export type { ViewerHandle, ViewerProps } from './dom/createViewer'
 export { defineObjectType, createObjectTypeRegistry, UNKNOWN_KIND_ISSUE } from './core/objectTypes'

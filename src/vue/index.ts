@@ -110,6 +110,25 @@ export const PDFCanvasEditor = defineComponent({
       default: undefined,
     },
     uploadFile: { type: Function as PropType<EditorProps['uploadFile']>, default: undefined },
+    /**
+     * 문서 불러오기 UI 를 호스트가 맡는다 (PLAN D31).
+     *
+     * 주면 내장 업로드 팝업을 띄우지 않는다. 파일은 `handle.importFile(file)` 로 넘긴다.
+     */
+    onRequestUpload: {
+      type: Function as PropType<EditorProps['onRequestUpload']>,
+      default: undefined,
+    },
+    /** 확인 모달을 호스트가 맡는다. 결과는 `handle.confirmPending()` · `cancelPending()`. */
+    onRequestConfirm: {
+      type: Function as PropType<EditorProps['onRequestConfirm']>,
+      default: undefined,
+    },
+    /** import 진행률·오류. 내장 팝업을 끈 호스트가 자기 UI 에 보여준다. */
+    onImportStateChange: {
+      type: Function as PropType<EditorProps['onImportStateChange']>,
+      default: undefined,
+    },
     /** 커스텀 객체 타입 (PLAN D25). **최초 1회만 읽는다.** */
     objectTypes: { type: Array as PropType<AnyObjectTypeDef[]>, default: undefined },
     /** 캔버스 안 커스텀 객체. */
@@ -164,6 +183,10 @@ export const PDFCanvasEditor = defineComponent({
         ...(props.initialScale !== undefined ? { initialScale: props.initialScale } : {}),
         ...(props.uploadFile ? { uploadFile: props.uploadFile } : {}),
         ...(props.objectTypes ? { objectTypes: props.objectTypes } : {}),
+        // 다이얼로그 위임 (D31). 아래 watchEffect 가 갱신도 흘린다.
+        ...(props.onRequestUpload ? { onRequestUpload: props.onRequestUpload } : {}),
+        ...(props.onRequestConfirm ? { onRequestConfirm: props.onRequestConfirm } : {}),
+        ...(props.onImportStateChange ? { onImportStateChange: props.onImportStateChange } : {}),
         onChange: (next) => {
           doc.value = next
           emit('change', next)
@@ -194,6 +217,14 @@ export const PDFCanvasEditor = defineComponent({
         ...(props.autosave !== undefined ? { autosave: props.autosave } : {}),
         ...(props.ports ? { ports: props.ports } : {}),
         ...(props.uploadFile ? { uploadFile: props.uploadFile } : {}),
+        /*
+         * 다이얼로그 위임도 흘린다 (D31). React 래퍼는 prop 을 통째로 넘기므로 자동으로
+         * 갱신되는데, Vue 는 나열식이라 여기 없으면 마운트 값에 고정된다 — 같은 계약이
+         * 프레임워크마다 다르게 동작하면 그게 버그의 형태다 (PLAN 20.21 · 20.23).
+         */
+        ...(props.onRequestUpload ? { onRequestUpload: props.onRequestUpload } : {}),
+        ...(props.onRequestConfirm ? { onRequestConfirm: props.onRequestConfirm } : {}),
+        ...(props.onImportStateChange ? { onImportStateChange: props.onImportStateChange } : {}),
       }
       handle?.update(next)
     })

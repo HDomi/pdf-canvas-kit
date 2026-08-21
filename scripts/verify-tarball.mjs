@@ -81,6 +81,29 @@ try {
     check(`${junk} 없음`, hit.length === 0, hit.length ? `${hit.length}개 발견` : undefined)
   }
 
+  /*
+   * 스타일 커스터마이징 계약 (PLAN D31).
+   *
+   * `editor.css` 전체가 `@layer` 안에 있어야 소비자 규칙이 특이도 싸움 없이 이긴다. 토큰은
+   * 레이어 **밖**이어야 한다 — 안에 있으면 토큰 오버라이드도 한 단계 낮아진다.
+   *
+   * 번들러가 레이어를 삼키거나 평탄화하면 이 계약이 조용히 깨진다. 그때 증상은 "호스트
+   * CSS 가 안 먹는다" 이고, 원인을 찾기 어렵다.
+   */
+  console.log('\n[스타일 레이어]')
+  const css = readFileSync(join(pkgDir, 'dist/styles.css'), 'utf8')
+  const layerAt = css.indexOf('@layer')
+  const layerName = css.match(/@layer\s+([a-z-]+)\s*\{/)?.[1]
+  check('@layer 선언이 있다', layerAt >= 0)
+  check('레이어 이름이 pdf-canvas-kit', layerName === 'pdf-canvas-kit', layerName)
+  const tokenAt = css.indexOf('--pck-bg')
+  check('토큰이 레이어 밖(앞)에 있다', tokenAt >= 0 && tokenAt < layerAt)
+  const outside = css
+    .slice(0, layerAt < 0 ? css.length : layerAt)
+    .split('}')
+    .filter((r) => r.includes('.pck-') && !r.includes('--pck-'))
+  check('레이어 밖에 규칙이 없다', outside.length === 0, `${outside.length}개`)
+
   console.log('\n[의존성]')
   check(
     'dependencies 는 pdfjs-dist 하나',

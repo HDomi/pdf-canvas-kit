@@ -6,427 +6,441 @@
  *
  * 클래스 이름에 `pck-` 접두사를 붙여 호스트 스타일과 충돌하지 않게 한다. 유틸리티 프레임워크는
  * 쓰지 않는다. 라이브러리가 소비하는 앱에 Tailwind를 요구해서는 안 된다.
+ *
+ * ## ★ 전체가 `@layer pdf-canvas-kit` 안에 있다
+ *
+ * **레이어에 속한 규칙은 레이어 밖의 규칙에게 항상 진다 — 특이도와 무관하게.** 그래서 호스트가
+ * `.pck-topbar { background: red }` 한 줄만 써도 이긴다. `!important` 도, `.my-app .pck-x`
+ * 같은 특이도 올리기도 필요 없다.
+ *
+ * 이게 없으면 호스트는 우리 선택자보다 특이도를 높여야 하고, 우리가 선택자를 하나 늘리는
+ * 순간 조용히 깨진다. 레이어는 그 싸움을 아예 없앤다.
+ *
+ * 토큰(`tokens.css`)은 **레이어에 넣지 않는다.** 커스텀 프로퍼티는 캐스케이드 레이어의 영향을
+ * 받지만, 토큰을 덮어쓰는 것은 이미 의도된 첫 번째 경로이므로 레이어로 한 단계 더 낮출 이유가
+ * 없다. 값 하나만 바꾸려는 호스트가 레이어 규칙을 몰라도 되게 둔다.
  */
 
-.pck-editor {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 0;
-  background: var(--pck-bg);
-  font-size: var(--pck-text-md);
-}
+@layer pdf-canvas-kit {
+  .pck-editor {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    min-height: 0;
+    background: var(--pck-bg);
+    font-size: var(--pck-text-md);
+  }
 
-/* ---------------------------------------------------------------- 상단 바 -- */
+  /* ---------------------------------------------------------------- 상단 바 -- */
 
-.pck-topbar {
-  display: flex;
-  align-items: center;
-  gap: var(--pck-space-2);
-  height: var(--pck-topbar-height);
-  flex: 0 0 var(--pck-topbar-height);
-  padding: 0 var(--pck-space-4);
-  background: var(--pck-topbar-bg);
-  color: var(--pck-topbar-ink);
-  border-bottom: 1px solid var(--pck-topbar-border);
-}
+  .pck-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--pck-space-2);
+    height: var(--pck-topbar-height);
+    flex: 0 0 var(--pck-topbar-height);
+    padding: 0 var(--pck-space-4);
+    background: var(--pck-topbar-bg);
+    color: var(--pck-topbar-ink);
+    border-bottom: 1px solid var(--pck-topbar-border);
+  }
 
-.pck-topbar-spacer {
-  flex: 1;
-}
+  .pck-topbar-spacer {
+    flex: 1;
+  }
 
-.pck-topbar-divider {
-  width: 1px;
-  height: 22px;
-  background: var(--pck-line);
-  margin: 0 var(--pck-space-1);
-}
+  .pck-topbar-divider {
+    width: 1px;
+    height: 22px;
+    background: var(--pck-line);
+    margin: 0 var(--pck-space-1);
+  }
 
-.pck-title {
-  min-width: 0;
-}
+  .pck-title {
+    min-width: 0;
+  }
 
-.pck-title-label,
-.pck-title-input {
-  font: inherit;
-  color: inherit;
-  max-width: 42ch;
-  padding: 6px 10px;
-  border-radius: var(--pck-radius-sm);
-}
+  .pck-title-label,
+  .pck-title-input {
+    font: inherit;
+    color: inherit;
+    max-width: 42ch;
+    padding: 6px 10px;
+    border-radius: var(--pck-radius-sm);
+  }
 
-.pck-title-label {
-  background: none;
-  border: 1px solid transparent;
-  cursor: text;
-  text-align: left;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  display: block;
-  width: 100%;
-}
+  .pck-title-label {
+    background: none;
+    border: 1px solid transparent;
+    cursor: text;
+    text-align: left;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    display: block;
+    width: 100%;
+  }
 
-.pck-title-label:hover {
-  border-color: var(--pck-line);
-}
+  .pck-title-label:hover {
+    border-color: var(--pck-line);
+  }
 
-.pck-title-input {
-  border: 1px solid var(--pck-line-strong);
-  background: var(--pck-surface);
-  min-width: 24ch;
-}
+  .pck-title-input {
+    border: 1px solid var(--pck-line-strong);
+    background: var(--pck-surface);
+    min-width: 24ch;
+  }
 
-.pck-badge {
-  font-size: var(--pck-text-sm);
-  color: var(--pck-ink-muted);
-  border: 1px solid var(--pck-line);
-  border-radius: 999px;
-  padding: 3px 10px;
-  white-space: nowrap;
-}
+  .pck-badge {
+    font-size: var(--pck-text-sm);
+    color: var(--pck-ink-muted);
+    border: 1px solid var(--pck-line);
+    border-radius: 999px;
+    padding: 3px 10px;
+    white-space: nowrap;
+  }
 
-.pck-badge.is-saving {
-  color: var(--pck-state-warn);
-}
-.pck-badge.is-error {
-  color: var(--pck-state-danger);
-  border-color: currentcolor;
-}
-.pck-badge.is-disabled {
-  opacity: 0.6;
-}
+  .pck-badge.is-saving {
+    color: var(--pck-state-warn);
+  }
+  .pck-badge.is-error {
+    color: var(--pck-state-danger);
+    border-color: currentcolor;
+  }
+  .pck-badge.is-disabled {
+    opacity: 0.6;
+  }
 
-/* ---------------------------------------------------------------- 버튼 -- */
+  /* ---------------------------------------------------------------- 버튼 -- */
 
-.pck-icon-btn,
-.pck-primary-btn,
-.pck-ghost-btn,
-.pck-tool,
-.pck-dashed-btn {
-  font: inherit;
-  cursor: pointer;
-  border-radius: var(--pck-radius-sm);
-  transition:
-    border-color 120ms ease,
-    background 120ms ease;
-}
+  .pck-icon-btn,
+  .pck-primary-btn,
+  .pck-ghost-btn,
+  .pck-tool,
+  .pck-dashed-btn {
+    font: inherit;
+    cursor: pointer;
+    border-radius: var(--pck-radius-sm);
+    transition:
+      border-color 120ms ease,
+      background 120ms ease;
+  }
 
-.pck-icon-btn {
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  font-size: 15px;
-  line-height: 1;
-}
+  .pck-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: grid;
+    place-items: center;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    font-size: 15px;
+    line-height: 1;
+  }
 
-.pck-icon-btn:hover:not(:disabled) {
-  border-color: var(--pck-line-strong);
-}
+  .pck-icon-btn:hover:not(:disabled) {
+    border-color: var(--pck-line-strong);
+  }
 
-.pck-primary-btn {
-  background: var(--pck-accent);
-  color: var(--pck-accent-ink);
-  border: 1px solid var(--pck-accent);
-  padding: 8px 18px;
-  font-weight: 600;
-}
+  .pck-primary-btn {
+    background: var(--pck-btn-primary-bg);
+    color: var(--pck-btn-primary-ink);
+    border: 1px solid var(--pck-btn-primary-bg);
+    padding: var(--pck-btn-padding);
+    font-weight: var(--pck-btn-font-weight);
+  }
 
-.pck-ghost-btn {
-  background: none;
-  border: 1px solid var(--pck-line);
-  padding: 6px 14px;
-  color: var(--pck-ink);
-}
+  .pck-ghost-btn {
+    background: none;
+    border: 1px solid var(--pck-line);
+    padding: var(--pck-btn-ghost-padding);
+    color: var(--pck-ink);
+  }
 
-.pck-icon-btn:disabled,
-.pck-primary-btn:disabled,
-.pck-tool:disabled,
-.pck-zoom-btn:disabled,
-.pck-pagelist-rowbtns button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+  .pck-icon-btn:disabled,
+  .pck-primary-btn:disabled,
+  .pck-tool:disabled,
+  .pck-zoom-btn:disabled,
+  .pck-pagelist-rowbtns button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 
-/* ------------------------------------------------------------------ 본문 --- */
+  /* ------------------------------------------------------------------ 본문 --- */
 
-/*
+  /*
  * 패널 사이에 리사이저 열이 하나씩 들어간다. 폭은 CSS 변수로, 실제 값은 PDFCanvasEditor 가
  * 인라인 스타일로 덮어쓴다 (PLAN Q17) — 레이아웃 규칙을 두 곳에서 정의하지 않는다.
  */
-.pck-body {
-  flex: 1;
-  min-height: 0;
-  display: grid;
-  grid-template-columns:
-    var(--pck-pagelist-width) var(--pck-resizer-width)
-    minmax(0, 1fr)
-    var(--pck-resizer-width) var(--pck-inspector-width);
-}
+  .pck-body {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns:
+      var(--pck-pagelist-width) var(--pck-resizer-width)
+      minmax(0, 1fr)
+      var(--pck-resizer-width) var(--pck-inspector-width);
+  }
 
-/* 드래그 중에는 텍스트 선택과 포인터 이벤트가 방해된다. */
-.pck-body.is-resizing {
-  user-select: none;
-  cursor: col-resize;
-}
+  /* 드래그 중에는 텍스트 선택과 포인터 이벤트가 방해된다. */
+  .pck-body.is-resizing {
+    user-select: none;
+    cursor: col-resize;
+  }
 
-.pck-body.is-resizing .pck-stage,
-.pck-body.is-resizing .pck-inspector,
-.pck-body.is-resizing .pck-pagelist {
-  pointer-events: none;
-}
+  .pck-body.is-resizing .pck-stage,
+  .pck-body.is-resizing .pck-inspector,
+  .pck-body.is-resizing .pck-pagelist {
+    pointer-events: none;
+  }
 
-.pck-resizer {
-  position: relative;
-  cursor: col-resize;
-  background: var(--pck-line);
-  /* 보이는 선은 1px이지만 잡기 편하도록 히트 영역을 넓힌다. */
-  background-clip: content-box;
-  border-left: 3px solid transparent;
-  border-right: 3px solid transparent;
-  box-sizing: border-box;
-}
+  .pck-resizer {
+    position: relative;
+    cursor: col-resize;
+    background: var(--pck-line);
+    /* 보이는 선은 1px이지만 잡기 편하도록 히트 영역을 넓힌다. */
+    background-clip: content-box;
+    border-left: 3px solid transparent;
+    border-right: 3px solid transparent;
+    box-sizing: border-box;
+  }
 
-.pck-resizer:hover,
-.pck-body.is-resizing .pck-resizer {
-  background-color: var(--pck-line-strong);
-}
+  .pck-resizer:hover,
+  .pck-body.is-resizing .pck-resizer {
+    background-color: var(--pck-line-strong);
+  }
 
-.pck-panel-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  height: 34px;
-  padding: 0 var(--pck-space-3);
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--pck-ink-muted);
-  border-bottom: 1px dashed var(--pck-line);
-}
+  .pck-panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 34px;
+    padding: 0 var(--pck-space-3);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pck-ink-muted);
+    border-bottom: 1px dashed var(--pck-line);
+  }
 
-.pck-panel-count {
-  font-variant-numeric: tabular-nums;
-}
+  .pck-panel-count {
+    font-variant-numeric: tabular-nums;
+  }
 
-.pck-panel-empty {
-  margin: var(--pck-space-4);
-  color: var(--pck-ink-muted);
-  font-size: var(--pck-text-sm);
-  text-align: center;
-}
+  .pck-panel-empty {
+    margin: var(--pck-space-4);
+    color: var(--pck-ink-muted);
+    font-size: var(--pck-text-sm);
+    text-align: center;
+  }
 
-/* -------------------------------------------------------------- 페이지 목록 -- */
+  /* -------------------------------------------------------------- 페이지 목록 -- */
 
-.pck-pagelist {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background: var(--pck-pagelist-bg);
-}
+  .pck-pagelist {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--pck-pagelist-bg);
+  }
 
-.pck-pagelist-scroll {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--pck-space-3);
-}
+  .pck-pagelist-scroll {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--pck-space-3);
+  }
 
-.pck-thumb-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: var(--pck-space-3);
-}
+  .pck-thumb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--pck-space-3);
+  }
 
-.pck-thumb {
-  width: 100%;
-  display: grid;
-  gap: 4px;
-  justify-items: center;
-  background: none;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  color: var(--pck-ink-muted);
-}
+  .pck-thumb {
+    width: 100%;
+    display: grid;
+    gap: 4px;
+    justify-items: center;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    font: inherit;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-thumb-paper {
-  display: block;
-  width: 100%;
-  background: var(--pck-page-bg);
-  border: 1px solid var(--pck-pagelist-thumb-border);
-  overflow: hidden;
-  /* 객체 자리 표시가 퍼센트 좌표로 놓이는 기준이다. */
-  position: relative;
-}
+  .pck-thumb-paper {
+    display: block;
+    width: 100%;
+    background: var(--pck-page-bg);
+    border: 1px solid var(--pck-pagelist-thumb-border);
+    overflow: hidden;
+    /* 객체 자리 표시가 퍼센트 좌표로 놓이는 기준이다. */
+    position: relative;
+  }
 
-/**
+  /**
  * 썸네일의 객체 자리 표시 (2026.08.21).
  *
  * 내용을 그리지 않고 **어디에 뭐가 있는지**만 보여준다. 유형별로 색을 바꿔 텍스트와 도형과
  * 커스텀 객체를 구분한다 — 썸네일 크기에서 읽히는 정보는 그 정도다.
  */
-.pck-thumb-obj {
-  position: absolute;
-  box-sizing: border-box;
-  transform-origin: center;
-  border: 1px solid var(--pck-thumb-obj-stroke);
-  background: var(--pck-thumb-obj-fill);
-  /* 클릭은 썸네일 버튼이 받는다. */
-  pointer-events: none;
-}
+  .pck-thumb-obj {
+    position: absolute;
+    box-sizing: border-box;
+    transform-origin: center;
+    border: 1px solid var(--pck-thumb-obj-stroke);
+    background: var(--pck-thumb-obj-fill);
+    /* 클릭은 썸네일 버튼이 받는다. */
+    pointer-events: none;
+  }
 
-.pck-thumb-obj[data-type='custom'] {
-  border-color: var(--pck-thumb-obj-custom);
-  background: color-mix(in srgb, var(--pck-thumb-obj-custom) 22%, transparent);
-}
+  .pck-thumb-obj[data-type='custom'] {
+    border-color: var(--pck-thumb-obj-custom);
+    background: color-mix(in srgb, var(--pck-thumb-obj-custom) 22%, transparent);
+  }
 
-.pck-thumb-obj[data-type='mask'] {
-  border-style: dashed;
-}
+  .pck-thumb-obj[data-type='mask'] {
+    border-style: dashed;
+  }
 
-.pck-thumb-paper img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
+  .pck-thumb-paper img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
 
-.pck-thumb.is-active .pck-thumb-paper {
-  border-color: var(--pck-pagelist-thumb-active);
-  box-shadow: 0 0 0 1px var(--pck-pagelist-thumb-active);
-}
+  .pck-thumb.is-active .pck-thumb-paper {
+    border-color: var(--pck-pagelist-thumb-active);
+    box-shadow: 0 0 0 1px var(--pck-pagelist-thumb-active);
+  }
 
-.pck-thumb.is-active .pck-thumb-no {
-  color: var(--pck-ink);
-  font-weight: 600;
-}
+  .pck-thumb.is-active .pck-thumb-no {
+    color: var(--pck-ink);
+    font-weight: 600;
+  }
 
-.pck-thumb-no {
-  font-size: var(--pck-text-sm);
-  font-variant-numeric: tabular-nums;
-}
+  .pck-thumb-no {
+    font-size: var(--pck-text-sm);
+    font-variant-numeric: tabular-nums;
+  }
 
-.pck-pagelist-actions {
-  display: grid;
-  gap: var(--pck-space-2);
-  margin-top: var(--pck-space-3);
-}
+  .pck-pagelist-actions {
+    display: grid;
+    gap: var(--pck-space-2);
+    margin-top: var(--pck-space-3);
+  }
 
-.pck-dashed-btn {
-  background: none;
-  border: 1px dashed var(--pck-line-strong);
-  padding: 9px;
-  color: var(--pck-ink-muted);
-}
+  .pck-dashed-btn {
+    background: none;
+    border: 1px dashed var(--pck-line-strong);
+    padding: 9px;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-dashed-btn:hover {
-  color: var(--pck-ink);
-  border-color: var(--pck-ink-muted);
-}
+  .pck-dashed-btn:hover {
+    color: var(--pck-ink);
+    border-color: var(--pck-ink-muted);
+  }
 
-.pck-pagelist-rowbtns {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--pck-space-2);
-}
+  .pck-pagelist-rowbtns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--pck-space-2);
+  }
 
-.pck-pagelist-rowbtns button {
-  font: inherit;
-  font-size: var(--pck-text-sm);
-  padding: 6px 4px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius-sm);
-  cursor: pointer;
-  color: var(--pck-ink-muted);
-}
+  .pck-pagelist-rowbtns button {
+    font: inherit;
+    font-size: var(--pck-text-sm);
+    padding: 6px 4px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius-sm);
+    cursor: pointer;
+    color: var(--pck-ink-muted);
+  }
 
-/* ------------------------------------------------------------------ 중앙 --- */
+  /* ------------------------------------------------------------------ 중앙 --- */
 
-.pck-main {
-  display: flex;
-  flex-direction: column;
-  min-width: 0;
-  min-height: 0;
-}
+  .pck-main {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+  }
 
-.pck-toolbar {
-  display: flex;
-  align-items: center;
-  gap: var(--pck-space-2);
-  flex-wrap: wrap;
-  padding: var(--pck-space-3) var(--pck-space-4) 0;
-}
+  .pck-toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--pck-space-2);
+    flex-wrap: wrap;
+    padding: var(--pck-space-3) var(--pck-space-4) 0;
+  }
 
-.pck-toolbar-divider {
-  width: 1px;
-  align-self: stretch;
-  background: var(--pck-line);
-  margin: 2px var(--pck-space-1);
-}
+  .pck-toolbar-divider {
+    width: 1px;
+    align-self: stretch;
+    background: var(--pck-line);
+    margin: 2px var(--pck-space-1);
+  }
 
-.pck-tool {
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  padding: 7px 13px;
-}
+  .pck-tool {
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    padding: 7px 13px;
+  }
 
-.pck-tool:hover:not(:disabled) {
-  border-color: var(--pck-line-strong);
-}
+  .pck-tool:hover:not(:disabled) {
+    border-color: var(--pck-line-strong);
+  }
 
-.pck-tool.is-active {
-  background: var(--pck-accent);
-  border-color: var(--pck-accent);
-  color: var(--pck-accent-ink);
-}
+  .pck-tool.is-active {
+    background: var(--pck-accent);
+    border-color: var(--pck-accent);
+    color: var(--pck-accent-ink);
+  }
 
-.pck-pagemeta {
-  margin: var(--pck-space-3) 0 0 var(--pck-space-4);
-  color: var(--pck-ink-muted);
-  font-size: var(--pck-text-sm);
-}
+  .pck-pagemeta {
+    margin: var(--pck-space-3) 0 0 var(--pck-space-4);
+    color: var(--pck-ink-muted);
+    font-size: var(--pck-text-sm);
+  }
 
-.pck-pagemeta .mono {
-  font-family: var(--pck-font-mono);
-}
+  .pck-pagemeta .mono {
+    font-family: var(--pck-font-mono);
+  }
 
-/* ----------------------------------------------------------------- 스테이지 --- */
+  /* ----------------------------------------------------------------- 스테이지 --- */
 
-/* 이 래퍼가 줌 컨트롤이 스크롤에 딸려가지 않게 잡아 준다 (PLAN 6.1). */
-.pck-stage-wrap {
-  position: relative;
-  flex: 1;
-  min-height: 0;
-  margin: var(--pck-space-3) var(--pck-space-4) var(--pck-space-4);
-}
+  /* 이 래퍼가 줌 컨트롤이 스크롤에 딸려가지 않게 잡아 준다 (PLAN 6.1). */
+  .pck-stage-wrap {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    margin: var(--pck-space-3) var(--pck-space-4) var(--pck-space-4);
+  }
 
-.pck-stage {
-  position: absolute;
-  inset: 0;
-  overflow: auto;
-  background: var(--pck-stage-bg);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius);
-  outline: none;
-}
+  .pck-stage {
+    position: absolute;
+    inset: 0;
+    overflow: auto;
+    background: var(--pck-stage-bg);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius);
+    outline: none;
+  }
 
-.pck-stage.is-pan-armed {
-  cursor: grab;
-}
+  .pck-stage.is-pan-armed {
+    cursor: grab;
+  }
 
-.pck-stage.is-panning {
-  cursor: grabbing;
-}
+  .pck-stage.is-panning {
+    cursor: grabbing;
+  }
 
-/*
+  /*
  * 페이지가 스테이지보다 작으면 중앙에 둔다 — 기본 fit-page 배율에서의 일반적인 경우다.
  * 줌으로 페이지가 커지면 패딩만 남고, 그 지점부터 스크롤(과 팬)이 시작된다.
  *
@@ -434,874 +448,878 @@
  * `width: max-content` 는 확대 시 컨테이너를 넘어 커질 수 있게 하는데, 단순한 `width: 100%` 는
  * 이걸 막는다.
  */
-.pck-stage-pad {
-  min-height: 100%;
-  min-width: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--pck-stage-padding);
-  box-sizing: border-box;
-  width: max-content;
-}
+  .pck-stage-pad {
+    min-height: 100%;
+    min-width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--pck-stage-padding);
+    box-sizing: border-box;
+    width: max-content;
+  }
 
-.pck-page-frame {
-  position: relative;
-  flex: none;
-  background: var(--pck-page-bg);
-  box-shadow: var(--pck-page-shadow);
-}
+  .pck-page-frame {
+    position: relative;
+    flex: none;
+    background: var(--pck-page-bg);
+    box-shadow: var(--pck-page-shadow);
+  }
 
-/* 유일한 스케일 지점. 자식들은 pt 값을 px에 그대로 쓴다 (PLAN 5.3). */
-.pck-page {
-  position: relative;
-  overflow: hidden;
-}
+  /* 유일한 스케일 지점. 자식들은 pt 값을 px에 그대로 쓴다 (PLAN 5.3). */
+  .pck-page {
+    position: relative;
+    overflow: hidden;
+  }
 
-.pck-page-bg {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  user-select: none;
-  pointer-events: none;
-}
+  .pck-page-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    user-select: none;
+    pointer-events: none;
+  }
 
-.pck-page-bg--blank {
-  background: var(--pck-page-bg);
-}
+  .pck-page-bg--blank {
+    background: var(--pck-page-bg);
+  }
 
-/* --------------------------------------------------------- 줌 컨트롤 --- */
+  /* --------------------------------------------------------- 줌 컨트롤 --- */
 
-.pck-stage-controls {
-  position: absolute;
-  right: var(--pck-space-4);
-  bottom: var(--pck-space-4);
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  padding: 3px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius);
-  box-shadow: var(--pck-shadow);
-}
+  .pck-stage-controls {
+    position: absolute;
+    right: var(--pck-space-4);
+    bottom: var(--pck-space-4);
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 3px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius);
+    box-shadow: var(--pck-shadow);
+  }
 
-.pck-zoom-btn,
-.pck-zoom-value {
-  font: inherit;
-  background: none;
-  border: none;
-  cursor: pointer;
-  border-radius: var(--pck-radius-sm);
-  color: var(--pck-ink);
-}
+  .pck-zoom-btn,
+  .pck-zoom-value {
+    font: inherit;
+    background: none;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--pck-radius-sm);
+    color: var(--pck-ink);
+  }
 
-.pck-zoom-btn {
-  width: 28px;
-  height: 26px;
-  font-size: 15px;
-  line-height: 1;
-}
+  .pck-zoom-btn {
+    width: 28px;
+    height: 26px;
+    font-size: 15px;
+    line-height: 1;
+  }
 
-.pck-zoom-value {
-  min-width: 52px;
-  height: 26px;
-  font-variant-numeric: tabular-nums;
-  font-size: var(--pck-text-sm);
-}
+  .pck-zoom-value {
+    min-width: 52px;
+    height: 26px;
+    font-variant-numeric: tabular-nums;
+    font-size: var(--pck-text-sm);
+  }
 
-.pck-zoom-btn:hover:not(:disabled),
-.pck-zoom-value:hover {
-  background: var(--pck-surface-sunken);
-}
+  .pck-zoom-btn:hover:not(:disabled),
+  .pck-zoom-value:hover {
+    background: var(--pck-surface-sunken);
+  }
 
-.pck-menu-scrim {
-  position: fixed;
-  inset: 0;
-  background: none;
-  border: none;
-  cursor: default;
-  z-index: 1;
-}
+  .pck-menu-scrim {
+    position: fixed;
+    inset: 0;
+    background: none;
+    border: none;
+    cursor: default;
+    z-index: 1;
+  }
 
-.pck-zoom-menu {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 6px);
-  z-index: 2;
-  min-width: 132px;
-  padding: 4px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius);
-  box-shadow: var(--pck-shadow);
-  max-height: 320px;
-  overflow-y: auto;
-}
+  .pck-zoom-menu {
+    position: absolute;
+    right: 0;
+    bottom: calc(100% + 6px);
+    z-index: 2;
+    min-width: 132px;
+    padding: 4px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius);
+    box-shadow: var(--pck-shadow);
+    max-height: 320px;
+    overflow-y: auto;
+  }
 
-.pck-zoom-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: var(--pck-text-sm);
-  background: none;
-  border: none;
-  padding: 6px 10px;
-  border-radius: var(--pck-radius-sm);
-  cursor: pointer;
-  color: var(--pck-ink);
-}
+  .pck-zoom-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: var(--pck-text-sm);
+    background: none;
+    border: none;
+    padding: 6px 10px;
+    border-radius: var(--pck-radius-sm);
+    cursor: pointer;
+    color: var(--pck-ink);
+  }
 
-.pck-zoom-menu button:hover {
-  background: var(--pck-surface-sunken);
-}
+  .pck-zoom-menu button:hover {
+    background: var(--pck-surface-sunken);
+  }
 
-.pck-zoom-menu button.is-current {
-  font-weight: 600;
-}
+  .pck-zoom-menu button.is-current {
+    font-weight: 600;
+  }
 
-.pck-zoom-menu hr {
-  border: none;
-  border-top: 1px solid var(--pck-line);
-  margin: 4px 0;
-}
+  .pck-zoom-menu hr {
+    border: none;
+    border-top: 1px solid var(--pck-line);
+    margin: 4px 0;
+  }
 
-/* ------------------------------------------------------------- 인스펙터 -- */
+  /* ------------------------------------------------------------- 인스펙터 -- */
 
-.pck-inspector {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  background: var(--pck-inspector-bg);
-}
+  .pck-inspector {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: var(--pck-inspector-bg);
+  }
 
-/* ----------------------------------------------------------- 빈 상태 -- */
+  /* ----------------------------------------------------------- 빈 상태 -- */
 
-.pck-empty {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-content: center;
-  justify-items: center;
-  gap: var(--pck-space-3);
-  text-align: center;
-  background: var(--pck-stage-bg);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius);
-  /* 대각선 해칭으로 와이어프레임의 "문서 없음" 상태를 따른다. */
-  background-image: repeating-linear-gradient(45deg, transparent 0 9px, rgb(0 0 0 / 2.5%) 9px 10px);
-}
+  .pck-empty {
+    position: absolute;
+    inset: 0;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: var(--pck-space-3);
+    text-align: center;
+    background: var(--pck-stage-bg);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius);
+    /* 대각선 해칭으로 와이어프레임의 "문서 없음" 상태를 따른다. */
+    background-image: repeating-linear-gradient(
+      45deg,
+      transparent 0 9px,
+      rgb(0 0 0 / 2.5%) 9px 10px
+    );
+  }
 
-.pck-empty h2 {
-  margin: 0;
-  font-size: var(--pck-text-lg);
-}
+  .pck-empty h2 {
+    margin: 0;
+    font-size: var(--pck-text-lg);
+  }
 
-.pck-empty p {
-  margin: 0;
-  max-width: 46ch;
-  color: var(--pck-ink-muted);
-}
+  .pck-empty p {
+    margin: 0;
+    max-width: 46ch;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-empty-doc {
-  width: 78px;
-  height: 100px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  display: grid;
-  align-content: start;
-  gap: 6px;
-  padding: 14px 12px;
-}
+  .pck-empty-doc {
+    width: 78px;
+    height: 100px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    display: grid;
+    align-content: start;
+    gap: 6px;
+    padding: 14px 12px;
+  }
 
-.pck-empty-doc span {
-  height: 5px;
-  background: var(--pck-line);
-}
+  .pck-empty-doc span {
+    height: 5px;
+    background: var(--pck-line);
+  }
 
-.pck-empty-doc span:nth-child(2) {
-  width: 80%;
-}
-.pck-empty-doc span:nth-child(3) {
-  width: 55%;
-}
+  .pck-empty-doc span:nth-child(2) {
+    width: 80%;
+  }
+  .pck-empty-doc span:nth-child(3) {
+    width: 55%;
+  }
 
-/* ----------------------------------------------------------------- 모달 --- */
+  /* ----------------------------------------------------------------- 모달 --- */
 
-.pck-modal-scrim {
-  position: fixed;
-  inset: 0;
-  z-index: 40;
-  display: grid;
-  place-items: center;
-  background: rgb(0 0 0 / 32%);
-  padding: var(--pck-space-4);
-}
+  .pck-modal-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: var(--pck-modal-z);
+    display: grid;
+    place-items: center;
+    background: var(--pck-modal-scrim-bg);
+    padding: var(--pck-space-4);
+  }
 
-.pck-modal {
-  width: min(520px, 100%);
-  background: var(--pck-surface);
-  border-radius: var(--pck-radius);
-  box-shadow: 0 8px 30px rgb(0 0 0 / 18%);
-  overflow: hidden;
-}
+  .pck-modal {
+    width: min(var(--pck-modal-width), 100%);
+    background: var(--pck-modal-bg);
+    border-radius: var(--pck-modal-radius);
+    box-shadow: var(--pck-modal-shadow);
+    overflow: hidden;
+  }
 
-.pck-modal-head {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--pck-space-3) var(--pck-space-4);
-  border-bottom: 1px solid var(--pck-line);
-}
+  .pck-modal-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: var(--pck-space-3) var(--pck-space-4);
+    border-bottom: 1px solid var(--pck-line);
+  }
 
-.pck-modal-head h2 {
-  margin: 0;
-  font-size: var(--pck-text-md);
-}
+  .pck-modal-head h2 {
+    margin: 0;
+    font-size: var(--pck-text-md);
+  }
 
-.pck-tabs {
-  display: flex;
-  gap: var(--pck-space-4);
-  padding: 0 var(--pck-space-4);
-  border-bottom: 1px solid var(--pck-line);
-}
+  .pck-tabs {
+    display: flex;
+    gap: var(--pck-space-4);
+    padding: 0 var(--pck-space-4);
+    border-bottom: 1px solid var(--pck-line);
+  }
 
-.pck-tabs button {
-  font: inherit;
-  background: none;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 10px 2px;
-  cursor: pointer;
-  color: var(--pck-ink-muted);
-}
+  .pck-tabs button {
+    font: inherit;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 10px 2px;
+    cursor: pointer;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-tabs button.is-active {
-  color: var(--pck-ink);
-  border-bottom-color: var(--pck-accent);
-}
+  .pck-tabs button.is-active {
+    color: var(--pck-ink);
+    border-bottom-color: var(--pck-accent);
+  }
 
-.pck-modal-body {
-  display: grid;
-  justify-items: center;
-  gap: var(--pck-space-2);
-  padding: var(--pck-space-4) var(--pck-space-4) 28px;
-  text-align: center;
-}
+  .pck-modal-body {
+    display: grid;
+    justify-items: center;
+    gap: var(--pck-space-2);
+    padding: var(--pck-space-4) var(--pck-space-4) 28px;
+    text-align: center;
+  }
 
-.pck-upload-hint {
-  margin: 0;
-  font-weight: 600;
-}
+  .pck-upload-hint {
+    margin: 0;
+    font-weight: 600;
+  }
 
-.pck-upload-sub,
-.pck-upload-limit,
-.pck-upload-formats {
-  margin: 0;
-  color: var(--pck-ink-muted);
-  font-size: var(--pck-text-sm);
-}
+  .pck-upload-sub,
+  .pck-upload-limit,
+  .pck-upload-formats {
+    margin: 0;
+    color: var(--pck-ink-muted);
+    font-size: var(--pck-text-sm);
+  }
 
-.pck-upload-error {
-  margin: var(--pck-space-2) 0 0;
-  color: var(--pck-state-danger);
-  font-size: var(--pck-text-sm);
-}
+  .pck-upload-error {
+    margin: var(--pck-space-2) 0 0;
+    color: var(--pck-state-danger);
+    font-size: var(--pck-text-sm);
+  }
 
-.pck-progress {
-  width: 100%;
-  height: 6px;
-  background: var(--pck-surface-sunken);
-  border-radius: 3px;
-  overflow: hidden;
-}
+  .pck-progress {
+    width: 100%;
+    height: 6px;
+    background: var(--pck-surface-sunken);
+    border-radius: 3px;
+    overflow: hidden;
+  }
 
-.pck-progress > i {
-  display: block;
-  height: 100%;
-  background: var(--pck-accent);
-  transition: width 90ms linear;
-}
+  .pck-progress > i {
+    display: block;
+    height: 100%;
+    background: var(--pck-accent);
+    transition: width 90ms linear;
+  }
 
-/* ------------------------------------------------------------------ 객체 --- */
+  /* ------------------------------------------------------------------ 객체 --- */
 
-/*
+  /*
  * 객체는 pt 값을 px로 그대로 받는다. 배율은 부모 .pck-page 의 transform이 처리한다 (PLAN 5.3).
  */
-.pck-obj {
-  position: absolute;
-  box-sizing: border-box;
-}
+  .pck-obj {
+    position: absolute;
+    box-sizing: border-box;
+  }
 
-/* 도구가 활성일 때는 객체가 포인터를 먹지 않아야 새 영역을 그릴 수 있다. */
-.pck-stage.is-tool-active .pck-obj {
-  pointer-events: none;
-}
+  /* 도구가 활성일 때는 객체가 포인터를 먹지 않아야 새 영역을 그릴 수 있다. */
+  .pck-stage.is-tool-active .pck-obj {
+    pointer-events: none;
+  }
 
-.pck-obj-text {
-  width: 100%;
-  height: 100%;
-  overflow: hidden;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
+  .pck-obj-text {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
 
-.pck-obj-shape {
-  display: block;
-  overflow: visible;
-}
+  .pck-obj-shape {
+    display: block;
+    overflow: visible;
+  }
 
-.pck-obj-mask {
-  width: 100%;
-  height: 100%;
-}
+  .pck-obj-mask {
+    width: 100%;
+    height: 100%;
+  }
 
-/* ---- Answer Box (편집기 표시) ---------------------------------------- */
+  /* ---- Answer Box (편집기 표시) ---------------------------------------- */
 
-/*
+  /*
  * 편집기에서는 실제 input/select를 쓰지 않는다. 클릭이 객체 선택으로 가야 하기 때문이다.
  * 학생용 뷰어에서 진짜 폼 요소가 된다 (M10).
  */
 
-/* 내보내기를 막는 객체는 테두리로도 알려 준다 (기획 6.3). */
-.pck-obj.is-invalid .pck-obj-custom {
-  border-color: var(--pck-invalid-stroke);
-  box-shadow: 0 0 0 1px var(--pck-invalid-stroke);
-}
+  /* 내보내기를 막는 객체는 테두리로도 알려 준다 (기획 6.3). */
+  .pck-obj.is-invalid .pck-obj-custom {
+    border-color: var(--pck-invalid-stroke);
+    box-shadow: 0 0 0 1px var(--pck-invalid-stroke);
+  }
 
-/* -------------------------------------------------------------- 오버레이 --- */
+  /* -------------------------------------------------------------- 오버레이 --- */
 
-/*
+  /*
  * 배율 transform 밖에 그려서 선 두께와 핸들 크기를 배율과 무관하게 유지한다 (PLAN D5).
  */
-.pck-overlay {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+  .pck-overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
 
-.pck-select-box {
-  position: absolute;
-  border: 1px solid var(--pck-select-stroke);
-  box-sizing: border-box;
-}
+  .pck-select-box {
+    position: absolute;
+    border: 1px solid var(--pck-select-stroke);
+    box-sizing: border-box;
+  }
 
-.pck-marquee {
-  position: absolute;
-  box-sizing: border-box;
-  border: 1px dashed var(--pck-select-stroke);
-  background: var(--pck-select-fill);
-}
+  .pck-marquee {
+    position: absolute;
+    box-sizing: border-box;
+    border: 1px dashed var(--pck-select-stroke);
+    background: var(--pck-select-fill);
+  }
 
-.pck-marquee.is-create {
-  border-style: solid;
-}
+  .pck-marquee.is-create {
+    border-style: solid;
+  }
 
-/* 핸들만 포인터를 받는다. 오버레이 자체는 클릭을 통과시켜야 한다. */
-.pck-handle {
-  position: absolute;
-  pointer-events: auto;
-  padding: 0;
-  border: 1px solid var(--pck-handle-stroke);
-  background: var(--pck-handle-bg);
-  border-radius: 1px;
-  box-sizing: content-box;
-  /* 앵커 지점을 핸들 중앙에 맞춘다. */
-  transform: translate(-50%, -50%);
-  background-clip: content-box;
-}
+  /* 핸들만 포인터를 받는다. 오버레이 자체는 클릭을 통과시켜야 한다. */
+  .pck-handle {
+    position: absolute;
+    pointer-events: auto;
+    padding: 0;
+    border: 1px solid var(--pck-handle-stroke);
+    background: var(--pck-handle-bg);
+    border-radius: 1px;
+    box-sizing: content-box;
+    /* 앵커 지점을 핸들 중앙에 맞춘다. */
+    transform: translate(-50%, -50%);
+    background-clip: content-box;
+  }
 
-.pck-tool-error {
-  position: absolute;
-  left: var(--pck-space-4);
-  bottom: var(--pck-space-4);
-  margin: 0;
-  z-index: 3;
-  padding: 6px 12px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-state-danger);
-  border-radius: var(--pck-radius-sm);
-  color: var(--pck-state-danger);
-  font-size: var(--pck-text-sm);
-  max-width: 60%;
-}
+  .pck-tool-error {
+    position: absolute;
+    left: var(--pck-space-4);
+    bottom: var(--pck-space-4);
+    margin: 0;
+    z-index: 3;
+    padding: 6px 12px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-state-danger);
+    border-radius: var(--pck-radius-sm);
+    color: var(--pck-state-danger);
+    font-size: var(--pck-text-sm);
+    max-width: 60%;
+  }
 
-.pck-stage.is-tool-active {
-  cursor: crosshair;
-}
+  .pck-stage.is-tool-active {
+    cursor: crosshair;
+  }
 
-/* ------------------------------------------------------------- 인스펙터 폼 --- */
+  /* ------------------------------------------------------------- 인스펙터 폼 --- */
 
-.pck-inspector-body {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: var(--pck-space-3);
-  display: grid;
-  gap: var(--pck-space-3);
-  align-content: start;
-}
+  .pck-inspector-body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--pck-space-3);
+    display: grid;
+    gap: var(--pck-space-3);
+    align-content: start;
+  }
 
-.pck-panel-section {
-  display: grid;
-  gap: var(--pck-space-2);
-}
+  .pck-panel-section {
+    display: grid;
+    gap: var(--pck-space-2);
+  }
 
-.pck-panel-section + .pck-panel-section {
-  padding-top: var(--pck-space-3);
-  border-top: 1px solid var(--pck-line);
-}
+  .pck-panel-section + .pck-panel-section {
+    padding-top: var(--pck-space-3);
+    border-top: 1px solid var(--pck-line);
+  }
 
-.pck-field {
-  display: grid;
-  gap: 4px;
-}
+  .pck-field {
+    display: grid;
+    gap: 4px;
+  }
 
-/*
+  /*
  * 한 줄에 늘어놓는 필드. 체크박스 + 라벨 + 보조 입력 조합에 쓴다.
  * `grid-auto-flow: column` 은 열 폭을 콘텐트에 맞추므로 색 선택기가 눌리지 않는다.
  */
-.pck-field--inline {
-  display: flex;
-  flex-flow: row nowrap;
-  justify-content: flex-start;
-  align-items: center;
-  gap: var(--pck-space-2);
-}
+  .pck-field--inline {
+    display: flex;
+    flex-flow: row nowrap;
+    justify-content: flex-start;
+    align-items: center;
+    gap: var(--pck-space-2);
+  }
 
-.pck-field-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--pck-space-2);
-}
+  .pck-field-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--pck-space-2);
+  }
 
-.pck-field-label {
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--pck-ink-muted);
-  margin: 0;
-  font-weight: 500;
-}
+  .pck-field-label {
+    font-size: 10px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--pck-ink-muted);
+    margin: 0;
+    font-weight: 500;
+  }
 
-.pck-input {
-  font: inherit;
-  font-size: var(--pck-text-sm);
-  width: 100%;
-  min-width: 0;
-  padding: 6px 8px;
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius-sm);
-  background: var(--pck-surface);
-  color: var(--pck-ink);
-  box-sizing: border-box;
-}
+  .pck-input {
+    font: inherit;
+    font-size: var(--pck-text-sm);
+    width: 100%;
+    min-width: 0;
+    padding: var(--pck-input-padding);
+    border: 1px solid var(--pck-input-border);
+    border-radius: var(--pck-input-radius);
+    background: var(--pck-input-bg);
+    color: var(--pck-input-ink);
+    box-sizing: border-box;
+  }
 
-.pck-input:focus-visible {
-  outline: 2px solid var(--pck-select-stroke);
-  outline-offset: -1px;
-}
+  .pck-input:focus-visible {
+    outline: 2px solid var(--pck-select-stroke);
+    outline-offset: -1px;
+  }
 
-/* 검증에 걸린 입력은 테두리로 알려 준다. 문구는 필드 아래에 따로 붙는다. */
-.pck-input[aria-invalid='true'] {
-  border-color: var(--pck-state-danger);
-}
+  /* 검증에 걸린 입력은 테두리로 알려 준다. 문구는 필드 아래에 따로 붙는다. */
+  .pck-input[aria-invalid='true'] {
+    border-color: var(--pck-state-danger);
+  }
 
-.pck-input--num {
-  width: 100%;
-}
+  .pck-input--num {
+    width: 100%;
+  }
 
-/*
+  /*
  * 색 선택기.
  *
  * `.pck-input` 의 `width: 100%` 를 그대로 쓰면 flex 행(`.pck-field--inline`) 안에서 폭이 무너져
  * 세로 막대처럼 보인다 — 실제로 그 증상을 겪었다. 고정 폭과 `flex: none` 으로 못 박는다.
  */
-.pck-input--color {
-  width: 48px;
-  min-width: 48px;
-  flex: none;
-  padding: 2px;
-  height: 28px;
-  cursor: pointer;
-}
+  .pck-input--color {
+    width: 48px;
+    min-width: 48px;
+    flex: none;
+    padding: 2px;
+    height: 28px;
+    cursor: pointer;
+  }
 
-/* 그리드 셀(테두리 색 등)에서는 셀 폭을 채우는 편이 자연스럽다. */
-.pck-field-grid .pck-input--color {
-  width: 100%;
-  min-width: 0;
-}
+  /* 그리드 셀(테두리 색 등)에서는 셀 폭을 채우는 편이 자연스럽다. */
+  .pck-field-grid .pck-input--color {
+    width: 100%;
+    min-width: 0;
+  }
 
-.pck-textarea {
-  resize: vertical;
-  line-height: 1.5;
-  font-family: inherit;
-}
+  .pck-textarea {
+    resize: vertical;
+    line-height: 1.5;
+    font-family: inherit;
+  }
 
-.pck-row {
-  display: grid;
-  grid-template-columns: auto 1fr auto;
-  align-items: center;
-  gap: 6px;
-}
+  .pck-row {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 6px;
+  }
 
-/* 체크박스가 없는 행(단답형)에서도 열이 어긋나지 않게 한다. */
-.pck-row > .pck-input:first-child {
-  grid-column: 1 / 3;
-}
+  /* 체크박스가 없는 행(단답형)에서도 열이 어긋나지 않게 한다. */
+  .pck-row > .pck-input:first-child {
+    grid-column: 1 / 3;
+  }
 
-/* ---- 확인 모달 · 컨텍스트 메뉴 ---------------------------------------- */
+  /* ---- 확인 모달 · 컨텍스트 메뉴 ---------------------------------------- */
 
-.pck-modal--confirm {
-  width: min(400px, 100%);
-  padding: var(--pck-space-4);
-}
+  .pck-modal--confirm {
+    width: min(400px, 100%);
+    padding: var(--pck-space-4);
+  }
 
-.pck-confirm-message {
-  margin: 0 0 var(--pck-space-4);
-  line-height: 1.6;
-}
+  .pck-confirm-message {
+    margin: 0 0 var(--pck-space-4);
+    line-height: 1.6;
+  }
 
-.pck-confirm-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: var(--pck-space-2);
-}
+  .pck-confirm-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--pck-space-2);
+  }
 
-.pck-primary-btn.is-danger {
-  background: var(--pck-state-danger);
-  border-color: var(--pck-state-danger);
-}
+  .pck-primary-btn.is-danger {
+    background: var(--pck-state-danger);
+    border-color: var(--pck-state-danger);
+  }
 
-.pck-context-menu {
-  position: fixed;
-  z-index: 50;
-  padding: 4px;
-  background: var(--pck-surface);
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius);
-  box-shadow: var(--pck-shadow);
-}
+  .pck-context-menu {
+    position: fixed;
+    z-index: 50;
+    padding: 4px;
+    background: var(--pck-surface);
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius);
+    box-shadow: var(--pck-shadow);
+  }
 
-.pck-context-menu button {
-  display: block;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  font-size: var(--pck-text-sm);
-  background: none;
-  border: none;
-  padding: 7px 10px;
-  border-radius: var(--pck-radius-sm);
-  cursor: pointer;
-  color: var(--pck-ink);
-}
+  .pck-context-menu button {
+    display: block;
+    width: 100%;
+    text-align: left;
+    font: inherit;
+    font-size: var(--pck-text-sm);
+    background: none;
+    border: none;
+    padding: 7px 10px;
+    border-radius: var(--pck-radius-sm);
+    cursor: pointer;
+    color: var(--pck-ink);
+  }
 
-.pck-context-menu button:hover:not(:disabled) {
-  background: var(--pck-surface-sunken);
-}
+  .pck-context-menu button:hover:not(:disabled) {
+    background: var(--pck-surface-sunken);
+  }
 
-.pck-context-menu button:disabled {
-  opacity: 0.4;
-  cursor: default;
-}
+  .pck-context-menu button:disabled {
+    opacity: 0.4;
+    cursor: default;
+  }
 
-.pck-context-menu button.is-danger:not(:disabled) {
-  color: var(--pck-state-danger);
-}
+  .pck-context-menu button.is-danger:not(:disabled) {
+    color: var(--pck-state-danger);
+  }
 
-.pck-context-menu hr {
-  border: none;
-  border-top: 1px solid var(--pck-line);
-  margin: 4px 0;
-}
+  .pck-context-menu hr {
+    border: none;
+    border-top: 1px solid var(--pck-line);
+    margin: 4px 0;
+  }
 
-.pck-row-btn {
-  font: inherit;
-  width: 22px;
-  height: 22px;
-  display: grid;
-  place-items: center;
-  background: none;
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius-sm);
-  color: var(--pck-ink-muted);
-  cursor: pointer;
-}
+  .pck-row-btn {
+    font: inherit;
+    width: 22px;
+    height: 22px;
+    display: grid;
+    place-items: center;
+    background: none;
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius-sm);
+    color: var(--pck-ink-muted);
+    cursor: pointer;
+  }
 
-.pck-row-btn:hover:not(:disabled) {
-  color: var(--pck-state-danger);
-  border-color: currentcolor;
-}
+  .pck-row-btn:hover:not(:disabled) {
+    color: var(--pck-state-danger);
+    border-color: currentcolor;
+  }
 
-.pck-row-btn:disabled {
-  opacity: 0.35;
-  cursor: default;
-}
+  .pck-row-btn:disabled {
+    opacity: 0.35;
+    cursor: default;
+  }
 
-.pck-check {
-  width: 15px;
-  height: 15px;
-  flex: none;
-  accent-color: var(--pck-accent);
-  cursor: pointer;
-  margin: 0;
-}
+  .pck-check {
+    width: 15px;
+    height: 15px;
+    flex: none;
+    accent-color: var(--pck-accent);
+    cursor: pointer;
+    margin: 0;
+  }
 
-.pck-dashed-btn--sm {
-  padding: 6px;
-  font-size: var(--pck-text-sm);
-}
+  .pck-dashed-btn--sm {
+    padding: 6px;
+    font-size: var(--pck-text-sm);
+  }
 
-.pck-field-error {
-  margin: 0;
-  color: var(--pck-state-danger);
-  font-size: var(--pck-text-sm);
-  line-height: 1.4;
-}
+  .pck-field-error {
+    margin: 0;
+    color: var(--pck-state-danger);
+    font-size: var(--pck-text-sm);
+    line-height: 1.4;
+  }
 
-.pck-field-note {
-  margin: 0;
-  color: var(--pck-ink-muted);
-  font-size: 11px;
-  line-height: 1.4;
-}
+  .pck-field-note {
+    margin: 0;
+    color: var(--pck-ink-muted);
+    font-size: 11px;
+    line-height: 1.4;
+  }
 
-.pck-field-note--inline {
-  align-self: center;
-}
+  .pck-field-note--inline {
+    align-self: center;
+  }
 
-.pck-segmented {
-  display: inline-flex;
-  border: 1px solid var(--pck-line);
-  border-radius: var(--pck-radius-sm);
-  overflow: hidden;
-}
+  .pck-segmented {
+    display: inline-flex;
+    border: 1px solid var(--pck-line);
+    border-radius: var(--pck-radius-sm);
+    overflow: hidden;
+  }
 
-.pck-segmented button {
-  font: inherit;
-  min-width: 32px;
-  padding: 5px 0;
-  background: var(--pck-surface);
-  border: none;
-  border-right: 1px solid var(--pck-line);
-  cursor: pointer;
-  color: var(--pck-ink-muted);
-}
+  .pck-segmented button {
+    font: inherit;
+    min-width: 32px;
+    padding: 5px 0;
+    background: var(--pck-surface);
+    border: none;
+    border-right: 1px solid var(--pck-line);
+    cursor: pointer;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-segmented button:last-child {
-  border-right: none;
-}
+  .pck-segmented button:last-child {
+    border-right: none;
+  }
 
-.pck-segmented button.is-active {
-  background: var(--pck-accent);
-  color: var(--pck-accent-ink);
-}
+  .pck-segmented button.is-active {
+    background: var(--pck-accent);
+    color: var(--pck-accent-ink);
+  }
 
-.pck-inspector-delete {
-  justify-self: start;
-  margin-top: var(--pck-space-2);
-  color: var(--pck-state-danger);
-  border-color: var(--pck-state-danger);
-}
+  .pck-inspector-delete {
+    justify-self: start;
+    margin-top: var(--pck-space-2);
+    color: var(--pck-state-danger);
+    border-color: var(--pck-state-danger);
+  }
 
-/* ---- 텍스트 인라인 편집 (M6) ------------------------------------------ */
+  /* ---- 텍스트 인라인 편집 (M6) ------------------------------------------ */
 
-.pck-obj-text {
-  outline: none;
-}
+  .pck-obj-text {
+    outline: none;
+  }
 
-.pck-obj-text.is-editing {
-  /* 편집 중임을 알리는 최소한의 표시. 배율 밖 오버레이가 아니라 여기 있어도 되는 이유는
+  .pck-obj-text.is-editing {
+    /* 편집 중임을 알리는 최소한의 표시. 배율 밖 오버레이가 아니라 여기 있어도 되는 이유는
      테두리 두께가 배율과 함께 커져도 읽는 데 방해가 되지 않기 때문이다. */
-  box-shadow: 0 0 0 1px var(--pck-select-stroke);
-  cursor: text;
-}
+    box-shadow: 0 0 0 1px var(--pck-select-stroke);
+    cursor: text;
+  }
 
-/* 빈 텍스트 객체는 아무것도 그려지지 않아 클릭할 수 없다. 옅은 자리 표시를 둔다. */
-.pck-obj.is-text .pck-obj-text:empty::before {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: rgb(0 0 0 / 3%);
-  outline: 1px dashed var(--pck-line-strong);
-  outline-offset: -1px;
-}
+  /* 빈 텍스트 객체는 아무것도 그려지지 않아 클릭할 수 없다. 옅은 자리 표시를 둔다. */
+  .pck-obj.is-text .pck-obj-text:empty::before {
+    content: '';
+    display: block;
+    width: 100%;
+    height: 100%;
+    background: rgb(0 0 0 / 3%);
+    outline: 1px dashed var(--pck-line-strong);
+    outline-offset: -1px;
+  }
 
-.pck-obj.is-editing {
-  /* 편집 중에는 도구 활성 상태여도 포인터를 받아야 한다. */
-  pointer-events: auto !important;
-}
+  .pck-obj.is-editing {
+    /* 편집 중에는 도구 활성 상태여도 포인터를 받아야 한다. */
+    pointer-events: auto !important;
+  }
 
-/* ---- 회전 핸들 -------------------------------------------------------- */
+  /* ---- 회전 핸들 -------------------------------------------------------- */
 
-.pck-handle--rotate {
-  border-radius: 50%;
-  cursor: grab;
-  border-color: var(--pck-select-stroke);
-}
+  .pck-handle--rotate {
+    border-radius: 50%;
+    cursor: grab;
+    border-color: var(--pck-select-stroke);
+  }
 
-.pck-handle--rotate:active {
-  cursor: grabbing;
-}
+  .pck-handle--rotate:active {
+    cursor: grabbing;
+  }
 
-/* ---- 내보내기 팝업 (옵션 컴포넌트) ------------------------------------ */
+  /* ---- 내보내기 팝업 (옵션 컴포넌트) ------------------------------------ */
 
-.pck-modal-body--form {
-  justify-items: stretch;
-  text-align: left;
-  gap: var(--pck-space-3);
-}
+  .pck-modal-body--form {
+    justify-items: stretch;
+    text-align: left;
+    gap: var(--pck-space-3);
+  }
 
-.pck-fieldset {
-  border: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  gap: 6px;
-}
+  .pck-fieldset {
+    border: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 6px;
+  }
 
-.pck-fieldset legend {
-  padding: 0;
-}
+  .pck-fieldset legend {
+    padding: 0;
+  }
 
-.pck-export-submit {
-  justify-self: stretch;
-  margin-top: var(--pck-space-2);
-}
+  .pck-export-submit {
+    justify-self: stretch;
+    margin-top: var(--pck-space-2);
+  }
 
-.pck-export-qr {
-  justify-self: center;
-  width: 148px;
-  height: 148px;
-  border: 1px solid var(--pck-line);
-  background: #fff;
-}
+  .pck-export-qr {
+    justify-self: center;
+    width: 148px;
+    height: 148px;
+    border: 1px solid var(--pck-line);
+    background: #fff;
+  }
 
-/* ---- 문항 번호 (PLAN Q9) ---------------------------------------------- */
+  /* ---- 문항 번호 (PLAN Q9) ---------------------------------------------- */
 
-/*
+  /*
  * 문서에 저장되지 않는 파생값이다. 위치에서 계산되므로 객체를 옮기면 번호도 따라 바뀐다.
  */
 
-/* ---- 페이지 드래그 순서 변경 ------------------------------------------ */
+  /* ---- 페이지 드래그 순서 변경 ------------------------------------------ */
 
-.pck-thumb-item {
-  position: relative;
-}
+  .pck-thumb-item {
+    position: relative;
+  }
 
-.pck-thumb-item.is-dragging {
-  opacity: 0.4;
-}
+  .pck-thumb-item.is-dragging {
+    opacity: 0.4;
+  }
 
-/*
+  /*
  * 삽입 표시선. 항목 사이 간격(gap) 안에 그리므로 레이아웃을 밀지 않는다.
  * 레이아웃이 밀리면 드래그 중 삽입 위치 판정이 흔들린다.
  */
-.pck-thumb-item.is-drop-before::before,
-.pck-thumb-item.is-drop-after::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--pck-select-stroke);
-  border-radius: 1px;
-}
+  .pck-thumb-item.is-drop-before::before,
+  .pck-thumb-item.is-drop-after::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: var(--pck-select-stroke);
+    border-radius: 1px;
+  }
 
-.pck-thumb-item.is-drop-before::before {
-  top: calc(var(--pck-space-3) / -2 - 1px);
-}
+  .pck-thumb-item.is-drop-before::before {
+    top: calc(var(--pck-space-3) / -2 - 1px);
+  }
 
-.pck-thumb-item.is-drop-after::after {
-  bottom: calc(var(--pck-space-3) / -2 - 1px);
-}
+  .pck-thumb-item.is-drop-after::after {
+    bottom: calc(var(--pck-space-3) / -2 - 1px);
+  }
 
-.pck-thumb {
-  /* 드래그 중 브라우저 기본 이미지 드래그가 끼어들지 않게 한다. */
-  touch-action: none;
-}
+  .pck-thumb {
+    /* 드래그 중 브라우저 기본 이미지 드래그가 끼어들지 않게 한다. */
+    touch-action: none;
+  }
 
-/* 회전 래퍼. 핸들 위치만 회전시키고 핸들 자신은 역회전한다 (ResizeHandles.vue). */
-.pck-handle-group {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
+  /* 회전 래퍼. 핸들 위치만 회전시키고 핸들 자신은 역회전한다 (ResizeHandles.vue). */
+  .pck-handle-group {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
 
-/*
+  /*
  * 텍스트 객체의 테두리.
  *
  * 교사가 테두리 색을 지정하면 `boxStyleToCss` 가 `border-style: solid` 를 함께 내보낸다.
  * 여기서는 두께 기본값만 잡아 둔다 — 색만 고르고 두께를 건드리지 않는 경우가 흔하다.
  */
-.pck-obj-text {
-  border: 0 solid transparent;
-  box-sizing: border-box;
-}
+  .pck-obj-text {
+    border: 0 solid transparent;
+    box-sizing: border-box;
+  }
 
-.pck-obj-text:not([style*='border-width']) {
-  border-width: 1px;
-}
+  .pck-obj-text:not([style*='border-width']) {
+    border-width: 1px;
+  }
 
-/* ---- 박스 색 편집 패널 (PLAN 18.8) ----------------------------------- */
+  /* ---- 박스 색 편집 패널 (PLAN 18.8) ----------------------------------- */
 
-/* 체크박스 + 라벨 + 색 선택기가 한 줄에 들어간다. 라벨 폭을 고정해 열이 맞는다. */
-.pck-style-label {
-  flex: none;
-  min-width: 52px;
-  font-size: var(--pck-text-sm);
-  color: var(--pck-ink-muted);
-}
+  /* 체크박스 + 라벨 + 색 선택기가 한 줄에 들어간다. 라벨 폭을 고정해 열이 맞는다. */
+  .pck-style-label {
+    flex: none;
+    min-width: 52px;
+    font-size: var(--pck-text-sm);
+    color: var(--pck-ink-muted);
+  }
 
-.pck-input--narrow {
-  width: 52px;
-  min-width: 52px;
-  flex: none;
-}
+  .pck-input--narrow {
+    width: 52px;
+    min-width: 52px;
+    flex: none;
+  }
 
-.pck-chip {
-  font: inherit;
-  font-size: 11px;
-  flex: none;
-  padding: 4px 9px;
-  background: none;
-  border: 1px solid var(--pck-line);
-  border-radius: 999px;
-  cursor: pointer;
-  color: var(--pck-ink-muted);
-}
+  .pck-chip {
+    font: inherit;
+    font-size: 11px;
+    flex: none;
+    padding: 4px 9px;
+    background: none;
+    border: 1px solid var(--pck-line);
+    border-radius: 999px;
+    cursor: pointer;
+    color: var(--pck-ink-muted);
+  }
 
-.pck-chip:hover {
-  border-color: var(--pck-line-strong);
-}
+  .pck-chip:hover {
+    border-color: var(--pck-line-strong);
+  }
 
-.pck-chip.is-active {
-  background: var(--pck-accent);
-  border-color: var(--pck-accent);
-  color: var(--pck-accent-ink);
-}
+  .pck-chip.is-active {
+    background: var(--pck-accent);
+    border-color: var(--pck-accent);
+    color: var(--pck-accent-ink);
+  }
 
-/* ------------------------------------------------- 커스텀 객체 (D25) --- */
+  /* ------------------------------------------------- 커스텀 객체 (D25) --- */
 
-/**
+  /**
  * 기본 틀. 배경·테두리는 인라인 스타일(`BoxStyle`)이 덮고, 미지정이면 아래 토큰이 살아 있다.
  */
-.pck-obj-custom {
-  width: 100%;
-  height: 100%;
-  background: var(--pck-custom-bg);
-  border: 1px solid var(--pck-custom-border);
-  border-radius: var(--pck-radius-sm);
-  color: var(--pck-custom-ink);
-  /* 넘치는 콘텐츠를 자른다. 크기 격리는 위 `container-type: size` 가 담당한다. */
-  overflow: hidden;
-}
+  .pck-obj-custom {
+    width: 100%;
+    height: 100%;
+    background: var(--pck-custom-bg);
+    border: 1px solid var(--pck-custom-border);
+    border-radius: var(--pck-radius-sm);
+    color: var(--pck-custom-ink);
+    /* 넘치는 콘텐츠를 자른다. 크기 격리는 위 `container-type: size` 가 담당한다. */
+    overflow: hidden;
+  }
 
-/**
+  /**
  * 콘텐츠 컨테이너 — **소비자 컴포넌트가 갇히는 박스** (PLAN D25).
  *
  * ★ 포인터 이벤트를 받지 않는다. 클릭이 **객체 선택·드래그**로 가야 하기 때문이다.
@@ -1325,35 +1343,35 @@
  * 쿼리가 보는 값은 **pt 박스 크기**다(배율이 아니다). 그래서 확대·축소해도 레이아웃이 흔들리지
  * 않고, 핸들로 크기를 바꿀 때만 반응한다 — 사용자가 원한 "viewport 조작하듯이" 가 이것이다.
  */
-.pck-obj-custom-content {
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  container-type: size;
-  container-name: pck-object;
-}
+  .pck-obj-custom-content {
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    container-type: size;
+    container-name: pck-object;
+  }
 
-/**
+  /**
  * 등록되지 않은 `kind`.
  *
  * 객체를 버리지 않고 자리를 지킨다 — 버리면 저장할 때 데이터가 사라진다.
  */
-.pck-obj-custom--unknown {
-  display: grid;
-  place-items: center;
-  border-style: dashed;
-  border-color: var(--pck-state-danger);
-  background: color-mix(in srgb, var(--pck-state-danger) 8%, transparent);
-}
+  .pck-obj-custom--unknown {
+    display: grid;
+    place-items: center;
+    border-style: dashed;
+    border-color: var(--pck-state-danger);
+    background: color-mix(in srgb, var(--pck-state-danger) 8%, transparent);
+  }
 
-.pck-obj-custom-unknown-mark {
-  color: var(--pck-state-danger);
-  font-weight: 700;
-}
+  .pck-obj-custom-unknown-mark {
+    color: var(--pck-state-danger);
+    font-weight: 700;
+  }
 
-/* ============================================================ 뷰어 (R11) == */
+  /* ============================================================ 뷰어 (R11) == */
 
-/**
+  /**
  * 뷰어 스크롤 컨테이너.
  *
  * 편집기와 달리 **모든 페이지를 세로로 잇는다** (PLAN D15). 배율은 사용자가 조작하지 않고
@@ -1362,52 +1380,52 @@
  *
  * `height: 100%` 다. 호스트가 컨테이너에 높이를 줘야 한다 (ARCHITECTURE §15.4).
  */
-.pck-viewer {
-  height: 100%;
-  overflow-y: auto;
-  overflow-x: hidden;
-  background: var(--pck-stage-bg);
-  /* 모바일에서 관성 스크롤. 학생이 긴 문서를 훑는 화면이다. */
-  -webkit-overflow-scrolling: touch;
-}
+  .pck-viewer {
+    height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: var(--pck-stage-bg);
+    /* 모바일에서 관성 스크롤. 학생이 긴 문서를 훑는 화면이다. */
+    -webkit-overflow-scrolling: touch;
+  }
 
-/**
+  /**
  * 폭 측정자 (`ResizeObserver` 대상).
  *
  * 스크롤 컨테이너 자신을 관측하면 피드백 루프가 생긴다 — 배율↑ → 높이↑ → 세로 스크롤바 →
  * 콘텐츠 폭↓ → 재발화. 그래서 스크롤바 **안쪽** 폭을 갖는 빈 블록을 관측한다.
  */
-.pck-viewer-meter {
-  height: 0;
-  /* 흐름에 참여해야 폭을 받는다. display:none 이면 0 이 된다. */
-  display: block;
-}
+  .pck-viewer-meter {
+    height: 0;
+    /* 흐름에 참여해야 폭을 받는다. display:none 이면 0 이 된다. */
+    display: block;
+  }
 
-/**
+  /**
  * 뷰어의 빈 상태.
  *
  * 편집기의 `.pck-empty` 는 `position: absolute; inset: 0` 인데 여기는 흐름에 둔다 —
  * 뷰어는 스크롤 컨테이너라 absolute 로 두면 스크롤 높이가 0 이 되어 중앙 정렬이 깨진다.
  */
-.pck-viewer-empty {
-  display: grid;
-  place-items: center;
-  min-height: 100%;
-  padding: 32px;
-  color: var(--pck-ink-muted);
-  font-size: var(--pck-text-sm);
-  text-align: center;
-}
+  .pck-viewer-empty {
+    display: grid;
+    place-items: center;
+    min-height: 100%;
+    padding: 32px;
+    color: var(--pck-ink-muted);
+    font-size: var(--pck-text-sm);
+    text-align: center;
+  }
 
-.pck-viewer-pages {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* 페이지 경계가 보이도록 간격을 준다. 편집기는 한 페이지뿐이라 이 규칙이 없다. */
-  gap: var(--pck-viewer-page-gap);
-}
+  .pck-viewer-pages {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* 페이지 경계가 보이도록 간격을 준다. 편집기는 한 페이지뿐이라 이 규칙이 없다. */
+    gap: var(--pck-viewer-page-gap);
+  }
 
-/**
+  /**
  * 뷰어의 객체.
  *
  * 편집기의 `.pck-obj` 와 좌표 규칙이 같다 — pt 를 px 로 그대로 쓰고 배율은 부모 페이지의
@@ -1415,45 +1433,46 @@
  *
  * 기본은 이벤트를 받지 않는다. 응답 폼(`.pck-viewer-custom-content`)만 되받는다.
  */
-.pck-viewer-obj {
-  position: absolute;
-  pointer-events: none;
-}
+  .pck-viewer-obj {
+    position: absolute;
+    pointer-events: none;
+  }
 
-.pck-viewer-custom {
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  background: var(--pck-obj-fill);
-  border: 1px solid var(--pck-obj-stroke);
-  color: var(--pck-obj-text);
-  overflow: hidden;
-  /*
+  .pck-viewer-custom {
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    background: var(--pck-obj-fill);
+    border: 1px solid var(--pck-obj-stroke);
+    color: var(--pck-obj-text);
+    overflow: hidden;
+    /*
    * 크기 컨테인먼트. 안쪽 콘텐츠가 틀을 넘지 못하고, 컨테이너 쿼리로 pt 박스 크기에 반응할
    * 수 있다 — 편집기의 `.pck-obj-custom` 과 같은 계약이다.
    */
-  container-type: size;
-  container-name: pck-object;
-}
+    container-type: size;
+    container-name: pck-object;
+  }
 
-/**
+  /**
  * 응답 폼 컨테이너. **포인터 이벤트를 받는다** — 편집기와 반대다 (PLAN D29).
  *
  * 뷰어에는 드래그가 없으므로 프레임이 이벤트를 먹을 이유가 없다. 인라인 스타일로도 주는데
  * (`viewerObject.ts`), 이 정책이 뷰어의 계약이라 스타일시트 오버라이드로 폼이 죽으면 안 된다.
  */
-.pck-viewer-custom-content {
-  width: 100%;
-  height: 100%;
-  pointer-events: auto;
-}
+  .pck-viewer-custom-content {
+    width: 100%;
+    height: 100%;
+    pointer-events: auto;
+  }
 
-/**
+  /**
  * 등록되지 않은 `kind`.
  *
  * 편집기와 달리 안내를 띄우지 않는다 — 학생이 할 수 있는 일이 없다. 자리만 비워 둔다.
  */
-.pck-viewer-custom--unknown {
-  border-style: dashed;
-  opacity: 0.4;
+  .pck-viewer-custom--unknown {
+    border-style: dashed;
+    opacity: 0.4;
+  }
 }

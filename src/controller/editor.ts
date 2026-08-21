@@ -135,6 +135,56 @@ export interface EditorProps {
   onMountCustom?: (objectId: string, el: HTMLElement | null) => void
   /** 커스텀 객체의 인스펙터 컨테이너. 위와 같은 규칙. */
   onMountInspector?: (objectId: string, el: HTMLElement | null) => void
+
+  /* ------------------------------------------- 다이얼로그 위임 (PLAN D31) -- */
+
+  /**
+   * 문서 불러오기가 필요할 때 (R12).
+   *
+   * **주면 내장 업로드 팝업을 띄우지 않는다.** 호스트가 자기 다이얼로그를 열고, 파일을 고른 뒤
+   * `handle.importFile(file)` 을 부른다. 진행률·오류는 `onImportStateChange` 로 받는다.
+   *
+   * 호스트 앱에는 이미 자기 디자인 시스템 모달이 있고, 우리 팝업만 다르게 생긴 것이 가장
+   * 불편한 지점이었다 — 팝업 하나 때문에 슬롯 배선 전체를 만들 이유는 없다.
+   *
+   * ```ts
+   * onRequestUpload: () => setUploadOpen(true)
+   * // 호스트 다이얼로그에서: await handle.importFile(file)
+   * ```
+   */
+  onRequestUpload?: () => void
+  /**
+   * 되돌릴 수 없는 동작에 확인이 필요할 때 (R12).
+   *
+   * **주면 내장 확인 팝업을 띄우지 않는다.** 호스트가 자기 모달을 띄우고 결과에 따라
+   * `handle.confirmPending()` 또는 `handle.cancelPending()` 을 부른다.
+   *
+   * 부르지 않고 방치하면 편집기는 그 동작을 **대기 상태로 유지한다** — 조용히 취소하지 않는다.
+   * 사용자가 [삭제] 를 눌렀는데 아무 일도 없는 것과, 확인 없이 지워지는 것 중 어느 쪽도
+   * 낫지 않으므로 결정을 호스트에 남긴다.
+   */
+  onRequestConfirm?: (request: ConfirmRequest) => void
+  /**
+   * import 진행 상태가 바뀔 때 (R12).
+   *
+   * 내장 팝업을 끈 호스트가 진행률과 오류를 자기 UI 에 보여줄 수 있어야 한다.
+   */
+  onImportStateChange?: (state: ImportState) => void
+}
+
+/** 호스트가 확인을 받아야 하는 동작. 문구는 이미 번역된 상태로 온다. */
+export interface ConfirmRequest {
+  /** 무엇을 확인하는지. `strings.ts` 를 거친 문구다. */
+  message: string
+  /** 되돌릴 수 없는 동작이면 true — 호스트가 강조 색을 고를 수 있다. */
+  danger: boolean
+}
+
+/** import 진행 상태. 내장 팝업을 끈 호스트가 자기 UI 로 보여준다. */
+export interface ImportState {
+  /** `null` 이면 진행 중인 작업이 없다. */
+  progress: ImportProgress | null
+  error: string | null
 }
 
 /* ----------------------------------------------------------------- 반환 계약 -- */
@@ -257,6 +307,13 @@ export interface EditorController {
   pendingPageDelete: ReadSignal<number | null>
   cancelRemovePage: () => void
   modalOpen: ReadSignal<boolean>
+  /**
+   * 호스트가 다이얼로그를 맡았는지 (D31).
+   *
+   * 셸이 이걸 보고 내장 팝업을 그리지 않는다. 컨트롤러가 판단해서 내려 주는 이유: 셸이
+   * `props` 를 직접 읽으면 렌더 층이 prop 이름을 알게 되고, 위임 조건이 두 곳에 생긴다.
+   */
+  dialogsDelegated: ReadSignal<{ upload: boolean; confirm: boolean }>
 
   /* 오류 문구 */
   toolError: ReadSignal<string | null>
@@ -788,6 +845,23 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
   const importProgress = signal<ImportProgress | null>(null)
   const importError = signal<string | null>(null)
 
+  /*
+   * import 상태를 호스트에 알린다 (D31).
+   *
+   * 대입 지점이 여덟 곳이라 각각에서 콜백을 부르면 빠뜨리기 쉽다. 두 signal 을 한 곳에서
+   * 지켜보면 새 대입 지점이 생겨도 자동으로 따라온다.
+   *
+   * ⚠️ **선언 바로 뒤여야 한다.** `watch` 는 source 를 즉시 한 번 평가해 이전 값을 잡으므로,
+   * 위쪽에 두면 `const` 의 TDZ 에 걸려 런타임에 던진다.
+   *
+   * `immediate` 를 주지 않는다 — 마운트 직후 `{ progress: null, error: null }` 을 보내면
+   * 호스트가 "작업이 끝났다" 로 오해할 수 있다.
+   */
+  watch(
+    () => ({ progress: importProgress.value, error: importError.value }),
+    (state) => props.value.onImportStateChange?.(state),
+  )
+
   /** 실패를 기획이 정한 문구로 옮긴다 (기획 2.4). */
   function describeImportError(err: unknown): string {
     if (err instanceof PageLimitError) return text('error.pageLimit')
@@ -862,6 +936,16 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
 
     if (page.objects.length > 0) {
       pendingPageDelete.value = index
+      /*
+       * 확인을 호스트에 넘긴다 (D31). `pendingPageDelete` 는 그대로 둔다 —
+       * `confirmPending()` 이 그 값을 읽어 실제 삭제를 수행한다.
+       *
+       * 셸은 이 콜백이 있으면 내장 확인 팝업을 그리지 않는다.
+       */
+      props.value.onRequestConfirm?.({
+        message: text('confirm.deletePage'),
+        danger: true,
+      })
       return
     }
     removePageAt(index)
@@ -1146,6 +1230,17 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
     importError,
     openUpload: () => {
       importError.value = null
+      /*
+       * 호스트가 업로드 UI 를 맡았으면 내장 팝업을 열지 않는다 (D31).
+       *
+       * `uploadOpen` 을 켜지 않는 것이 핵심이다 — 켜면 셸이 내장 팝업을 그리고 호스트
+       * 다이얼로그와 두 겹이 된다.
+       */
+      const delegate = props.value.onRequestUpload
+      if (delegate) {
+        delegate()
+        return
+      }
       uploadOpen.value = true
     },
     closeUpload: () => (uploadOpen.value = false),
@@ -1154,6 +1249,11 @@ export function createEditorController(initialProps: EditorProps = {}): EditorCo
       engine.cancelImport()
       importProgress.value = null
     },
+
+    dialogsDelegated: computed(() => ({
+      upload: props.value.onRequestUpload !== undefined,
+      confirm: props.value.onRequestConfirm !== undefined,
+    })),
 
     pageMenu,
     openPageMenu,

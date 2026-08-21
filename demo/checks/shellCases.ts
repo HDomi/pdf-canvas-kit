@@ -556,4 +556,163 @@ export const SHELL_GROUPS: CaseGroup[] = [
       },
     ],
   },
+
+  {
+    title: 'shell — 다이얼로그 위임 (D31) ★',
+    note: '호스트가 onRequestUpload · onRequestConfirm 을 주면 내장 팝업을 그리지 않는다. 그리면 호스트 모달과 두 겹이 된다.',
+    cases: [
+      {
+        name: '위임하지 않으면 내장 업로드 팝업이 열린다',
+        expected: true,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {})
+          editor.requestUpload()
+          const shown = host.querySelector('.pck-modal') !== null
+          editor.destroy()
+          host.remove()
+          return shown
+        },
+      },
+      {
+        name: '★ onRequestUpload 를 주면 내장 팝업을 그리지 않고 콜백만 부른다',
+        expected: [1, false],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          let calls = 0
+          const editor = createPDFCanvasEditor(host, {
+            onRequestUpload: () => calls++,
+          })
+          editor.requestUpload()
+          const shown = host.querySelector('.pck-modal') !== null
+          editor.destroy()
+          host.remove()
+          return [calls, shown]
+        },
+      },
+      {
+        /*
+         * ★ 확인 위임. 객체가 있는 페이지를 지우려 하면 확인이 필요하다.
+         *
+         * 위임하면 내장 팝업 대신 콜백이 불리고, 동작은 대기 상태로 남는다 —
+         * confirmPending() 이 그것을 수행한다.
+         */
+        name: '★ onRequestConfirm 을 주면 콜백이 불리고 내장 팝업이 없다',
+        expected: [true, true, false],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const seen: string[] = []
+          const doc = createPDFCanvasDoc({
+            pages: [
+              createPage({
+                size: A4_PT,
+                objects: [
+                  {
+                    id: 'o1',
+                    type: 'custom',
+                    kind: 'demo.a',
+                    rect: { x: 0, y: 0, w: 10, h: 10 },
+                    data: {},
+                  },
+                ],
+              }),
+              createPage({ size: A4_PT }),
+            ],
+          })
+          const c = createEditorController({
+            initialDoc: doc,
+            objectTypes: [TYPE_A],
+            onRequestConfirm: (req) => seen.push(req.message),
+          })
+          const [, dispose] = scope(() => editorShell(c))
+          c.requestRemovePage(0)
+          const called = seen.length === 1
+          const danger = c.pendingPageDelete.value === 0
+          const shown = document.querySelector('.pck-modal') !== null
+          dispose()
+          host.remove()
+          return [called, danger, shown]
+        },
+      },
+      {
+        /*
+         * 대기 상태를 만드는 것은 편집기 안의 조작(썸네일 우클릭 → 삭제)이다.
+         * facade 에 `requestRemovePage` 를 노출하지 않았으므로 컨트롤러로 만든다.
+         */
+        name: 'confirmPending 이 대기 중인 삭제를 수행한다',
+        expected: [2, 1],
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 'o1',
+                      type: 'custom',
+                      kind: 'demo.a',
+                      rect: { x: 0, y: 0, w: 10, h: 10 },
+                      data: {},
+                    },
+                  ],
+                }),
+                createPage({ size: A4_PT }),
+              ],
+            }),
+            objectTypes: [TYPE_A],
+            onRequestConfirm: () => {},
+          })
+          const before = editor.getDoc().pages.length
+          // 대기 상태를 만든다. 객체가 있는 페이지라 확인이 필요하다.
+          editor.requestRemovePage(0)
+          editor.confirmPending()
+          const after = editor.getDoc().pages.length
+          editor.destroy()
+          host.remove()
+          return [before, after]
+        },
+      },
+      {
+        name: 'cancelPending 은 문서를 바꾸지 않는다',
+        expected: 2,
+        actual: () => {
+          const host = document.createElement('div')
+          document.body.append(host)
+          const editor = createPDFCanvasEditor(host, {
+            initialDoc: createPDFCanvasDoc({
+              pages: [
+                createPage({
+                  size: A4_PT,
+                  objects: [
+                    {
+                      id: 'o1',
+                      type: 'custom',
+                      kind: 'demo.a',
+                      rect: { x: 0, y: 0, w: 10, h: 10 },
+                      data: {},
+                    },
+                  ],
+                }),
+                createPage({ size: A4_PT }),
+              ],
+            }),
+            objectTypes: [TYPE_A],
+            onRequestConfirm: () => {},
+          })
+          editor.requestRemovePage(0)
+          editor.cancelPending()
+          const pages = editor.getDoc().pages.length
+          editor.destroy()
+          host.remove()
+          return pages
+        },
+      },
+    ],
+  },
 ]

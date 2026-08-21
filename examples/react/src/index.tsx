@@ -19,6 +19,7 @@ import {
   type CustomSlotProps,
   type EditorHandle,
 } from 'pdf-canvas-kit/react'
+import type { ConfirmRequest, ImportState } from 'pdf-canvas-kit'
 import {
   configurePdfResources,
   createPDFCanvasDoc,
@@ -164,6 +165,17 @@ function App() {
   const [tab, setTab] = useState<'editor' | 'viewer'>('editor')
   const [note, setNote] = useState('')
 
+  /*
+   * 다이얼로그를 호스트가 맡는다 (PLAN D31).
+   *
+   * `onRequestUpload` · `onRequestConfirm` 을 주면 편집기가 내장 팝업을 띄우지 않는다.
+   * 여기서는 브라우저 기본 UI 로 대체했지만 실제 앱은 자기 디자인 시스템 모달을 쓴다 —
+   * **패키지가 알아야 하는 것은 "확인/취소" 뿐이다.**
+   */
+  const [confirm, setConfirm] = useState<ConfirmRequest | null>(null)
+  const [importing, setImporting] = useState<ImportState | null>(null)
+  const fileInput = useRef<HTMLInputElement>(null)
+
   const send = () => {
     // 검증 게이트. 실패하면 편집기가 문제 객체로 데려간다.
     if (!editor.current?.checkBeforeExport()) {
@@ -190,10 +202,59 @@ function App() {
           뷰어
         </button>
         <span style={{ color: '#e0a' }}>{note}</span>
+        {importing?.progress && (
+          <span>
+            불러오는 중 {Math.round(importing.progress.ratio * 100)}%
+            {importing.progress.total
+              ? ` (${importing.progress.page}/${importing.progress.total})`
+              : ''}
+          </span>
+        )}
+        {importing?.error && <span style={{ color: '#f66' }}>{importing.error}</span>}
         <a href="http://localhost:3102/" style={{ marginLeft: 'auto', color: '#9a9aa0' }}>
           Vue 예제 →
         </a>
       </div>
+      {/* 호스트가 만든 확인 모달. 편집기는 이것의 존재를 모른다. */}
+      {confirm && (
+        <div style={sheet}>
+          <div style={sheetBox}>
+            <p style={{ margin: '0 0 12px' }}>{confirm.message}</p>
+            <button
+              onClick={() => {
+                editor.current?.confirmPending()
+                setConfirm(null)
+              }}
+              style={{ color: confirm.danger ? '#b4342b' : undefined }}
+            >
+              확인
+            </button>
+            <button
+              onClick={() => {
+                editor.current?.cancelPending()
+                setConfirm(null)
+              }}
+            >
+              취소
+            </button>
+          </div>
+        </div>
+      )}
+      {/*
+        업로드도 호스트 것이다. 파일을 고르면 handle.importFile 로 넘긴다 —
+        진행률·오류는 onImportStateChange 로 돌아온다.
+      */}
+      <input
+        ref={fileInput}
+        type="file"
+        accept=".pdf"
+        style={{ display: 'none' }}
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) void editor.current?.importFile(file)
+          e.target.value = ''
+        }}
+      />
       <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
         <div style={pane(tab === 'editor')}>
           <PDFCanvasEditor
@@ -203,6 +264,9 @@ function App() {
             renderObject={{ 'example.shortAnswer': AnswerBadge }}
             renderInspector={{ 'example.shortAnswer': AnswerFields }}
             onChange={setDoc}
+            onRequestUpload={() => fileInput.current?.click()}
+            onRequestConfirm={setConfirm}
+            onImportStateChange={setImporting}
             style={{ height: '100%' }}
           />
         </div>
@@ -258,6 +322,22 @@ const bar: React.CSSProperties = {
  * 탭은 `visibility` 로 숨긴다. `display: none` 은 뷰어의 폭 측정(ResizeObserver)을 죽인다
  * (ARCHITECTURE §18.3).
  */
+/** 호스트 모달. 패키지 CSS 와 무관하다 — 편집기는 이 UI 를 모른다. */
+const sheet: React.CSSProperties = {
+  position: 'fixed',
+  inset: 0,
+  zIndex: 100,
+  display: 'grid',
+  placeItems: 'center',
+  background: 'rgb(0 0 0 / 40%)',
+}
+const sheetBox: React.CSSProperties = {
+  background: '#fff',
+  padding: 20,
+  borderRadius: 4,
+  fontSize: 13,
+}
+
 const pane = (visible: boolean): React.CSSProperties => ({
   position: 'absolute',
   inset: 0,

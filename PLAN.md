@@ -3063,3 +3063,60 @@ export interface PDFCanvasViewerRef { handle: ViewerHandle | null }
 `npm run checks` 는 통과하는데 `npm run typecheck` 가 잡은 실수가 하나 있었다 — 케이스에서
 `shapeObj()` 를 인자 없이 불렀다. vite 변환은 타입을 보지 않으므로 **두 게이트가 서로를
 대신하지 못한다.**
+
+### 20.21 React `ref` 가 비어 있었다 (2026.08.21)
+
+호스트의 [뷰어로 보내기] 가 **에러 없이 아무 일도 하지 않았다.** `editorRef.current?.toPublicDoc()`
+이 `undefined` 를 돌려주고 있었다.
+
+```tsx
+// ✗ R9 부터 있던 코드
+useImperativeHandle(ref, () => handleRef.current as EditorHandle, [])
+```
+
+`useImperativeHandle` 은 **layout effect** 로 구현된다. 편집기를 만드는 `useEffect`(passive)
+보다 **먼저** 돌기 때문에 그 시점의 `handleRef.current` 는 `null` 이고, 그 `null` 이 ref 에
+박힌 뒤 다시 갱신되지 않는다(`deps: []`).
+
+`?.` 때문에 던지지도 않는다. 소비자에게는 **버튼이 죽은 것처럼** 보인다.
+
+```tsx
+// ✓ facade 를 만든 직후 직접 채운다
+handleRef.current = handle
+assignRef(refProp, handle)
+```
+
+Vue 쪽은 `expose({ get handle() {…} })` 게터라 접근 시점에 평가되어 같은 문제가 없었다.
+**같은 계약을 두 방식으로 구현하면 한쪽만 깨진다** — 그 비대칭이 이번 버그의 형태다.
+
+#### 진단 과정에서 내가 한 실수
+
+첫 프로브가 `ref.current = null` 을 보고 "재현됐다" 고 판단했는데, 그 프로브는 **effect 를
+flush 하지 못하고 있었다** — `.pck-editor` 조차 만들어지지 않은 상태였다. `act` 가 그 번들
+형태에서 잡히지 않아 폴백이 마이크로태스크 한 번만 기다렸다.
+
+`flushSync` + 매크로태스크 양보로 고친 뒤, **수정 전/후를 같은 프로브로 비교**해서야 진단이
+확정됐다 (`null` → `object`). 실패하는 관측은 버그의 증거가 아니라 **관측 도구의 문제일 수도
+있다.**
+
+#### 케이스로 고정했다
+
+`demo/checks/wrapperCases.ts` — React 런타임을 실제로 띄우는 유일한 케이스 파일이다.
+
+| 확인 | |
+| --- | --- |
+| 마운트 후 `ref` 가 채워진다 | ★ |
+| `ref` 로 `toPublicDoc()` 이 실제 문서를 준다 | ★ |
+| 뷰어도 `ref` 로 `pageCount()` 에 닿는다 | ★ |
+| 편집기·뷰어가 그려진다 · 뷰어 빈 상태 | |
+
+**수정을 되돌려 케이스가 정확히 3건 실패하는 것을 확인했다.** 회귀 검출이 실제로 동작한다.
+
+JSX 를 쓰지 않고 `createElement` 를 직접 부른다 — 헤드리스 러너에 `@vitejs/plugin-react` 가
+없고, 넣으면 케이스 전체의 번들 경로가 바뀐다. `act` 대신 `flushSync` + 태스크 양보를 쓰는
+이유는 위와 같다. **그 순서 차이가 검증 대상 그 자체다.**
+
+#### 함께 고친 데모 실수
+
+소비자 앱이 객체 수를 `doc.pages[0].objects.length` 로 셌다 — 현재 페이지가 아닌 곳에 놓은
+객체가 빠진다. 데모는 복붙될 코드이므로 전체 합계로 고치고 이유를 주석에 남겼다.

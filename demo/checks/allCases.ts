@@ -14,6 +14,7 @@
  * | `objectRenderCases.ts` | 객체·페이지 렌더 — pt→px, SVG NS, 두 겹 구조 | **예** |
  * | `shellCases.ts` | 편집기 셸 조립 — 컨트롤러↔컴포넌트 계약 | **예** |
  * | `viewerCases.ts` | 뷰어 — 배율 파생 · 슬롯 분기 · facade | **예** |
+ * | `wrapperCases.ts` | React 래퍼 — `ref` 로 facade 에 닿는가 | **예** (React 런타임) |
  *
  * 헤드리스 러너(`scripts/run-checks.mjs`)는 happy-dom 으로 전역 `document` 를 세운 뒤
  * 이 모듈을 불러온다. 브라우저에서는 실제 DOM 을 그대로 쓴다.
@@ -25,6 +26,7 @@ import { CONTROLLER_GROUPS } from './controllerCases'
 import { OBJECT_RENDER_GROUPS } from './objectRenderCases'
 import { SHELL_GROUPS } from './shellCases'
 import { VIEWER_GROUPS } from './viewerCases'
+import { WRAPPER_GROUPS } from './wrapperCases'
 
 export type { Case, CaseGroup } from './cases'
 
@@ -36,6 +38,7 @@ export const ALL_GROUPS: CaseGroup[] = [
   ...OBJECT_RENDER_GROUPS,
   ...SHELL_GROUPS,
   ...VIEWER_GROUPS,
+  ...WRAPPER_GROUPS,
 ]
 
 /* 내역 집계용 재export. `PCK_BREAKDOWN=1 npm run checks` 가 읽는다. */
@@ -46,3 +49,4 @@ export { CONTROLLER_GROUPS } from './controllerCases'
 export { OBJECT_RENDER_GROUPS } from './objectRenderCases'
 export { SHELL_GROUPS } from './shellCases'
 export { VIEWER_GROUPS } from './viewerCases'
+export { WRAPPER_GROUPS } from './wrapperCases'

@@ -1283,6 +1283,22 @@ DOM 을 직접 들고 있기 때문의 제약이고, portal 경로에는 해당�
 | 목록 증감 | DOM 을 손으로 | `map` / `v-for` |
 | 포커스 가드 | **필요** | 불필요 |
 
+### ⚠️ React 의 `ref` 는 `useImperativeHandle` 로 채우지 않는다
+
+```tsx
+// ✗ layout effect 라 편집기를 만드는 useEffect 보다 먼저 돈다 → null 이 박힌다
+useImperativeHandle(ref, () => handleRef.current as EditorHandle, [])
+
+// ✓ facade 를 만든 직후 직접 채운다
+handleRef.current = handle
+assignRef(refProp, handle)
+```
+
+`?.` 때문에 던지지 않아 **버튼이 죽은 것처럼** 보인다 (PLAN 20.21). Vue 는
+`expose({ get handle() {…} })` 게터라 접근 시점에 평가되어 같은 문제가 없다.
+
+`wrapperCases.ts` 가 이 불변식을 지킨다 — React 런타임을 실제로 띄우는 유일한 케이스다.
+
 ### ⚠️ Vue 의 `expose` 는 타입을 남기지 않는다
 
 React 의 `useImperativeHandle` 은 `ref` 타입을 자동으로 잡지만, Vue 의 `expose()` 는 런타임

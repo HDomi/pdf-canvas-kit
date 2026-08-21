@@ -33,7 +33,6 @@
 import {
   useCallback,
   useEffect,
-  useImperativeHandle,
   useRef,
   useState,
   useSyncExternalStore,
@@ -83,6 +82,22 @@ export interface PDFCanvasEditorProps extends Omit<
   ref?: Ref<EditorHandle>
 }
 
+/**
+ * `ref` 를 직접 채운다. **`useImperativeHandle` 을 쓰지 않는다** (R11, 2026.08.21).
+ *
+ * `useImperativeHandle` 은 layout effect 라 편집기를 만드는 `useEffect` 보다 **먼저** 돈다.
+ * 그래서 `() => handleRef.current` 를 넘기면 아직 `null` 인 값이 ref 에 박히고, 소비자의
+ * `editorRef.current?.toPublicDoc()` 이 조용히 `undefined` 를 돌려준다 — 에러도 없이
+ * 아무 일도 일어나지 않는다. R9 부터 있던 버그이고 실제로 그렇게 새어 나갔다.
+ *
+ * 대신 facade 를 만든 직후 여기서 채운다. Vue 쪽은 `expose({ get handle() {…} })` 게터라
+ * 접근 시점에 평가되어 같은 문제가 없다 — 그 비대칭을 이 함수가 메운다.
+ */
+function assignRef<T>(ref: Ref<T> | undefined, value: T | null): void {
+  if (typeof ref === 'function') ref(value)
+  else if (ref) (ref as { current: T | null }).current = value
+}
+
 /** 마운트된 슬롯 컨테이너. `objectId` → 엘리먼트. */
 type Mounts = ReadonlyMap<string, HTMLElement>
 
@@ -126,7 +141,7 @@ export function PDFCanvasEditor({
   renderInspector,
   className,
   style,
-  ref,
+  ref: refProp,
   ...editorProps
 }: PDFCanvasEditorProps) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -155,10 +170,12 @@ export function PDFCanvasEditor({
       onMountInspector,
     })
     handleRef.current = handle
+    assignRef(refProp, handle)
 
     return () => {
       handle.destroy()
       handleRef.current = null
+      assignRef(refProp, null)
     }
     // 마운트 시 한 번만. 콜백은 `useCallback` 으로 안정적이다.
   }, [onMountCustom, onMountInspector])
@@ -167,8 +184,6 @@ export function PDFCanvasEditor({
   useEffect(() => {
     handleRef.current?.update(editorProps)
   })
-
-  useImperativeHandle(ref, () => handleRef.current as EditorHandle, [])
 
   /**
    * 문서 변경에 리렌더한다.
@@ -255,7 +270,7 @@ export function PDFCanvasViewer({
   renderObject,
   className,
   style,
-  ref,
+  ref: refProp,
   ...viewerProps
 }: PDFCanvasViewerProps) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -271,9 +286,11 @@ export function PDFCanvasViewer({
     if (!host) return
     const handle = createPDFCanvasViewer(host, { ...propsRef.current, onMountCustom })
     handleRef.current = handle
+    assignRef(refProp, handle)
     return () => {
       handle.destroy()
       handleRef.current = null
+      assignRef(refProp, null)
     }
   }, [onMountCustom])
 
@@ -281,8 +298,6 @@ export function PDFCanvasViewer({
   useEffect(() => {
     handleRef.current?.update(viewerProps)
   })
-
-  useImperativeHandle(ref, () => handleRef.current as ViewerHandle, [])
 
   /*
    * 문서를 구독하지 않는다 — 편집기와 다른 지점.

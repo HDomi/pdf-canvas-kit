@@ -117,6 +117,17 @@
 | `--pck-inspector-width` | `LAYOUT_DEFAULTS.inspectorWidthPx` | 같음 |
 | `--pck-topbar-height` | `LAYOUT_DEFAULTS.topBarHeightPx` | 스테이지 높이 계산이 어긋난다 |
 
+#### ⚠️ 예외 — 핸들 크기는 일부러 토큰이 아니다 (2026.08.21)
+
+`EDITOR_DEFAULTS.handles` 는 순수하게 보이는 값인데 `defaults.ts` 에 있고, `resizeHandles.ts`
+가 **인라인 스타일**로 준다. 즉 호스트가 CSS 로 이길 수 없다 — §19.1 계약의 의도된 예외다.
+
+핸들 크기는 취향이 아니라 **집을 수 있는지**의 문제다. 너무 작으면 잡히지 않고, 너무 크면
+얇은 객체(선·화살표는 박스가 실제로 얇다 — §21.1.1)에서 8개가 서로 겹쳐 어느 것을 잡는지 알
+수 없게 된다. 그 균형을 호스트 테마마다 다시 맞추게 할 이유가 없다.
+
+색(`--pck-handle-bg` · `--pck-handle-stroke`)은 토큰이다. 그쪽은 취향이고 겹침과 무관하다.
+
 ### 3.3 객체 색과 토큰의 관계
 
 텍스트·Answer Box는 `BoxStyle` 로 배경·테두리·글자색을 가질 수 있다.
@@ -1465,7 +1476,7 @@ defineObjectType<Answer, Omit<Answer, 'answers'>>({
 
 | 층 | 수단 | 왜 이 층인가 |
 | --- | --- | --- |
-| 값 | 토큰 `--pck-*` (75개) | 색·간격·폭은 값 하나 바꾸는 일이다 |
+| 값 | 토큰 `--pck-*` (74개) | 색·간격·폭은 값 하나 바꾸는 일이다 |
 | 규칙 | **`@layer pdf-canvas-kit`** | 배치·정렬은 값으로 안 된다. 레이어가 특이도 싸움을 없앤다 |
 | 동작 | **다이얼로그 위임** (D31) | 호스트 모달을 쓰려면 UI 가 아니라 함수가 필요하다 |
 

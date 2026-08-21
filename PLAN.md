@@ -3317,3 +3317,35 @@ facade 에 여섯 개를 노출했다 — `importFile` · `cancelImport` · `con
 | --- | --- |
 | `@layer` 가 브라우저에서 실제로 지는가 | ⏳ happy-dom 은 캐스케이드 레이어를 완전히 구현하지 않는다. **빌드 구조만 검사했다** |
 | 호스트 모달로 실제 업로드·삭제가 되는가 | ⏳ 예제에 붙였다. 브라우저 확인 필요 |
+
+#### 예제를 컴포넌트로 나누고 테마 토글을 넣었다 (2026.08.21)
+
+R12 직후 요청받은 것. 두 예제가 **같은 구조**로 커스터마이징 셋을 다 보여준다.
+
+```
+examples/{react,vue}/src/
+  theme.css        ★ 패키지 스타일 오버라이드 (두 예제가 같은 파일)
+  host.css         예제 자신의 스타일 — 패키지 클래스를 건드리지 않는다
+  objectType.ts    커스텀 타입 (프레임워크 무관)
+  components/      ConfirmDialog · UploadDialog · DevBar
+  slots/           AnswerBadge · AnswerFields · AnswerInput
+  useThemeToggle   theme.css 를 <style> 로 붙였다 뗀다
+```
+
+`theme.css` 와 `host.css` 를 나눈 이유: 섞으면 **무엇이 오버라이드인지** 흐려진다. 전자는
+`.pck-*` 만, 후자는 `.ex-*` · `.host-*` 만 건드린다.
+
+#### 토글이 `@layer` 를 증명한다
+
+`import './theme.css'` 로 하면 vite 가 자동 주입해서 끌 수가 없다. 끄려고 `.plain .pck-x`
+같은 스코프를 만들면 **특이도가 올라가 증명이 무의미해진다** — 이 예제의 요점이 "단일 클래스
+선택자가 이긴다" 이기 때문이다.
+
+그래서 `?raw` 로 문자열을 받아 `<style>` 로 붙이고 뗀다. 특이도 그대로, 토글 가능.
+
+테마가 덮는 범위: 상단바·툴바·좌측 패널(제목·썸네일·버튼)·스테이지(격자 배경·프레임 테두리·
+줌 컨트롤)·인스펙터(섹션·라벨·삭제 버튼)·뷰어(배경·간격·응답 폼 강조). **토큰으로 안 되는
+것을 일부러 섞었다** — `justify-content`, `background-image`, `text-transform`, `border-style`.
+
+시범에 쓴 클래스는 전부 `editor.css` 에 실제로 있는지 확인했다. 없는 클래스를 쓰면 "오버라이드가
+먹는다" 는 증명이 거짓이 된다.

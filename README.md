@@ -717,8 +717,27 @@ export const shortAnswer = defineObjectType<{ answers: string[]; points: number 
 > 대기 상태로 남는다.** 조용히 취소하지 않는다 — 사용자가 [삭제]를 눌렀는데 아무 일도 없는
 > 것과, 확인 없이 지워지는 것 중 어느 쪽도 낫지 않으므로 결정을 호스트에 남긴다.
 
-Vue도 같다. 예제는 [examples/react/src/index.tsx](examples/react/src/index.tsx) ·
-[examples/vue/src/App.vue](examples/vue/src/App.vue) — 둘 다 자기 모달로 대체해 뒀다.
+Vue도 같다. 두 예제가 같은 구조로 이 셋을 다 보여준다.
+
+```
+examples/{react,vue}/src/
+  theme.css              ★ 패키지 스타일 오버라이드 — [테마] 토글로 켜고 끈다
+  host.css               예제 자신의 스타일 (패키지 클래스를 건드리지 않는다)
+  objectType.ts          커스텀 객체 타입 (프레임워크 무관)
+  components/
+    ConfirmDialog        호스트 확인 모달 — 편집기는 이 존재를 모른다
+    UploadDialog         호스트 업로드 모달 (드래그&드롭 포함)
+  slots/
+    AnswerBadge          편집기 캔버스 (미리보기)
+    AnswerFields         편집기 인스펙터 (편집)
+    AnswerInput          뷰어 (응답 폼)
+```
+
+**[테마 ON/OFF] 토글이 `@layer` 를 눈으로 확인하는 장치다.** `theme.css` 를 `?raw` 로 읽어
+`<style>` 로 붙였다 뗀다 — 스코프 클래스를 만들지 않으므로 **특이도가 올라가지 않고**,
+그래서 "단일 클래스 선택자가 패키지 규칙을 이긴다" 는 것이 그대로 증명된다.
+
+테마는 상단바·툴바·좌측 패널·스테이지·인스펙터·뷰어를 **전부** 덮는다.
 
 ### 문구 바꾸기
 

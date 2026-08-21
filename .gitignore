@@ -29,3 +29,4 @@ publish-*.sh
 .npmrc
 .env
 .env.local
+!.env.example

@@ -259,10 +259,10 @@ npm run dev      # 3100 데모(레포 소스) · 3101 React 예제 · 3102 Vue �
 | `npm run copy:pdfjs` | pdf.js 런타임 자산을 `demo/public/pdfjs` 로 복사 |
 | `npm run check:docs` | 문서의 죽은 상대 링크 검사 (lint 게이트에 포함) |
 | `npm run examples:build` | 예제 앱 타입체크 + 빌드. **소비 경로를 검증하는 자리** |
-| `./publish.sh` | **npm 배포.** gitignore 대상 — `DRY_RUN=1 ./publish.sh` 로 먼저 확인한다 |
+| `./publish.sh` | **npm 배포.** gitignore 대상. 인증은 `.env` 의 `NPM_TOKEN`([.env.example](.env.example)) 또는 2FA OTP. `DRY_RUN=1` 로 먼저 확인한다 |
 | `npm run verify:tarball` | 배포 산출물 검사 — 훅 · `exports` · 불필요 파일 · peer · `@layer` |
 | `npm run license-check` | 의존성 라이선스 검사 (MIT/Apache-2.0/BSD/ISC만 허용) |
-| `./publish.sh` | **npm 배포.** gitignore 대상 — `DRY_RUN=1 ./publish.sh` 로 먼저 확인한다 |
+| `./publish.sh` | **npm 배포.** gitignore 대상. 인증은 `.env` 의 `NPM_TOKEN`([.env.example](.env.example)) 또는 2FA OTP. `DRY_RUN=1` 로 먼저 확인한다 |
 | `npm run verify:tarball` | **배포 산출물 검사** — 라이프사이클 훅 · `exports` 대상 · 불필요 파일 · peer 설정 |
 | `npm run examples:build` | **예제 앱 타입체크 + 빌드** (`skipLibCheck: false`). 소비 경로를 검증하는 자리다 |
 

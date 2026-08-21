@@ -15,7 +15,10 @@
     (`file:` 프로토콜과 tarball 해석이 같지만 **동일하다고 단정하지 않았다**)
   - [ ] beta 로 실제 앱을 한 번 만들어 본 뒤 `0.1.0` (latest) 로 승격
 - [ ] **npm publish** — `./publish.sh` 로 한다 (gitignore 대상. `DRY_RUN=1` 로 먼저 확인)
-  - `npm login` 이 선행돼야 한다. scoped 패키지라 `publishConfig.access = "public"` 이 필수다
+  - 인증: `.env` 에 `NPM_TOKEN`(granular, **Bypass 2FA 체크**) 또는 2FA + OTP.
+    npm 이 2024 부터 publish 에 2FA 를 의무화했다 — 둘 중 하나가 없으면 403 이다.
+    `.env.example` 을 복사해 채운다
+  - scoped 패키지라 `publishConfig.access = "public"` 이 필수다
   - ⚠️ `verify:tarball` 을 `prepublishOnly` 에 넣지 않는다 — `publish → prepublishOnly →
     pack → prepare` 로 npm 이 재귀 실행되며 출력이 섞인다. `publish.sh` 가 publish 전에 부른다
   - tarball 을 실제 React·Vue 앱에 설치해 검증했다 (`examples/*` 가 그 경로를 계속 지킨다)
